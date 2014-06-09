@@ -1,0 +1,225 @@
+<html>
+	<head>
+		<title>Myriad Switcher 0.1 User Guide</title>
+	</head>
+	<body>
+		<h1>
+			MyriadSwitcher</h1>
+		<p>
+			MyriadSwitcher is a python app to mine the wonderful crypto-currency known as Myriadcoin. Unlike most cryptos out there, Myriadcoin uses 5 different algorithms to mine the coin, namely SHA-256, Scrypt, Groestl, Skein and Qubit.</p>
+		<p>
+			MyriadSwitcher fetches the web to determine which of the 4 GPU profitable algos to mine (Scrypt, Groestl, Skein or Qubit). You can aim for maximum coins per day, maximum coins per watt, or mine in an hybrid mode that&#39;s anything in between the former modes.</p>
+		<p>
+			It also monitors your miners and automatically restarts them if they crash or freeze, and can generate an html output log to monitor your mining progress from anywhere.</p>
+		<p>
+			&nbsp;</p>
+		<h2>
+			Launch the application:</h2>
+		<p>
+			Double click the executable named&nbsp;MyriadSwitcherGUI.exe</p>
+		<p>
+			&nbsp;</p>
+		<h2>
+			Configuration</h2>
+		<h3>
+			Main Config Panel</h3>
+		<img src="img/mainconfig.png" />
+		<p>
+			&nbsp;</p>
+		<ol>
+			<li>
+				Use the check boxes to select the algos you want to the switcher to pick from. (MANDATORY)</li>
+			<li>
+				Then select the script files to launch your miners for every enabled algo (MANDATORY)</li>
+			<li>
+				<p>
+					If you know your hash rate (in Mega-hashes per seconds) for each algo, input those those in the MH/s selectors. If&nbsp; MyriadSwitcher knows your hash rate accurately it can make better decisions as to what mine or when to switch to a different algo.</p>
+				<p>
+					You&#39;ll also get more accurate predictions for expected coins per day and other stats displayed in the progress console that will be explained later in this document. If you don&#39;t know your hash rates or you&#39;re simply too lazy to set them, you can use the provided</p>
+				<p>
+					default values. The switcher will stil work, and will assume hash rates that match what Myriadcoin estimates for algo hash rate equivalencies at&nbsp;<a href="http://myriad.theblockexplorer.com/">http://myriad.theblockexplorer.com/</a></p>
+			</li>
+			<li>
+				<p>
+					&nbsp;Input your power consumption in the Watts selectors for each algo and your computer idle power consumption if you know them. As with hash rates, you can use defaults if you don&#39;t know them. It will not have an effect on how the app switches algos if you pick the Max Coins per Day mining mode.&nbsp;</p>
+			</li>
+			<li>
+				<p>
+					Efficiency: We all know we don&#39;t really get all the coins we&#39;re supposed to based only on our hash rate. There&#39;s some rejected shares, blocks that go orphaned, pool fees and pool donations... By default this is set to 95% meaning that all your earnings are cut down by a 5% (so you get a 95% of the theoretical figure).&nbsp;</p>
+			</li>
+		</ol>
+		<p>
+			&nbsp;</p>
+		<h3>
+			Switching Modes Panel</h3>
+		<img src="img/switchm.png" />
+		<p>
+			&nbsp;</p>
+		<p>
+			Here you can pick your mining mode.</p>
+		<ul>
+			<li>
+				Maximize coins per day: self explanatory, the miner will simply pick the algorithm that will net you the most coins, depending on your hash rates and the algo&#39;s difficulties.</li>
+			<li>
+				Maximize coins per watt: the switcher will priorize algos with lower power consumption like Groestl and Qubit. For example, if you have a system that draws 500W mining Groestl and 1000W mining Scrypt, Scrypt coins per day should be at least twice as many as Groestl&#39;s for the switcher to pick Scrypt over Groestl. In this example, Groestl has more <em>weight </em>for the switcher than Scrypt.&nbsp;</li>
+			<li>
+				Hybrid mode: it&#39;s anything in between (a) Maximize coins per day and (b) Maximize coins per watt. Use the slider to tweak how much you want it to be more like (a) or (b).&nbsp;</li>
+		</ul>
+		<p>
+			Minimum Coins: If profitability gets too low for your taste, the switcher stops mining. Just set a minimum amount of coins per day below which you&#39;d rather not have your system crunching hashes. If none of your active algos are currently able to generate more than this many coins per day, nothing is mined until difficulty goes down again.</p>
+		<p>
+			Expected Values: this is just an informative section of the configurator.</p>
+		<ul>
+			<li>
+				Weight represents the priority of each algo for the switcher. If you are mining in Maximize coins per day mode, all weights will be equal simply because there&#39;s no preference for any algo, will just mine the most profitable, but in Maximize coins per watt mode, algos with lower power draw have more weight</li>
+			<li>
+				Min. Coins: If you have set a minimum coin threshold and you are not using the Maximize coins per day mode, you can see here at which point the switcher will stop mining&nbsp; for each algo.</li>
+			<li>
+				Min C/W: Means Minimum Coins per Watt, same as before but in terms of Coins per Watt</li>
+		</ul>
+		<p>
+			&nbsp;</p>
+		<h3>
+			Miscellaneous Panel</h3>
+		<img src="img/misc.png" />
+		<h4>
+			Timings</h4>
+		<ul>
+			<li>
+				Normal Sleep time (minutes): This is the time in minutes that passes before the switcher checks again if there&#39;s a more profitable algo.</li>
+			<li>
+				Sleep time after miner restarts (minutes): Same as before but right after switching to a new algo, or restarting the miner after spending some time bellow the Minimum Coins threshold. This is usually better set higher than the previous sleep time to make sure you spend at least this amount of time mining something and keep the switcher from swaping algos too quickly.</li>
+			<li>
+				Switching Hysteresis (%): This is also to avoid frantic switching and is better explained with an example. If you set this to 10% and you&#39;re constantly mining say Scrypt at 1000 coins per day, another algo would need to be at least a 10% more profitable before it kicks in, so 1100 coins per day. If now for example Skein hits 1100 coins per day and takes over, Scrypt would need to be another 10% more profitable than Skein, so 1210 per day.</li>
+			<li>
+				Min. hysteresis time (minutes): Once this many minutes have passed mining a certain algo, hiysteresis is switched off. Makes sense if you&#39;ve been mining something for long enough to not worry about quick switching back and forth anymore.</li>
+			<li>
+				Ramp up time (seconds): The time it takes your miners to restart and begin submiting shares. It&#39;s used only for statistical purposes, to factor in down time in the amount of coins per day expected as displayed in the progress console that will be described in a while.</li>
+			<li>
+				HTTP timeout (seconds): The time the switcher waits for the interweb overlords to respond when querying for the MYR exchange rate and algo&#39;s difficulties.</li>
+		</ul>
+		<h4>
+			Log Configuration:</h4>
+		<p>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pretty self explanatory. Enable or disable logging and pick the log destination folder. The log files are stored per session, and the naming follows the following pattern: [YEAR]-[MONTH]-[DAY]-[HOURS][MINUTES][SECONDS]. Example:2014-05-14-154545.html&nbsp;</p>
+		<h4>
+			Exchange source</h4>
+		<p>
+			&nbsp;&nbsp;&nbsp;&nbsp; This is to pick the source of the current MYR exchange rate vs Bitcoin. Currently available sources are Poloniex and Mintpal. If you want another one and it had an API, let me know and I&#39;ll add it. It agin just for statistical purposes anyway.</p>
+		<h4>
+			Miner Error Handling</h4>
+		<p>
+			&nbsp; &nbsp; &nbsp;Select &quot;Miner error monitoring&quot; if you want MyriadSwitcher to restart your miners if they crash or freeze.</p>
+		<p>
+			&nbsp; &nbsp; &nbsp;You can also set the switcher to reboot your system completely after a number of consecutive errors, and specify if it should reboot after the miner crashes (the process is killed completely), freezes (the process halts and stops using CPU cycles) or both.&nbsp;</p>
+		<p>
+			&nbsp; &nbsp; &nbsp;Setting &quot;Reboot after 1 error&quot; will &nbsp;reboot the system as soon as a miner fails, with no attempt to restart it.</p>
+		<p>
+			&nbsp; &nbsp; &nbsp;After rebooting, the switcher will start automatically, wait a bit to give the system time to load, and start mining again &nbsp;</p>
+		<p>
+			&nbsp;</p>
+		<h2>
+			Buttons</h2>
+		<p>
+			&nbsp;&nbsp;&nbsp; Save: saves your current configuration.</p>
+		<p>
+			&nbsp;&nbsp;&nbsp; Cancel: discards the changes made to the configuration and reverts to the previously saved values.</p>
+		<p>
+			&nbsp;&nbsp;&nbsp; Defaults: Restores the config default values</p>
+		<p>
+			&nbsp;&nbsp;&nbsp; Run: Saves current changes made to the configuration panels and starts a mining session</p>
+		<p>
+			&nbsp;&nbsp;&nbsp; Stop: Terminates the mining session.</p>
+		<p>
+			Note: You don&#39;t need to stop the mining session to apply changes, just reconfigure on the fly, hit Save and the new configuration will apply</p>
+		<p>
+			&nbsp;</p>
+		<h2>
+			Progress Console Output</h2>
+		<img src="img/console.png" />
+		<p>
+			As you start mining, the Console will output some data events about your current session progress in a tabular fashion, let&#39;s describe each column&#39;s meaning:</p>
+		<ul>
+			<li>
+				Time: The local time of the event.</li>
+			<li>
+				Elapsed/Stint: The time in days hours-minutes-seconds since the session started, or the current coin stint started for summary lines</li>
+			<li>
+				Algo: The algorithm being mined currently</li>
+			<li>
+				Exch: The current exchange rate for Myriadcoin vs Bitcoin&nbsp; in satoshis&nbsp;</li>
+			<li>
+				Prof&nbsp;1Mh/s: Current expected profitability of the algo being mined in satoshis per 1MH/s per day.</li>
+			<li>
+				My&nbsp;profit: Current expected profitability of the algo being mined in satoshis per day based on your own hash rate</li>
+			<li>
+				Scrypt&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;&nbsp;&nbsp;/day: Total expected coins mined in Scrypt, it&#39;s percentage of the expected total coins mined for all 4 algos</li>
+			<li>
+				Groestl&nbsp;&nbsp; %&nbsp;&nbsp;&nbsp;/day: Total expected coins mined in Groestl , it&#39;s percentage of the expected total coins mined for all 4 algos</li>
+			<li>
+				Skein&nbsp;&nbsp;&nbsp;&nbsp; %&nbsp;&nbsp;&nbsp;/day: Total expected coins mined in Skein, it&#39;s percentage of the expected total coins mined for all 4 algos</li>
+			<li>
+				Qubit&nbsp;&nbsp;&nbsp;&nbsp; %&nbsp;&nbsp;&nbsp;/day: Total expected coins mined in Qubit, it&#39;s percentage of the expected total coins mined for all 4 algos</li>
+			<li>
+				Tot.Coins:&nbsp; Total expected coins mined, including all 4 algos</li>
+			<li>
+				Tot. $: Total expected satoshis, including all 4 algos, based on current exchange rate</li>
+			<li>
+				/day: Expected coins per day&nbsp; of the session/stint</li>
+			<li>
+				Prof&nbsp;1Mh/s: Total expected profitability of the session in satoshis per 1MH/s per day.</li>
+			<li>
+				My&nbsp;profit: Total expected profitability of the session in satoshis per day based on your own hash rate</li>
+			<li>
+				Watts: Average power consumption of the session or stint</li>
+			<li>
+				C/W:&nbsp; Average coins per watt of the session or stint</li>
+		</ul>
+		<p>
+			What I call a stint is simply the time spent on a given&nbsp; algo, before the session ends, the switcher swaps to another one or you disable it and start mining something else. You can call it Sue if you want.</p>
+		<p>
+			What&#39;s with the colorful green/cyan lines? These are summary stats for the stints and are displayed every time you switch algos. The values displayed are averages and totals just for that particuar... Sue&nbsp;</p>
+		<p>
+			And the red/magenta ones? Those mark a miner restart after it craps out, the switcher monitors their activity and restart the miner if they crash or freeze.</p>
+		<p>
+			&nbsp;</p>
+		<h2>
+			Menu Items</h2>
+		<h3>
+			File</h3>
+		<ul>
+			<li>
+				Open: Open a new config file. By default the switcher uses myriadSwitcher.conf, but you can have any number of configs stored and use any of them as you see fit. The frame title includes the name of the current config file in use.</li>
+			<li>
+				Save: Does the same as the Save button.</li>
+			<li>
+				Save as: Saves your current configuration to a file with a name of your choice and sets it as the active config file</li>
+			<li>
+				Exit: Closes the app and the miners. If you shut down the app clicking the &quot;X&quot; on the top right/left of the frame, the app closes but the miners keep running</li>
+		</ul>
+		<h3>
+			Donations</h3>
+		<p>
+			Nothing to see here</p>
+		<h3>
+			Help&nbsp;</h3>
+		<p>
+			Open the User Guide: Opens this file</p>
+		<p>
+			About: Just a simple dialog displaying the current version.</p>
+		<p>
+			...........................................................................................................................................................................................................................................................................................................................................</p>
+		<p>
+			So that&#39;s it, if you have any comments, suggestions or bug reports, please use:</p>
+		<p>
+			Reddit: <a href="http://www.reddit.com/r/myriadcoin/comments/25ipos/help_beta_test_the_new_autoswitching_mining_app/">http://www.reddit.com/r/myriadcoin/comments/25ipos/help_beta_test_the_new_autoswitching_mining_app/</a></p>
+		<p>
+			or</p>
+		<p>
+			Bitcointalk: <a href="https://bitcointalk.org/index.php?topic=483515.4280">https://bitcointalk.org/index.php?topic=483515.4280</a></p>
+		<p>
+			or</p>
+		<p>
+			Myriadcoins IRC&#39;s channel at: <a href="http://webchat.freenode.net/?channels=%23%23myriadcoin&amp;uio=OT10cnVlJjExPTEyMyYxMj10cnVl38">http://webchat.freenode.net/?channels=%23%23myriadcoin&amp;uio=OT10cnVlJjExPTEyMyYxMj10cnVl38</a></p>
+	</body>
+</html>

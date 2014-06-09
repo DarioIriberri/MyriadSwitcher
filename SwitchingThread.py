@@ -54,6 +54,7 @@ class SwitchingThread (threading.Thread):
         self.configChangedFlag = False
         self.rebooting = rebooting
         self.resume = resume
+        self.miner = None
 
         self.console = console
         self.htmlBuilder = None
@@ -98,7 +99,6 @@ class SwitchingThread (threading.Thread):
         currentPrice       = None
         current            = None
         #effectiveRoundTime = None
-        miner              = None
         switchtext         = None
         cpu1               = None
         globalStart        = None
@@ -260,7 +260,7 @@ class SwitchingThread (threading.Thread):
                     prevAlgo = maxAlgo
 
                 current = maxAlgo
-                miner = self.hashtableMiners[current] if current in self.hashtableMiners.keys() else None
+                self.miner = self.hashtableMiners[current] if current in self.hashtableMiners.keys() else None
 
                 prevSwitchtext = switchtext
 
@@ -290,9 +290,9 @@ class SwitchingThread (threading.Thread):
                 prevAlgo = current
                 switchtext = "   " + current
 
-                cpu2 = self.getCPUUsages(miner)
+                cpu2 = self.getCPUUsages(self.miner)
 
-                stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, miner, config_json)
+                stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, self.miner, config_json)
                 restart = not globalStopped and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
 
                 cpu1 = cpu2
@@ -347,7 +347,7 @@ class SwitchingThread (threading.Thread):
                     globalStopped = hashtablePerWattAttenuated[current] < averageMinimumCoinsPerWatt
 
             if globalStopped:
-                self.killMiner(miner) if miner else self.killMiners()
+                self.killMiner(self.miner) if self.miner else self.killMiners()
 
                 if status != "SWITCH":
                     status = "OK"
@@ -360,7 +360,7 @@ class SwitchingThread (threading.Thread):
                 t1 = time.time()
 
                 if not config_json["debug"]:
-                    self.killMiner(miner) if miner else self.killMiners()
+                    self.killMiner(self.miner) if self.miner else self.killMiners()
 
                     workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
                     retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
@@ -375,8 +375,8 @@ class SwitchingThread (threading.Thread):
                         self.stop(True)
                         break
 
-                    if self.waitForMinerToStart(miner, config_json["rampUptime"]):
-                        cpu1 = self.getCPUUsages(miner)
+                    if self.waitForMinerToStart(self.miner, config_json["rampUptime"]):
+                        cpu1 = self.getCPUUsages(self.miner)
 
                     #if self.checkSwitchingThreadStopped():
                     #    breakAt = "after miner start"
@@ -484,14 +484,14 @@ class SwitchingThread (threading.Thread):
 
                 if not globalStopped:
                     try:
-                        cpuF2 = self.getCPUUsages(miner)
+                        cpuF2 = self.getCPUUsages(self.miner)
 
-                        if self.minerCrashed(cpu1, cpuF2, miner, config_json):
+                        if self.minerCrashed(cpu1, cpuF2, self.miner, config_json):
                             loopMinerStatus = MINER_CRASHED
                             break
 
                         if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
-                            if self.minerFreezed(cpuF1, cpuF2, miner, config_json):
+                            if self.minerFreezed(cpuF1, cpuF2, self.miner, config_json):
                                 loopMinerStatus = MINER_FREEZED
                                 break
 
@@ -852,7 +852,7 @@ class SwitchingThread (threading.Thread):
 
         if kill_miners:
             try:
-                self.killMiner(miner) if miner else self.killMiners()
+                self.killMiner(self.miner) if self.miner else self.killMiners()
             except:
                 print "Failed to kill miners"
 
