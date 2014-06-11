@@ -409,7 +409,7 @@ class SwitchingThread (threading.Thread):
 
         if kill_miners:
             try:
-                self.killMiner(self.miner) if self.miner else self.killMiners()
+                self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
             except:
                 print "Failed to kill miners"
 
