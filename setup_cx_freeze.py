@@ -17,13 +17,13 @@ f.writelines(lines)
 f.close()
 
 
-setup(
-    name = "Myriad Switcher",
-    version = FrameMYR.FrameMYR.getVersion(),
-    description = "A Myriadcoin Auto-switching mining software",
-    #author="Dario Iriberri",
-    executables = [Executable("MyriadSwitcherGUI.pyw", base = "Win32GUI",icon="myriadS1.ico")]
-    )
+#setup(
+#    name = "Myriad Switcher",
+#    version = FrameMYR.FrameMYR.getVersion(),
+#    description = "A Myriadcoin Auto-switching mining software",
+#    #author="Dario Iriberri",
+#    executables = [Executable("MyriadSwitcherGUI.pyw", base = "Win32GUI",icon="myriadS1.ico")]
+#    )
 
 
 
