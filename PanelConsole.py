@@ -12,7 +12,6 @@ import time
 
 ConsoleEvent, EVT_CONSOLE_EVENT = wx.lib.newevent.NewEvent()
 MAX_STOP_TIME = 45
-DATA_FILE_NAME = "m_s_data.myr"
 
 
 class PanelConsole(wx.Panel):

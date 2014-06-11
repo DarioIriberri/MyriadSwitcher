@@ -1,10 +1,6 @@
 __author__ = 'Dario'
 
 import threading
-import urllib2
-import json
-import socket
-import operator
 import psutil
 import subprocess
 import time
@@ -12,27 +8,10 @@ import sys
 import io
 import os
 import logging
-import cPickle
-import PanelConsole
+import socket
 import HTMLBuilder
+import SwitcherData
 
-
-
-SECONDS_PER_DAY = 86400
-
-MODE_MAX_PER_DAY = 1
-MODE_MAX_PER_WATT = 2
-MODE_MAX_PER_HYBRID = 3
-
-EXCHANGE_POLONIEX = "poloniex"
-EXCHANGE_MINTPAL  = "mintpal"
-
-scryptS  = " Scrypt "
-groestlS = " Groestl"
-skeinS   = " SKein  "
-qubitS   = " Qubit  "
-
-MINER_CHOICES = ["sgminer", "cgminer", "bfgminer", "reaper", "cudaminer", "minerd"]
 
 MIN_TIME_THREAD_PROBED = 45
 CPU_TIME    = 0
@@ -44,17 +23,15 @@ MINER_FREEZED = "freezes"
 MINER_CRASHED_OR_FREEZED = "crashes or freezes"
 
 
-
 class SwitchingThread (threading.Thread):
     def __init__(self, name, counter, console, rebooting, resume):
         super(SwitchingThread, self).__init__()
         self._stop = threading.Event()
 
-        self.hashtableMiners = {}
         self.configChangedFlag = False
         self.rebooting = rebooting
         self.resume = resume
-        self.miner = None
+        self.activeMiner = None
 
         self.console = console
         self.htmlBuilder = None
@@ -78,227 +55,72 @@ class SwitchingThread (threading.Thread):
 
         self.console.parent.onMiningProcessStarted()
 
-        config_json = self.loadConfig(thread.activeConfigFile)
+        switcherData = SwitcherData.SwitcherData()
+        config_json = switcherData.loadConfig(thread.activeConfigFile)
+        #config_json = self.loadConfig(thread.activeConfigFile)
         self.htmlBuilder = HTMLBuilder.HTMLBuilder(self, config_json["sleepSHORT"] * 60000)
 
-        first = True
-        i=1
+        dataInitComplete = True
 
-        logFileName = self.init(config_json)
+        if self.resume or self.rebooting:
+            dataInitComplete = switcherData.loadData(self.htmlBuilder)
 
-        greaterThanHys = True
-        greaterThanMin = True
+        if not dataInitComplete:
+            self.resume = False
 
-        #watts = 0
+        logFileName = switcherData.init(config_json, self.htmlBuilder, self.resume, self.rebooting, dataInitComplete)
 
         errors = 0
-        num = 20.11656761
 
         #Init vars
-        hashtableCorrected = None
-        currentPrice       = None
-        current            = None
-        #effectiveRoundTime = None
         switchtext         = None
         cpu1               = None
-        globalStart        = None
-        #globalTime         = 0
-        lastStintStart     = None
-        prevRoundStart     = None
-        prevStintStart     = None
         scriptPath         = None
-        prevRestartTime    = 0
-        coinsStint         = 0
-        wattsStint         = 0
         prevSwitchtext     = None
         globalStopped      = False
         wasStopped         = False
         stopReason         = None
         maxMinerFails      = False
         loopMinerStatus    = None
-        breakAt            = None
-        restart            = False
-        self.globalTime    = 0
 
         while True:
-            #if self.checkSwitchingThreadStopped():
-            #    breakAt = "main loop init"
-            #    break
+            dataError = switcherData.fetchData(thread.activeConfigFile)
 
-            self.hashtableMiners = self.buildHashtableMiners(config_json)
+            threadStopped = self.checkSwitchingThreadStopped()
 
-            hashtableFactors = { scryptS : config_json["scryptFactor"], groestlS : config_json["groestlFactor"], skeinS : config_json["skeinFactor"], qubitS : config_json["qubitFactor"] }
-            scryptFactor	= hashtableFactors[scryptS]
-            groestlFactor	= hashtableFactors[groestlS]
-            skeinFactor	    = hashtableFactors[skeinS]
-            qubitFactor	    = hashtableFactors[qubitS]
+            if dataError:
+                self.htmlBuilder.pl(dataError, HTMLBuilder.COLOR_RED)
 
-            #getResult      = None
-            #getResultCoins = None
-            getResultPrice = None
-            #priceOK        = None
-
-            startT2 = time.time()
-
-            try:
-                getResult = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=info")
-
-            except:
-                self.htmlBuilder.pl("Something went wrong while retrieving the difficulties from the block chain explorer       :-(   ", HTMLBuilder.COLOR_RED)
-
-                if self.checkSwitchingThreadStopped():
+                if threadStopped:
                     break
                 else:
                     continue
-
-            try:
-                getResultCoins = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=coins")
-
-            except:
-                self.htmlBuilder.pl("Something went wrong while retrieving the block reward data from the block chain explorer  :-(   ", HTMLBuilder.COLOR_RED)
-
-                if self.checkSwitchingThreadStopped():
-                    break
-                else:
-                    continue
-
-            try:
-                if EXCHANGE_POLONIEX == config_json["exchange"]:
-                    getResultPrice = self.httpGet("https://poloniex.com/public?command=returnTicker")
-
-                if EXCHANGE_MINTPAL ==  config_json["exchange"]:
-                    getResultPrice = self.httpGet("https://api.mintpal.com/v1/market/stats/MYR/BTC")
-
-                priceOK = True
-
-            except:
-                #Write-Host "Something went wrong while retrieving the exchange rate data :-(                                                                                                                                                          " -foreground "white" -background "black"
-                currentPrice = 0
-                priceOK = False
-
-            httpTime = time.time() - startT2
-
-            #if self.checkSwitchingThreadStopped():
-            #    breakAt = "post HTTP"
-            #    break
-
-            obj = json.loads(getResult)
-            objCoins = json.loads(getResultCoins)
-
-            diffScrypt 	= obj["difficulty_scrypt"]
-            diffGroestl = obj["difficulty_groestl"]
-            diffSkein 	= obj["difficulty_skein"]
-            diffQubit 	= obj["difficulty_qubit"]
-
-            per = objCoins["per"]
-
-            scryptCorrFactor  = config_json["scryptHashRate"]  * num * int(per)
-            groestlCorrFactor = config_json["groestlHashRate"] * num * int(per)
-            skeinCorrFactor   = config_json["skeinHashRate"]  * num * int(per)
-            qubitCorrFactor   = config_json["qubitHashRate"]   * num * int(per)
-
-            previousPrice = currentPrice
-
-            if priceOK:
-                objPrice = json.loads(getResultPrice)
-
-                if EXCHANGE_POLONIEX == config_json["exchange"]:
-                    currentPrice = float(objPrice["BTC_MYR"]["last"]) * 100000000
-
-                if EXCHANGE_MINTPAL == config_json["exchange"]:
-                    currentPrice = float(objPrice[0]["last_price"]) * 100000000
-
-            prevHashtableCorrected = hashtableCorrected
-
-            if config_json["mode"] == MODE_MAX_PER_WATT:
-                config_json["attenuation"] = 0
-
-            hashtableWatts = { scryptS : config_json["scryptWatts"], groestlS : config_json["groestlWatts"], skeinS : config_json["skeinWatts"], qubitS : config_json["qubitWatts"] }
-            attenuationWatts = self.getAverageHashValues(hashtableWatts) ** ((float(1) / 500))
-            attenuationWatts = attenuationWatts ** config_json["attenuation"]
-            hashtableWattsAttenuated = { scryptS : config_json["scryptWatts"] + attenuationWatts, groestlS : config_json["groestlWatts"] + attenuationWatts, skeinS : config_json["skeinWatts"] + attenuationWatts, qubitS : config_json["qubitWatts"] + attenuationWatts }
-
-            hashtableRaw  = { scryptS : ((scryptCorrFactor / diffScrypt)), groestlS : ((groestlCorrFactor / diffGroestl)), skeinS : ((skeinCorrFactor / diffSkein)), qubitS : ((qubitCorrFactor / diffQubit)) }
-            hashtableRawAttenuated  = { scryptS : ((scryptCorrFactor / diffScrypt) ) / ( hashtableWatts[scryptS] + attenuationWatts ), groestlS : ((groestlCorrFactor / diffGroestl) ) / ( hashtableWatts[groestlS] + attenuationWatts ), skeinS : ((skeinCorrFactor / diffSkein) ) / ( hashtableWatts[skeinS] + attenuationWatts ), qubitS : ((qubitCorrFactor / diffQubit) ) / ( hashtableWatts[qubitS] + attenuationWatts ) }
-            hashtableFactored  = { scryptS : ((scryptCorrFactor / diffScrypt) * scryptFactor), groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor), skeinS : ((skeinCorrFactor / diffSkein) * skeinFactor), qubitS : ((qubitCorrFactor / diffQubit) * qubitFactor) }
-            hashtablePerWatt   =          { scryptS : ((scryptCorrFactor / diffScrypt) * scryptFactor) / hashtableWatts[scryptS], groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor) / hashtableWatts[groestlS], skeinS : ((skeinCorrFactor / diffSkein) * skeinFactor) / hashtableWatts[skeinS], qubitS : ((qubitCorrFactor / diffQubit) * qubitFactor) / hashtableWatts[qubitS] }
-            hashtablePerWattAttenuated  = { scryptS : ((scryptCorrFactor / diffScrypt) * scryptFactor) / ( hashtableWatts[scryptS] + attenuationWatts ), groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor) / ( hashtableWatts[groestlS] + attenuationWatts ), skeinS : ((skeinCorrFactor / diffSkein) * skeinFactor) / ( hashtableWatts[skeinS] + attenuationWatts ), qubitS : ((qubitCorrFactor / diffQubit) * qubitFactor) / ( hashtableWatts[qubitS] + attenuationWatts ) }
-            hashtableCorrected = { scryptS : (scryptCorrFactor / diffScrypt), groestlS : (groestlCorrFactor / diffGroestl), skeinS : (skeinCorrFactor / diffSkein), qubitS : (qubitCorrFactor / diffQubit) }
-
-            if self.noAlgoSelected(config_json):
-                if config_json["mode"] == MODE_MAX_PER_DAY:
-                    hashtable = hashtableRaw
-                else:
-                    hashtable = hashtableRawAttenuated
-            else:
-                if config_json["mode"] == MODE_MAX_PER_DAY:
-                    hashtable = hashtableFactored
-                else:
-                    hashtable = hashtablePerWattAttenuated
-
-
-            valArraySorted = sorted(hashtable.iteritems(), key=operator.itemgetter(1), reverse=True)
-
-            maxAlgo  = valArraySorted[0][0]
-            maxValue = valArraySorted[0][1]
-
-            newVal  = maxValue
-
-            if current:
-                prevVal = hashtable[current]
-
-                greaterThanHys = ( not prevVal ) or ( float(newVal) / float(prevVal) ) > config_json["hysteresis"]
-                #$greaterThanMin = ( $timeStint -gt $minTimeNoHysteresis )
-                greaterThanMin = ((time.time() - lastStintStart) / 60.0) > config_json["minTimeNoHysteresis"]
 
             # New Algo found to switch to!
-            if (current != maxAlgo and ( greaterThanHys or greaterThanMin )) or self.checkSwitchingThreadStopped():
-                if current:
-                    prevAlgo = current
-
-                else:
-                    prevAlgo = maxAlgo
-
-                current = maxAlgo
-                self.miner = self.hashtableMiners[current] if current in self.hashtableMiners.keys() else None
-
+            if switcherData.isSwitchToNewAlgo(threadStopped):
                 prevSwitchtext = switchtext
 
-                if maxAlgo == scryptS:
-                    switchtext = "> " + scryptS
-                    scriptPath = config_json["scryptBatchFile"]
+                scriptPath = switcherData.getScriptPath()
+                switchtext = "> " + switcherData.maxAlgo
 
-                elif maxAlgo == groestlS:
-                    switchtext = "> " + groestlS
-                    scriptPath = config_json["groestlBatchFile"]
-
-                elif maxAlgo == skeinS:
-                    switchtext = "> " + skeinS
-                    scriptPath = config_json["skeinBatchFile"]
-
-                elif maxAlgo == qubitS:
-                    switchtext = "> " + qubitS
-                    scriptPath = config_json["qubitBatchFile"]
-
-                restart = not self.checkSwitchingThreadStopped()
+                restart = not threadStopped
                 status = "SWITCH"
 
                 errors = 0
 
             # Still same Algo, check if the miner is running OK
             else:
-                prevAlgo = current
-                switchtext = "   " + current
+                switchtext = "   " + switcherData.current
 
-                cpu2 = self.getCPUUsages(self.miner)
+                cpu2 = self.getCPUUsages(switcherData.getMiner())
 
-                stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, self.miner, config_json)
+                stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, switcherData.getMiner(), config_json)
                 restart = not globalStopped and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
 
                 cpu1 = cpu2
 
                 if restart:
-                    switchtext = "x " + current
+                    switchtext = "x " + switcherData.current
                     status = "FAIL"
                     errors += 1
 
@@ -308,51 +130,21 @@ class SwitchingThread (threading.Thread):
                         maxMinerFails = True
 
                 else:
-                    switchtext = ". " + current
+                    switchtext = ". " + switcherData.current
                     status = "OK"
                     errors = 0
 
-            now = time.time()
+            switcherData.initRound(status)
 
-            if first:
-                lastStintStart = now
-                globalStart = prevStintStart = prevRoundStart = lastStintStart
-                prevHashtableCorrected = hashtableCorrected
-
-            if status == "SWITCH":
-                prevStintStart = lastStintStart
-                lastStintStart = now
-
-            self.globalTime = self.storedGlobalTime + ( now - globalStart )
-            globalRoundTime = now - prevRoundStart
-            globalStintTime = now - prevStintStart
-            prevRoundStart = now
-
-            prevValCorrected = prevHashtableCorrected[prevAlgo]
-
-            nextValCorrected = hashtableCorrected[current]
-            newValCorrected  = hashtableCorrected[prevAlgo]
-
-            restartTime = 0
-
-            if self.noAlgoSelected(config_json):
-                globalStopped = True
-
-            else:
-                if config_json["mode"] == MODE_MAX_PER_DAY:
-                    globalStopped = newValCorrected < config_json["minCoins"]
-
-                else:
-                    averageMinimumCoinsPerWatt = config_json["minCoins"] / self.getAverageHashValues(hashtableWattsAttenuated)
-                    globalStopped = hashtablePerWattAttenuated[current] < averageMinimumCoinsPerWatt
+            globalStopped = switcherData.getGlobalStopped()
 
             if globalStopped:
-                self.killMiner(self.miner) if self.miner else self.killMiners()
+                self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
                 if status != "SWITCH":
                     status = "OK"
 
-                switchtext = "S " + current
+                switchtext = "S " + switcherData.current
 
             if ( restart and not maxMinerFails and not globalStopped ) or ( wasStopped and not globalStopped ):
                 sleepTime = config_json["sleepLONG"]
@@ -360,7 +152,7 @@ class SwitchingThread (threading.Thread):
                 t1 = time.time()
 
                 if not config_json["debug"]:
-                    self.killMiner(self.miner) if self.miner else self.killMiners()
+                    self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
                     workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
                     retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
@@ -375,91 +167,22 @@ class SwitchingThread (threading.Thread):
                         self.stop(True)
                         break
 
-                    if self.waitForMinerToStart(self.miner, config_json["rampUptime"]):
-                        cpu1 = self.getCPUUsages(self.miner)
+                    if self.waitForMinerToStart(switcherData.getMiner(), config_json["rampUptime"]):
+                        cpu1 = self.getCPUUsages(switcherData.getMiner())
+                        self.activeMiner = switcherData.getMiner()
 
-                    #if self.checkSwitchingThreadStopped():
-                    #    breakAt = "after miner start"
-                    #    break
+                        #if self.checkSwitchingThreadStopped():
+                        #    breakAt = "after miner start"
+                        #    break
 
                 restartTime = time.time() - t1
 
             else:
                 sleepTime = config_json["sleepSHORT"]
 
-            if not prevValCorrected:
-                prevValCorrected = newValCorrected
+            timeStopped = 0 if status != "FAIL" else LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
 
-            avgValCorrected = ( float(newValCorrected) + float(prevValCorrected) ) / 2.0
-
-            effectiveRoundTime = 0 if wasStopped else globalRoundTime - prevRestartTime
-
-            if status == "FAIL":
-                timeStopped = LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
-                effectiveRoundTime -= timeStopped
-
-            effectiveRoundTime = max(effectiveRoundTime, 0)
-
-            if maxMinerFails:
-                coinsRound = 0
-
-            else:
-                timeRoundDays = effectiveRoundTime / SECONDS_PER_DAY
-
-                #self.hashtableTime[prevAlgo] += effectiveRoundTime
-                self.hashtableTime[prevAlgo] += globalRoundTime
-                coinsRound = avgValCorrected * timeRoundDays
-
-            coinsStint = coinsStint  + coinsRound
-
-            totalCoinsPrev = self.hashtableCoins[prevAlgo] + coinsRound
-            self.hashtableCoins[prevAlgo] = totalCoinsPrev
-
-            if wasStopped and not first or (globalStopped and first):
-                currentWatts = config_json["idleWatts"]
-
-            else:
-                currentWatts = hashtableWatts[prevAlgo]
-                if status in ("FAIL", "MAX_FAIL"):
-                    currentWatts = (currentWatts * (effectiveRoundTime / globalRoundTime)) + (config_json["idleWatts"] * ((globalRoundTime - effectiveRoundTime) / globalRoundTime))
-
-            wattsRound = currentWatts * globalRoundTime
-            wattsStint += wattsRound
-
-            self.watts = self.watts + wattsRound
-
-            totalCoins = sum(self.hashtableCoins.values())
-
-            if (first and not self.resume) or self.globalTime == 0:
-                wattsAvg = currentWatts
-            else:
-                wattsAvg = self.watts / self.globalTime
-
-            # Prepare next round
-            prevRestartTime = restartTime
-            wasStopped = globalStopped
-
-            if status == "SWITCH" or status == "MAX_FAIL":
-                if not first:
-                    avgStintWatts = wattsStint / globalStintTime
-                    self.htmlBuilder.printData("SWITCH", now, globalStintTime, prevSwitchtext, previousPrice, currentPrice,
-                                               newValCorrected, coinsStint, avgStintWatts, prevAlgo, globalStopped,
-                                               self.hashtableCoins, hashtableCorrected, self.hashtableTime, config_json)
-
-                self.htmlBuilder.printHeader()
-
-                coinsStint = 0
-                wattsStint = 0
-
-                if status == "SWITCH":
-                    status = "OK"
-
-
-            self.htmlBuilder.printData(status, now, self.globalTime, switchtext, previousPrice, currentPrice,
-                                       nextValCorrected, totalCoins, wattsAvg, current, globalStopped,
-                                       self.hashtableCoins, hashtableCorrected, self.hashtableTime, config_json)
-
-            #globalStart, wattsAvg, hashtableCoins, hashtableTime
+            switcherData.executeRound(status, timeStopped, maxMinerFails, self.htmlBuilder, self.resume, prevSwitchtext, switchtext)
 
             self.htmlBuilder.log(config_json, logFileName)
 
@@ -470,8 +193,6 @@ class SwitchingThread (threading.Thread):
             if self.checkMaxFails(status, stopReason, config_json, logFileName):
                 breakAt = "after prints, max fails"
                 break
-
-            first = False
 
             cpuF1 = cpu1
             loopMinerStatus = None
@@ -484,14 +205,14 @@ class SwitchingThread (threading.Thread):
 
                 if not globalStopped:
                     try:
-                        cpuF2 = self.getCPUUsages(self.miner)
+                        cpuF2 = self.getCPUUsages(switcherData.getMiner())
 
-                        if self.minerCrashed(cpu1, cpuF2, self.miner, config_json):
+                        if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), config_json):
                             loopMinerStatus = MINER_CRASHED
                             break
 
                         if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
-                            if self.minerFreezed(cpuF1, cpuF2, self.miner, config_json):
+                            if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), config_json):
                                 loopMinerStatus = MINER_FREEZED
                                 break
 
@@ -509,55 +230,10 @@ class SwitchingThread (threading.Thread):
 
             self.configChangedFlag = False
 
-            config_json = self.loadConfig(thread.activeConfigFile)
+            config_json = switcherData.loadConfig(thread.activeConfigFile)
 
-        self.end(breakAt)
-
-    def init(self, config_json):
-        dataInitComplete = False
-
-        if self.resume or self.rebooting:
-            dataInitComplete = self.loadData()
-
-        if not dataInitComplete:
-            self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
-            self.hashtableCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
-            self.storedGlobalTime = 0
-            self.watts = 0
-
-            self.resume = False
-
-        time_now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
-        time_now_file = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
-        self.fileSuffix  = time_now_file
-
-        if self.resume or self.rebooting:
-            self.htmlBuilder.pl()
-
-        if config_json["debug"]:
-            self.fileSuffix = "debug-" + self.fileSuffix
-
-        logFileName = config_json["logPath"] + "\\" + self.fileSuffix + ".html"
-
-        self.htmlBuilder.pl("Init time: " + time_now)
-
-        if config_json["debug"]:
-            self.htmlBuilder.pl()
-            self.htmlBuilder.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
-            self.htmlBuilder.pl("#####################################             DEBUG     MODE           #############################################", HTMLBuilder.COLOR_YELLOW)
-            self.htmlBuilder.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
-
-        return logFileName
-
-    def end(self, breakAt):
-        self.htmlBuilder.pl()
-        self.htmlBuilder.pl("Process stopped at ... " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-
-        self.dumpData()
-
+        switcherData.end(self.htmlBuilder)
         self.console.parent.onMiningProcessStopped()
-
-        print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "Exiting thread loop..... "
 
     def configChanged(self):
         self.configChangedFlag = True
@@ -619,9 +295,6 @@ class SwitchingThread (threading.Thread):
             time.sleep(ramp_up_time)
 
         return not(i == 60)
-
-    def noAlgoSelected(self, config_json):
-        return not (config_json["scryptFactor"] or config_json["groestlFactor"] or config_json["skeinFactor"] or config_json["qubitFactor"])
 
     # Returns None if the miner is running, or MINER_DIED or MINER_FREEZED
     def minerStopped(self, cpu1, cpu2, miner, config_json):
@@ -715,134 +388,18 @@ class SwitchingThread (threading.Thread):
             pass
 
     def killMiners(self):
-        if self.hashtableMiners:
-            for miner in MINER_CHOICES:
-                self.killMiner(miner)
+        for miner in SwitcherData.MINER_CHOICES:
+            self.killMiner(miner)
 
     def killMiner(self, miner):
-        if self.hashtableMiners:
-            for proc in psutil.process_iter():
-                try:
-                    proc.name()
-                except:
-                    continue
+        for proc in psutil.process_iter():
+            try:
+                proc.name()
+            except:
+                continue
 
-                if miner in proc.name():
-                    proc.kill()
-
-    def getAverageHashValues(self, dict_p):
-        return sum(dict_p.values()) / float(len(dict_p))
-
-    def httpGet(self, url):
-        return urllib2.urlopen(url).read()
-
-    def loadConfig(self, activeFile):
-        f = None
-        try:
-            f = open(activeFile)
-        except IOError:
-            print "Config file not found: " + activeFile
-            #return None
-
-        config = f.read()
-        f.close()
-
-        config_json = json.loads(config)
-
-        if config_json["debug"]:
-            config_json["sleepSHORT"] = config_json["sleepSHORTDebug"]
-            config_json["sleepLONG"]  = config_json["sleepLONGDebug"]
-        else:
-            config_json["sleepSHORT"] *= 60
-            config_json["sleepLONG"]  *= 60
-
-        self.refresh_t = str(config_json["sleepSHORT"] * 1000)
-
-        config_json["hysteresis"] = (float(config_json["hysteresis"]) / 100.0) + 1
-        config_json["globalCorrectionFactor"] = (float(config_json["globalCorrectionFactor"]) / 100.0)
-        config_json["scryptHashRate"] = config_json["scryptHashRate"] * config_json["globalCorrectionFactor"]
-        config_json["groestlHashRate"] = config_json["groestlHashRate"] * config_json["globalCorrectionFactor"]
-        config_json["skeinHashRate"] = config_json["skeinHashRate"] * config_json["globalCorrectionFactor"]
-        config_json["qubitHashRate"] = config_json["qubitHashRate"] * config_json["globalCorrectionFactor"]
-
-        socket.setdefaulttimeout(config_json["timeout"])
-
-        return config_json
-
-    def buildHashtableMiners(self, config_json):
-        hashtableMiners = {}
-
-        try:
-            if config_json["scryptBatchFile"]:
-                hashtableMiners[scryptS] = self.fetchMiner(config_json["scryptBatchFile"])
-        except:
-            print ("WARNING: Failed to fetch miner for Scrypt. Myriad Switcher is now unable to monitor your Scrypt miner for crashes or freezes.")
-            hashtableMiners[scryptS] = None
-
-        try:
-            if config_json["groestlBatchFile"]:
-                hashtableMiners[groestlS] = self.fetchMiner(config_json["groestlBatchFile"])
-        except:
-            print ("WARNING: Failed to fetch miner for Groestl. Myriad Switcher is now unable to monitor your Groestl miner for crashes or freezes.")
-            hashtableMiners[groestlS] = None
-
-        try:
-            if config_json["skeinBatchFile"]:
-                hashtableMiners[skeinS] = self.fetchMiner(config_json["skeinBatchFile"])
-        except:
-            print ("WARNING: Failed to fetch miner for Skein. Myriad Switcher is now unable to monitor your Skein miner for crashes or freezes.")
-            hashtableMiners[skeinS] = None
-
-        try:
-            if config_json["qubitBatchFile"]:
-                hashtableMiners[qubitS] = self.fetchMiner(config_json["qubitBatchFile"])
-        except:
-            print ("WARNING: Failed to fetch miner for Qubit. Myriad Switcher is now unable to monitor your Qubit miner for crashes or freezes.")
-            hashtableMiners[qubitS] = None
-
-        #hashtableMiners[scryptS] = None
-        #hashtableMiners[groestlS] = None
-        #hashtableMiners[skeinS] = None
-        #hashtableMiners[qubitS] = None
-
-        return hashtableMiners
-
-    def fetchMiner(self, file):
-        f = open(file)
-        contents = f.read()
-        f.close()
-
-        for miner in MINER_CHOICES:
-            if (miner + ".exe") in contents or (".\\" + miner) in contents:
-                return miner
-
-        return None
-
-    def loadData(self):
-        try:
-            obj = cPickle.load(open(PanelConsole.DATA_FILE_NAME, "rb" ))
-
-            self.hashtableTime  = obj[0]
-            self.hashtableCoins = obj[1]
-            self.storedGlobalTime = obj[2]
-            self.watts = obj[3]
-
-            self.htmlBuilder.loadLines()
-
-            return True
-
-        except IOError:
-            return False
-
-    def dumpData(self):
-        try:
-            obj = [self.hashtableTime, self.hashtableCoins, self.globalTime, self.watts]
-            cPickle.dump(obj, open(PanelConsole.DATA_FILE_NAME, "wb"))
-
-            self.htmlBuilder.dumpLines()
-
-        except IOError:
-            pass
+            if miner in proc.name():
+                proc.kill()
 
     def stop(self, kill_miners):
         #self.htmlBuilder.pl()

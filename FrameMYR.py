@@ -6,11 +6,12 @@ from wx.lib.agw.ribbon.page import GetSizeInOrientation
 import wx.lib.newevent
 import NotebookMYR
 import PanelConsole
+import SwitcherData
 from Tkinter import Tk
 
 
 VERSION  = "0.2"
-REVISION = 13
+REVISION = 16
 
 
 class FrameMYR(wx.Frame):
@@ -142,7 +143,7 @@ class FrameMYR(wx.Frame):
 
         self.enabled_buttons(False)
         self.buttonStop.Enable(False)
-        self.buttonResume.Enable(os.path.isfile(PanelConsole.DATA_FILE_NAME))
+        self.buttonResume.Enable(os.path.isfile(SwitcherData.DATA_FILE_NAME))
 
     def chechReboot(self):
         if os.path.isfile("reboot"):
