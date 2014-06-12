@@ -152,6 +152,7 @@ class NotebookMYR(wx.Notebook):
         print 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
         event.Skip()
 
+    #todo Get defaults from each panel
     def loadDefaults(self):
         defaults = {
                 "scryptBatchFile"		: 	"",

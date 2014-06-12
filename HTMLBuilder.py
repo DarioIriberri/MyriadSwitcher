@@ -135,7 +135,7 @@ class HTMLBuilder():
 
         return '{0:>7}'.format(int(coinsR)) if formated else coinsR
 
-    def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg, active, stopped, hashtableCoins, hashtableCorrected, hashtableTime, config_json):
+    def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg, active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableCorrected, hashtableTime, config_json):
         status = "FAIL" if status == "MAX_FAIL" else status
 
         totalCoinsFormated = "{:7.0f}".format(coins)
@@ -220,26 +220,36 @@ class HTMLBuilder():
                 #valCorrectedQ = dailyCoinsFormated
 
 
-            valCorrectedY = self.getCoinsPerDay(hashtableCoins[scryptS], hashtableTime[scryptS], True)
-            valCorrectedG = self.getCoinsPerDay(hashtableCoins[groestlS], hashtableTime[groestlS], True)
-            valCorrectedS = self.getCoinsPerDay(hashtableCoins[skeinS], hashtableTime[skeinS], True)
-            valCorrectedQ = self.getCoinsPerDay(hashtableCoins[qubitS], hashtableTime[qubitS], True)
+            valCorrectedY = self.getCoinsPerDay(hashtableExpectedCoins[scryptS], hashtableTime[scryptS], True)
+            valCorrectedG = self.getCoinsPerDay(hashtableExpectedCoins[groestlS], hashtableTime[groestlS], True)
+            valCorrectedS = self.getCoinsPerDay(hashtableExpectedCoins[skeinS], hashtableTime[skeinS], True)
+            valCorrectedQ = self.getCoinsPerDay(hashtableExpectedCoins[qubitS], hashtableTime[qubitS], True)
 
         else:
-            totalCoinsScrypt  = hashtableCoins[scryptS]
-            totalCoinsGroestl = hashtableCoins[groestlS]
-            totalCoinsSkein   = hashtableCoins[skeinS]
-            totalCoinsQubit   = hashtableCoins[qubitS]
+            totalCoinsScrypt  = hashtableExpectedCoins[scryptS]
+            totalCoinsGroestl = hashtableExpectedCoins[groestlS]
+            totalCoinsSkein   = hashtableExpectedCoins[skeinS]
+            totalCoinsQubit   = hashtableExpectedCoins[qubitS]
 
             valCorrectedY = '{0:>7}'.format(int(hashtableCorrected[scryptS]))
             valCorrectedG = '{0:>7}'.format(int(hashtableCorrected[groestlS]))
             valCorrectedS = '{0:>7}'.format(int(hashtableCorrected[skeinS]))
             valCorrectedQ = '{0:>7}'.format(int(hashtableCorrected[qubitS]))
 
-        stringOthersCoinsY = "{:7.0f}".format(totalCoinsScrypt)  + " " + self.formatPct(totalCoinsScrypt, coins, 0)  + valCorrectedY
-        stringOthersCoinsG = "{:7.0f}".format(totalCoinsGroestl) + " " + self.formatPct(totalCoinsGroestl, coins, 0) + valCorrectedG
-        stringOthersCoinsS = "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(totalCoinsSkein, coins, 0)   + valCorrectedS
-        stringOthersCoinsQ = "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(totalCoinsQubit, coins, 0)   + valCorrectedQ
+        minedY = '{0:>7}'.format(hashtableMinedCoins[scryptS])
+        minedG = '{0:>7}'.format(hashtableMinedCoins[groestlS])
+        minedS = '{0:>7}'.format(hashtableMinedCoins[skeinS])
+        minedQ = '{0:>7}'.format(hashtableMinedCoins[qubitS])
+
+        #stringOthersCoinsY = "{:7.0f}".format(totalCoinsScrypt)  + " " + self.formatPct(totalCoinsScrypt, coins, 0)  + valCorrectedY
+        #stringOthersCoinsG = "{:7.0f}".format(totalCoinsGroestl) + " " + self.formatPct(totalCoinsGroestl, coins, 0) + valCorrectedG
+        #stringOthersCoinsS = "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(totalCoinsSkein, coins, 0)   + valCorrectedS
+        #stringOthersCoinsQ = "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(totalCoinsQubit, coins, 0)   + valCorrectedQ
+
+        stringOthersCoinsY = minedY + " / " + "{:7.0f}".format(totalCoinsScrypt)  + valCorrectedY
+        stringOthersCoinsG = minedG + " / " + "{:7.0f}".format(totalCoinsGroestl) + valCorrectedG
+        stringOthersCoinsS = minedS + " / " + "{:7.0f}".format(totalCoinsSkein)   + valCorrectedS
+        stringOthersCoinsQ = minedQ + " / " + "{:7.0f}".format(totalCoinsQubit)   + valCorrectedQ
 
         stringPrice = '{0:>10} $'.format(int(currentPrice * valCorrected / float(config_json["scryptHashRate"]))) + '{0:>10} $ '.format(int((currentPrice * valCorrected)))
 

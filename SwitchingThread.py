@@ -136,7 +136,8 @@ class SwitchingThread (threading.Thread):
 
             switcherData.initRound(status)
 
-            globalStopped = switcherData.getGlobalStopped()
+            globalStopped = switcherData.globalStopped
+            wasStopped    = switcherData.wasStopped
 
             if globalStopped:
                 self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
