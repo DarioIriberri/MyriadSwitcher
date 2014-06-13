@@ -386,7 +386,7 @@ class SwitcherData():
 
         self.totalCoins = sum(self.hashtableExpectedCoins.values())
 
-        #self.updateAlgoMinedCoins()
+        self.updateAlgoMinedCoins()
 
     def updateAlgoMinedCoins(self):
         self.hashtableMinedCoins[scryptS]  = self.getAlgoCoins(urlScryptAPI)
@@ -436,46 +436,17 @@ class SwitcherData():
     def getAverageHashValues(self, dict_p):
         return sum(dict_p.values()) / float(len(dict_p))
 
-    def printData(self, status, prevSwitchtext, switchtext):
-        if status == "SWITCH" or status == "MAX_FAIL":
-            if prevSwitchtext:
-                self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
-                                          self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped,
-                                           self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
-
-            self.htmlBuilder.printHeader()
-
-            self.coinsStint = 0
-            self.wattsStint = 0
-
-            if status == "SWITCH":
-                status = "OK"
-
-
-        self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
-                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.current, self.globalStopped,
-                                   self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
-
-        self.first = False
-
     #def printData(self, status, htmlBuilder, prevSwitchtext, switchtext):
     #    if status == "SWITCH" or status == "MAX_FAIL":
     #        if prevSwitchtext:
-    #            hashtableCoinsMinedStint = Counter(self.hashtableMinedCoins) - Counter(self.hashtablePreviousStintMinedCoins)
-    #
     #            htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
     #                                      self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped,
-    #                                       self.hashtableExpectedCoins, hashtableCoinsMinedStint, self.hashtableCorrected, self.hashtableTime, self.config_json)
+    #                                       self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
     #
     #        htmlBuilder.printHeader()
     #
     #        self.coinsStint = 0
     #        self.wattsStint = 0
-    #        self.hashtablePreviousStintMinedCoins = copy.copy(self.hashtableMinedCoins)
-    #        #self.hashtableStintMinedCoins[scryptS]  = 0
-    #        #self.hashtableStintMinedCoins[groestlS] = 0
-    #        #self.hashtableStintMinedCoins[skeinS]   = 0
-    #        #self.hashtableStintMinedCoins[qubitS]   = 0
     #
     #        if status == "SWITCH":
     #            status = "OK"
@@ -483,9 +454,39 @@ class SwitcherData():
     #
     #    htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
     #                               self.nextValCorrected, self.totalCoins, self.wattsAvg, self.current, self.globalStopped,
-    #                               self.hashtableExpectedCoins, self.hashtableMinedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
+    #                               self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
     #
     #    self.first = False
+
+    def printData(self, status, prevSwitchtext, switchtext):
+        if status == "SWITCH" or status == "MAX_FAIL":
+            if prevSwitchtext:
+                hashtableCoinsMinedStint = Counter(self.hashtableMinedCoins) - Counter(self.hashtablePreviousStintMinedCoins)
+
+                self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
+                                          self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped,
+                                           self.hashtableExpectedCoins, hashtableCoinsMinedStint, self.hashtableCorrected, self.hashtableTime, self.config_json)
+
+            self.htmlBuilder.printHeader()
+
+            self.coinsStint = 0
+            self.wattsStint = 0
+            self.hashtablePreviousStintMinedCoins = copy.copy(self.hashtableMinedCoins)
+            #self.hashtableStintMinedCoins[scryptS]  = 0
+            #self.hashtableStintMinedCoins[groestlS] = 0
+            #self.hashtableStintMinedCoins[skeinS]   = 0
+            #self.hashtableStintMinedCoins[qubitS]   = 0
+
+            if status == "SWITCH":
+                status = "OK"
+
+
+        self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
+                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.current, self.globalStopped,
+                                   self.hashtableExpectedCoins, self.hashtableMinedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
+
+        self.first = False
+
     def loadData(self):
         try:
             obj = cPickle.load(open(DATA_FILE_NAME, "rb" ))
