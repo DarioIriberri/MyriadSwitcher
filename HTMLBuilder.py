@@ -45,11 +45,11 @@ SESSION_FILE_NAME = "m_s_session.myr"
 
 
 class HTMLBuilder():
-    def __init__(self, parent, refresh_milisecs):
+    def __init__(self, console, refresh_milisecs):
         self.line  = str()
         self.lines = []
+        self.console = console
 
-        self.parent = parent
         self.refresh_milisecs = str(refresh_milisecs)
 
     def html_begin(self):
@@ -93,7 +93,7 @@ class HTMLBuilder():
         self.line = str()
 
         evt = PanelConsole.ConsoleEvent(html=self.buildHTML(self.lines))
-        wx.PostEvent(self.parent.console, evt)
+        wx.PostEvent(self.console, evt)
 
         #self.wv.SetPage(self.buildHTML(self.lines), "/")
         #self.wv.LoadURL("https://dl.dropboxusercontent.com/u/19353176/Myriad_log/2014-05-04-040554.html")
@@ -137,7 +137,6 @@ class HTMLBuilder():
 
     #def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
     #              active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableCorrected, hashtableTime, config_json):
-
     def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
                   active, stopped, hashtableExpectedCoins, hashtableCorrected, hashtableTime, config_json):
 

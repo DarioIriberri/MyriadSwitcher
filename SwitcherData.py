@@ -38,7 +38,7 @@ urlSkeinAPI     = "http://myrsk.cryptorus.com/index.php?page=api&action=getuserb
 urlQubitAPI     = "http://myr.nonce-pool.com/index.php?page=api&action=getuserbalance&api_key=bef60a0f9091956d60e15354ccaf32c0b0d1dbda94681b356c55701f64201154"
 
 class SwitcherData():
-    def __init__(self):
+    def __init__(self, console, activeFile):
         self.current                            = None
         self.first                              = True
         self.currentPrice                       = None
@@ -49,6 +49,12 @@ class SwitcherData():
         self.prevRestartTime                    = 0
         self.coinsStint                         = 0
         self.wattsStint                         = 0
+
+        self.console = console
+
+        self.config_json = self.loadConfig(activeFile)
+
+        self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 60000)
 
     def fetchData(self, activeConfigFile):
         self.config_json = self.loadConfig(activeConfigFile)
@@ -151,7 +157,7 @@ class SwitcherData():
         self.maxAlgo  = valArraySorted[0][0]
         self.maxValue = valArraySorted[0][1]
 
-    def init(self, config_json, htmlBuilder, resume, rebooting, dataInitComplete):
+    def init(self, resume, rebooting, dataInitComplete):
         if not dataInitComplete:
             self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
             self.hashtableExpectedCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
@@ -162,23 +168,22 @@ class SwitcherData():
         time_now_file = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
         self.fileSuffix  = time_now_file
 
-        if resume or rebooting:
-            htmlBuilder.pl()
+        #if resume or rebooting:
+        #    htmlBuilder.pl()
 
-        if config_json["debug"]:
+        if self.config_json["debug"]:
             self.fileSuffix = "debug-" + self.fileSuffix
 
-        logFileName = config_json["logPath"] + "\\" + self.fileSuffix + ".html"
+        self.logFileName = self.config_json["logPath"] + "\\" + self.fileSuffix + ".html"
 
-        htmlBuilder.pl("Init time: " + time_now)
+        self.pl("Init time: " + time_now)
 
-        if config_json["debug"]:
-            htmlBuilder.pl()
-            htmlBuilder.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
-            htmlBuilder.pl("#####################################             DEBUG     MODE           #############################################", HTMLBuilder.COLOR_YELLOW)
-            htmlBuilder.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
+        if self.config_json["debug"]:
+            self.pl()
+            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
+            self.pl("#####################################             DEBUG     MODE           #############################################", HTMLBuilder.COLOR_YELLOW)
+            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
 
-        return logFileName
 
     def isSwitchToNewAlgo(self, forceSwitch):
         greaterThanHys = True
@@ -199,7 +204,7 @@ class SwitcherData():
 
         return isSwitch
 
-    def executeRound(self, status, timeStopped, maxMinerFails, htmlBuilder, resume, prevSwitchtext, switchtext):
+    def executeRound(self, status, timeStopped, maxMinerFails, resume, prevSwitchtext, switchtext):
         self.setEffectiveRoundTime(status == "FAIL", timeStopped)
 
         self.calculateCoins(maxMinerFails)
@@ -207,7 +212,9 @@ class SwitcherData():
 
         self.prepareNextRound()
 
-        self.printData(status, htmlBuilder, prevSwitchtext, switchtext)
+        self.printData(status, prevSwitchtext, switchtext)
+
+        self.htmlBuilder.log(self.config_json, self.logFileName)
 
     def getMiner(self):
         return self.hashtableMiners[self.current] if self.current in self.hashtableMiners.keys() else None
@@ -429,14 +436,14 @@ class SwitcherData():
     def getAverageHashValues(self, dict_p):
         return sum(dict_p.values()) / float(len(dict_p))
 
-    def printData(self, status, htmlBuilder, prevSwitchtext, switchtext):
+    def printData(self, status, prevSwitchtext, switchtext):
         if status == "SWITCH" or status == "MAX_FAIL":
             if prevSwitchtext:
-                htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
+                self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
                                           self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped,
                                            self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
-            htmlBuilder.printHeader()
+            self.htmlBuilder.printHeader()
 
             self.coinsStint = 0
             self.wattsStint = 0
@@ -445,7 +452,7 @@ class SwitcherData():
                 status = "OK"
 
 
-        htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
+        self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
                                    self.nextValCorrected, self.totalCoins, self.wattsAvg, self.current, self.globalStopped,
                                    self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
@@ -479,8 +486,7 @@ class SwitcherData():
     #                               self.hashtableExpectedCoins, self.hashtableMinedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
     #
     #    self.first = False
-
-    def loadData(self, htmlBuilder):
+    def loadData(self):
         try:
             obj = cPickle.load(open(DATA_FILE_NAME, "rb" ))
 
@@ -489,7 +495,7 @@ class SwitcherData():
             self.storedGlobalTime = obj[2]
             self.watts = obj[3]
 
-            htmlBuilder.loadLines()
+            #htmlBuilder.loadLines()
 
             return True
 
@@ -513,3 +519,9 @@ class SwitcherData():
         self.dumpData(htmlBuilder)
 
         print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "Exiting thread loop..... "
+
+    def pl(self, line_p=" ", colorForeground=(255, 255, 255), colorBackground=(0, 0, 0)):
+        self.htmlBuilder.pl(line_p, colorForeground, colorBackground)
+
+    def p(self, text, colorForeground=(255, 255, 255), colorBackground=(0, 0, 0)):
+        self.htmlBuilder.pl(text, colorForeground, colorBackground)

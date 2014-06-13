@@ -60,7 +60,6 @@ class PanelConsole(wx.Panel):
         self.thread = self.getThread(rebooting, resume)
         self.thread.setActiveConfigFile(activeConfigFile)
         self.thread.start()
-        self.activeConfigFile = activeConfigFile
 
     def configChanged(self):
         if self.thread:

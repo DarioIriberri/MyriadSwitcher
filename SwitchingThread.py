@@ -34,7 +34,6 @@ class SwitchingThread (threading.Thread):
         self.activeMiner = None
 
         self.console = console
-        self.htmlBuilder = None
         threading.Thread.__init__(self)
         self.name = name
         self.counter = counter
@@ -55,20 +54,18 @@ class SwitchingThread (threading.Thread):
 
         self.console.parent.onMiningProcessStarted()
 
-        switcherData = SwitcherData.SwitcherData()
-        config_json = switcherData.loadConfig(thread.activeConfigFile)
+        switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
         #config_json = self.loadConfig(thread.activeConfigFile)
-        self.htmlBuilder = HTMLBuilder.HTMLBuilder(self, config_json["sleepSHORT"] * 60000)
 
         dataInitComplete = True
 
         if self.resume or self.rebooting:
-            dataInitComplete = switcherData.loadData(self.htmlBuilder)
+            dataInitComplete = switcherData.loadData()
 
         if not dataInitComplete:
             self.resume = False
 
-        logFileName = switcherData.init(config_json, self.htmlBuilder, self.resume, self.rebooting, dataInitComplete)
+        switcherData.init(self.resume, self.rebooting, dataInitComplete)
 
         errors = 0
 
@@ -89,7 +86,7 @@ class SwitchingThread (threading.Thread):
             threadStopped = self.checkSwitchingThreadStopped()
 
             if dataError:
-                self.htmlBuilder.pl(dataError, HTMLBuilder.COLOR_RED)
+                switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
 
                 if threadStopped:
                     break
@@ -114,7 +111,7 @@ class SwitchingThread (threading.Thread):
 
                 cpu2 = self.getCPUUsages(switcherData.getMiner())
 
-                stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, switcherData.getMiner(), config_json)
+                stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, switcherData.getMiner(), switcherData.config_json)
                 restart = not globalStopped and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
 
                 cpu1 = cpu2
@@ -124,7 +121,7 @@ class SwitchingThread (threading.Thread):
                     status = "FAIL"
                     errors += 1
 
-                    if errors >= config_json["maxErrors"]:
+                    if errors >= switcherData.config_json["maxErrors"]:
                         status = "MAX_FAIL"
                         prevSwitchtext = switchtext
                         maxMinerFails = True
@@ -148,11 +145,11 @@ class SwitchingThread (threading.Thread):
                 switchtext = "S " + switcherData.current
 
             if ( restart and not maxMinerFails and not globalStopped ) or ( wasStopped and not globalStopped ):
-                sleepTime = config_json["sleepLONG"]
+                sleepTime = switcherData.config_json["sleepLONG"]
 
                 t1 = time.time()
 
-                if not config_json["debug"]:
+                if not switcherData.config_json["debug"]:
                     self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
                     workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
@@ -162,13 +159,13 @@ class SwitchingThread (threading.Thread):
                     #subprocess.call('cd /d "' + workingDirectory + '" && start cmd /c "' + scriptPath + '"', shell=True)
 
                     if retCode != 0:
-                        self.htmlBuilder.pl()
-                        self.htmlBuilder.pl("Failed to start your miner: " + scriptPath, HTMLBuilder.COLOR_RED)
+                        switcherData.pl()
+                        switcherData.pl("Failed to start your miner: " + scriptPath, HTMLBuilder.COLOR_RED)
                         breakAt = "failed miner start"
                         self.stop(True)
                         break
 
-                    if self.waitForMinerToStart(switcherData.getMiner(), config_json["rampUptime"]):
+                    if self.waitForMinerToStart(switcherData.getMiner(), switcherData.config_json["rampUptime"]):
                         cpu1 = self.getCPUUsages(switcherData.getMiner())
                         self.activeMiner = switcherData.getMiner()
 
@@ -179,19 +176,17 @@ class SwitchingThread (threading.Thread):
                 restartTime = time.time() - t1
 
             else:
-                sleepTime = config_json["sleepSHORT"]
+                sleepTime = switcherData.config_json["sleepSHORT"]
 
             timeStopped = 0 if status != "FAIL" else LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
 
-            switcherData.executeRound(status, timeStopped, maxMinerFails, self.htmlBuilder, self.resume, prevSwitchtext, switchtext)
-
-            self.htmlBuilder.log(config_json, logFileName)
+            switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
 
             if self.checkSwitchingThreadStopped():
                 breakAt = "after prints, thread stopped"
                 break
 
-            if self.checkMaxFails(status, stopReason, config_json, logFileName):
+            if self.checkMaxFails(status, stopReason, switcherData):
                 breakAt = "after prints, max fails"
                 break
 
@@ -208,12 +203,12 @@ class SwitchingThread (threading.Thread):
                     try:
                         cpuF2 = self.getCPUUsages(switcherData.getMiner())
 
-                        if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), config_json):
+                        if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), switcherData.config_json):
                             loopMinerStatus = MINER_CRASHED
                             break
 
                         if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
-                            if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), config_json):
+                            if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), switcherData.config_json):
                                 loopMinerStatus = MINER_FREEZED
                                 break
 
@@ -231,29 +226,29 @@ class SwitchingThread (threading.Thread):
 
             self.configChangedFlag = False
 
-            config_json = switcherData.loadConfig(thread.activeConfigFile)
+            switcherData.loadConfig(thread.activeConfigFile)
 
-        switcherData.end(self.htmlBuilder)
+        switcherData.end(switcherData.htmlBuilder)
         self.console.parent.onMiningProcessStopped()
 
     def configChanged(self):
         self.configChangedFlag = True
 
-    def checkMaxFails(self, status, stopReason, config_json, logFileName):
+    def checkMaxFails(self, status, stopReason, switcherData):
         if status == "MAX_FAIL":
-            if config_json["reboot"] and (config_json["rebootIf"] == MINER_CRASHED_OR_FREEZED or config_json["rebootIf"] == stopReason):
-                self.htmlBuilder.pl()
+            if switcherData.config_json["reboot"] and (switcherData.config_json["rebootIf"] == MINER_CRASHED_OR_FREEZED or switcherData.config_json["rebootIf"] == stopReason):
+                switcherData.pl()
                 self.prepareReboot()
-                self.htmlBuilder.pl(str(config_json["maxErrors"]) + " back to back miner " + stopReason + " ...rebooting!", HTMLBuilder.COLOR_RED)
+                switcherData.pl(str(switcherData.config_json["maxErrors"]) + " back to back miner " + stopReason + " ...rebooting!", HTMLBuilder.COLOR_RED)
                 subprocess.call('shutdown /r')
                 self.stop(True)
 
             else:
-                self.htmlBuilder.pl()
-                self.htmlBuilder.pl(str(config_json["maxErrors"]) + " back to back miner " + stopReason, HTMLBuilder.COLOR_RED)
+                switcherData.pl()
+                switcherData.pl(str(switcherData.config_json["maxErrors"]) + " back to back miner " + stopReason, HTMLBuilder.COLOR_RED)
                 self.stop(True)
 
-            self.htmlBuilder.log(config_json, logFileName)
+            switcherData.log()
 
             return True
 
