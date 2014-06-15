@@ -34,8 +34,7 @@ DATA_FILE_NAME = "m_s_data.myr"
 
 urlScryptAPI    = "https://myr.nut2pools.com/index.php?page=api&action=getuserbalance&api_key=9d60c24d07665b9b8a4831a129bcb6d6ae39aa0474cdeb45a4e87f4a9f9939e0"
 urlGroestlAPI   = "http://myriadcoin-groestl.miningpoolhub.com/index.php?page=api&action=getuserbalance&api_key=9f335766b5075678cc6aa4dd80c11695b4f546cf3e348060216c7fbb80da317f"
-#urlSkeinAPI     = "http://myrsk.cryptorus.com/index.php?page=api&action=getuserbalance&api_key=8a3a5cd38982d88a78d9faac706246f003c287695515bd32322cc85f91a3e5de"
-urlSkeinAPI     = "https://myrskein.suprnova.cc/index.php?page=api&action=getuserbalance&api_key=aa2589ba1fec4cab2dd96d40e191b47f02779400dab8986389d6d3b45ce617e5&id=125"
+urlSkeinAPI     = "http://myrsk.cryptorus.com/index.php?page=api&action=getuserbalance&api_key=8a3a5cd38982d88a78d9faac706246f003c287695515bd32322cc85f91a3e5de"
 urlQubitAPI     = "http://myr.nonce-pool.com/index.php?page=api&action=getuserbalance&api_key=bef60a0f9091956d60e15354ccaf32c0b0d1dbda94681b356c55701f64201154"
 
 class SwitcherData():
