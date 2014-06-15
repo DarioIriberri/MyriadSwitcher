@@ -34,7 +34,8 @@ DATA_FILE_NAME = "m_s_data.myr"
 
 urlScryptAPI    = "https://myr.nut2pools.com/index.php?page=api&action=getuserbalance&api_key=9d60c24d07665b9b8a4831a129bcb6d6ae39aa0474cdeb45a4e87f4a9f9939e0"
 urlGroestlAPI   = "http://myriadcoin-groestl.miningpoolhub.com/index.php?page=api&action=getuserbalance&api_key=9f335766b5075678cc6aa4dd80c11695b4f546cf3e348060216c7fbb80da317f"
-urlSkeinAPI     = "http://myrsk.cryptorus.com/index.php?page=api&action=getuserbalance&api_key=8a3a5cd38982d88a78d9faac706246f003c287695515bd32322cc85f91a3e5de"
+#urlSkeinAPI     = "http://myrsk.cryptorus.com/index.php?page=api&action=getuserbalance&api_key=8a3a5cd38982d88a78d9faac706246f003c287695515bd32322cc85f91a3e5de"
+urlSkeinAPI     = "https://myrskein.suprnova.cc/index.php?page=api&action=getuserbalance&api_key=aa2589ba1fec4cab2dd96d40e191b47f02779400dab8986389d6d3b45ce617e5&id=125"
 urlQubitAPI     = "http://myr.nonce-pool.com/index.php?page=api&action=getuserbalance&api_key=bef60a0f9091956d60e15354ccaf32c0b0d1dbda94681b356c55701f64201154"
 
 class SwitcherData():
@@ -49,12 +50,37 @@ class SwitcherData():
         self.prevRestartTime                    = 0
         self.coinsStint                         = 0
         self.wattsStint                         = 0
+        self.storedGlobalTime                   = 0
+        self.watts                              = 0
+
+        self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
+        self.hashtableExpectedCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
 
         self.console = console
 
         self.config_json = self.loadConfig(activeFile)
 
         self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 60000)
+
+        time_now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
+        time_now_file = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
+        self.fileSuffix  = time_now_file
+
+        #if resume or rebooting:
+        #    htmlBuilder.pl()
+
+        if self.config_json["debug"]:
+            self.fileSuffix = "debug-" + self.fileSuffix
+
+        self.logFileName = self.config_json["logPath"] + "\\" + self.fileSuffix + ".html"
+
+        self.pl("Init time: " + time_now)
+
+        if self.config_json["debug"]:
+            self.pl()
+            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
+            self.pl("#####################################             DEBUG     MODE           #############################################", HTMLBuilder.COLOR_YELLOW)
+            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
 
     def fetchData(self, activeConfigFile):
         self.config_json = self.loadConfig(activeConfigFile)
@@ -156,34 +182,6 @@ class SwitcherData():
 
         self.maxAlgo  = valArraySorted[0][0]
         self.maxValue = valArraySorted[0][1]
-
-    def init(self, resume, rebooting, dataInitComplete):
-        if not dataInitComplete:
-            self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
-            self.hashtableExpectedCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
-            self.storedGlobalTime = 0
-            self.watts = 0
-
-        time_now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
-        time_now_file = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
-        self.fileSuffix  = time_now_file
-
-        #if resume or rebooting:
-        #    htmlBuilder.pl()
-
-        if self.config_json["debug"]:
-            self.fileSuffix = "debug-" + self.fileSuffix
-
-        self.logFileName = self.config_json["logPath"] + "\\" + self.fileSuffix + ".html"
-
-        self.pl("Init time: " + time_now)
-
-        if self.config_json["debug"]:
-            self.pl()
-            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
-            self.pl("#####################################             DEBUG     MODE           #############################################", HTMLBuilder.COLOR_YELLOW)
-            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
-
 
     def isSwitchToNewAlgo(self, forceSwitch):
         greaterThanHys = True
@@ -513,11 +511,14 @@ class SwitcherData():
         except IOError:
             pass
 
-    def end(self, htmlBuilder):
-        htmlBuilder.pl()
-        htmlBuilder.pl("Process stopped at ... " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    def log(self):
+        self.htmlBuilder.log(self.config_json, self.logFileName)
 
-        self.dumpData(htmlBuilder)
+    def end(self):
+        self.htmlBuilder.pl()
+        self.htmlBuilder.pl("Process stopped at ... " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+        self.dumpData(self.htmlBuilder)
 
         print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "Exiting thread loop..... "
 
