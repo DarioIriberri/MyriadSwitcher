@@ -57,15 +57,8 @@ class SwitchingThread (threading.Thread):
         switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
         #config_json = self.loadConfig(thread.activeConfigFile)
 
-        dataInitComplete = True
-
         if self.resume or self.rebooting:
-            dataInitComplete = switcherData.loadData()
-
-        if not dataInitComplete:
-            self.resume = False
-
-        switcherData.init(self.resume, self.rebooting, dataInitComplete)
+            switcherData.loadData()
 
         errors = 0
 
@@ -228,7 +221,7 @@ class SwitchingThread (threading.Thread):
 
             switcherData.loadConfig(thread.activeConfigFile)
 
-        switcherData.end(switcherData.htmlBuilder)
+        switcherData.end()
         self.console.parent.onMiningProcessStopped()
 
     def configChanged(self):

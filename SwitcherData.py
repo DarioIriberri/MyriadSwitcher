@@ -49,12 +49,37 @@ class SwitcherData():
         self.prevRestartTime                    = 0
         self.coinsStint                         = 0
         self.wattsStint                         = 0
+        self.storedGlobalTime                   = 0
+        self.watts                              = 0
+
+        self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
+        self.hashtableExpectedCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
 
         self.console = console
 
         self.config_json = self.loadConfig(activeFile)
 
         self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 60000)
+
+        time_now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
+        time_now_file = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
+        self.fileSuffix  = time_now_file
+
+        #if resume or rebooting:
+        #    htmlBuilder.pl()
+
+        if self.config_json["debug"]:
+            self.fileSuffix = "debug-" + self.fileSuffix
+
+        self.logFileName = self.config_json["logPath"] + "\\" + self.fileSuffix + ".html"
+
+        self.pl("Init time: " + time_now)
+
+        if self.config_json["debug"]:
+            self.pl()
+            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
+            self.pl("#####################################             DEBUG     MODE           #############################################", HTMLBuilder.COLOR_YELLOW)
+            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
 
     def fetchData(self, activeConfigFile):
         self.config_json = self.loadConfig(activeConfigFile)
@@ -156,34 +181,6 @@ class SwitcherData():
 
         self.maxAlgo  = valArraySorted[0][0]
         self.maxValue = valArraySorted[0][1]
-
-    def init(self, resume, rebooting, dataInitComplete):
-        if not dataInitComplete:
-            self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
-            self.hashtableExpectedCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
-            self.storedGlobalTime = 0
-            self.watts = 0
-
-        time_now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
-        time_now_file = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
-        self.fileSuffix  = time_now_file
-
-        #if resume or rebooting:
-        #    htmlBuilder.pl()
-
-        if self.config_json["debug"]:
-            self.fileSuffix = "debug-" + self.fileSuffix
-
-        self.logFileName = self.config_json["logPath"] + "\\" + self.fileSuffix + ".html"
-
-        self.pl("Init time: " + time_now)
-
-        if self.config_json["debug"]:
-            self.pl()
-            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
-            self.pl("#####################################             DEBUG     MODE           #############################################", HTMLBuilder.COLOR_YELLOW)
-            self.pl("########################################################################################################################", HTMLBuilder.COLOR_YELLOW)
-
 
     def isSwitchToNewAlgo(self, forceSwitch):
         greaterThanHys = True
@@ -512,11 +509,14 @@ class SwitcherData():
         except IOError:
             pass
 
-    def end(self, htmlBuilder):
-        htmlBuilder.pl()
-        htmlBuilder.pl("Process stopped at ... " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    def log(self):
+        self.htmlBuilder.log(self.config_json, self.logFileName)
 
-        self.dumpData(htmlBuilder)
+    def end(self):
+        self.htmlBuilder.pl()
+        self.htmlBuilder.pl("Process stopped at ... " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+        self.dumpData(self.htmlBuilder)
 
         print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "Exiting thread loop..... "
 
