@@ -510,7 +510,7 @@ class SwitcherData():
 
             htmlBuilder.dumpLines()
 
-        except IOError:
+        except (IOError, AttributeError):
             pass
 
     def log(self):

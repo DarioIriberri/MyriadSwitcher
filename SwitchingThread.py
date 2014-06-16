@@ -12,6 +12,7 @@ import socket
 import traceback
 import HTMLBuilder
 import SwitcherData
+from ErrorReport import ErrorReport
 
 
 MIN_TIME_THREAD_PROBED = 60
@@ -75,154 +76,165 @@ class SwitchingThread (threading.Thread):
         loopMinerStatus    = None
 
         while True:
-            dataError = switcherData.fetchData(thread.activeConfigFile)
+            try:
+                dataError = switcherData.fetchData(thread.activeConfigFile)
 
-            threadStopped = self.checkSwitchingThreadStopped()
+                threadStopped = self.checkSwitchingThreadStopped()
 
-            if dataError:
-                switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
+                if dataError:
+                    switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
 
-                if threadStopped:
-                    break
-                else:
-                    continue
+                    if threadStopped:
+                        break
+                    else:
+                        continue
 
-            # New Algo found to switch to!
-            if switcherData.isSwitchToNewAlgo(threadStopped):
-                prevSwitchtext = switchtext
+                # New Algo found to switch to!
+                if switcherData.isSwitchToNewAlgo(threadStopped):
+                    prevSwitchtext = switchtext
 
-                scriptPath = switcherData.getScriptPath()
-                switchtext = "> " + switcherData.maxAlgo
+                    scriptPath = switcherData.getScriptPath()
+                    switchtext = "> " + switcherData.maxAlgo
 
-                restart = not threadStopped
-                status = "SWITCH"
+                    restart = not threadStopped
+                    status = "SWITCH"
 
-                errors = 0
-
-            # Still same Algo, check if the miner is running OK
-            else:
-                switchtext = "   " + switcherData.current
-
-                cpu2 = self.getCPUUsages(switcherData.getMiner())
-
-                stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, switcherData.getMiner(), switcherData.config_json)
-                restart = not globalStopped and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
-
-                cpu1 = cpu2
-
-                if restart:
-                    switchtext = "x " + switcherData.current
-                    status = "FAIL"
-                    errors += 1
-
-                    if errors >= switcherData.config_json["maxErrors"]:
-                        status = "MAX_FAIL"
-                        prevSwitchtext = switchtext
-                        maxMinerFails = True
-
-                else:
-                    switchtext = ". " + switcherData.current
-                    status = "OK"
                     errors = 0
 
-            switcherData.initRound(status)
+                # Still same Algo, check if the miner is running OK
+                else:
+                    switchtext = "   " + switcherData.current
 
-            globalStopped = switcherData.globalStopped
-            wasStopped    = switcherData.wasStopped
+                    cpu2 = self.getCPUUsages(switcherData.getMiner())
 
-            if globalStopped:
-                self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
+                    stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(cpu1, cpu2, switcherData.getMiner(), switcherData.config_json)
+                    restart = not globalStopped and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
 
-                if status != "SWITCH":
-                    status = "OK"
+                    cpu1 = cpu2
 
-                switchtext = "S " + switcherData.current
+                    if restart:
+                        switchtext = "x " + switcherData.current
+                        status = "FAIL"
+                        errors += 1
 
-            if ( restart and not maxMinerFails and not globalStopped ) or ( wasStopped and not globalStopped ):
-                sleepTime = switcherData.config_json["sleepLONG"]
+                        if errors >= switcherData.config_json["maxErrors"]:
+                            status = "MAX_FAIL"
+                            prevSwitchtext = switchtext
+                            maxMinerFails = True
 
-                t1 = time.time()
+                    else:
+                        switchtext = ". " + switcherData.current
+                        status = "OK"
+                        errors = 0
 
-                if not switcherData.config_json["debug"]:
+                switcherData.initRound(status)
+
+                globalStopped = switcherData.globalStopped
+                wasStopped    = switcherData.wasStopped
+
+                if globalStopped:
                     self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
-                    workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
-                    retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
-                    #retCode = subprocess.Popen('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
-                    #subprocess.call('cd /d "' + unicode(workingDirectory) + '" && start cmd /c "' + unicode(scriptPath) + '"', shell=True)
-                    #subprocess.call('cd /d "' + workingDirectory + '" && start cmd /c "' + scriptPath + '"', shell=True)
+                    if status != "SWITCH":
+                        status = "OK"
 
-                    if retCode != 0:
-                        switcherData.pl()
-                        switcherData.pl("Failed to start your miner: " + scriptPath, HTMLBuilder.COLOR_RED)
-                        breakAt = "failed miner start"
-                        self.stop(True)
-                        break
+                    switchtext = "S " + switcherData.current
 
-                    if self.waitForMinerToStart(switcherData.getMiner(), switcherData.config_json["rampUptime"]):
-                        cpu1 = self.getCPUUsages(switcherData.getMiner())
-                        self.activeMiner = switcherData.getMiner()
+                if ( restart and not maxMinerFails and not globalStopped ) or ( wasStopped and not globalStopped ):
+                    sleepTime = switcherData.config_json["sleepLONG"]
 
-                        #if self.checkSwitchingThreadStopped():
-                        #    breakAt = "after miner start"
-                        #    break
+                    t1 = time.time()
 
-                restartTime = time.time() - t1
+                    if not switcherData.config_json["debug"]:
+                        self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
-            else:
-                sleepTime = switcherData.config_json["sleepSHORT"]
+                        workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
+                        retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
+                        #retCode = subprocess.Popen('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
+                        #subprocess.call('cd /d "' + unicode(workingDirectory) + '" && start cmd /c "' + unicode(scriptPath) + '"', shell=True)
+                        #subprocess.call('cd /d "' + workingDirectory + '" && start cmd /c "' + scriptPath + '"', shell=True)
 
-            timeStopped = 0 if status != "FAIL" else LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
-
-            switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
-
-            if self.checkSwitchingThreadStopped():
-                breakAt = "after prints, thread stopped"
-                break
-
-            if self.checkMaxFails(status, stopReason, switcherData):
-                breakAt = "after prints, max fails"
-                break
-
-            cpuF1 = cpu1
-            loopMinerStatus = None
-
-            t_initSleep = time.time()
-
-            while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
-                if self.checkSwitchingThreadStopped():
-                    break
-
-                if not globalStopped:
-                    try:
-                        cpuF2 = self.getCPUUsages(switcherData.getMiner())
-
-                        if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), switcherData.config_json):
-                            loopMinerStatus = MINER_CRASHED
+                        if retCode != 0:
+                            switcherData.pl()
+                            switcherData.pl("Failed to start your miner: " + scriptPath, HTMLBuilder.COLOR_RED)
+                            breakAt = "failed miner start"
+                            self.stop(True)
                             break
 
-                        if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
-                            if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), switcherData.config_json):
-                                loopMinerStatus = MINER_FREEZED
-                                break
+                        if self.waitForMinerToStart(switcherData.getMiner(), switcherData.config_json["rampUptime"]):
+                            cpu1 = self.getCPUUsages(switcherData.getMiner())
+                            self.activeMiner = switcherData.getMiner()
 
-                            else:
-                                cpuF1 = cpuF2
+                            #if self.checkSwitchingThreadStopped():
+                            #    breakAt = "after miner start"
+                            #    break
 
-                    except Exception, ex:
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
-                        print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-                        logging.exception("Loop error")
+                    restartTime = time.time() - t1
 
-                #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
-                time.sleep(LOOP_SLEEP_TIME)
+                else:
+                    sleepTime = switcherData.config_json["sleepSHORT"]
 
-            if self.configChangedFlag:
+                timeStopped = 0 if status != "FAIL" else LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
+
+                switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
+
+                if self.checkSwitchingThreadStopped():
+                    breakAt = "after prints, thread stopped"
+                    break
+
+                if self.checkMaxFails(status, stopReason, switcherData):
+                    breakAt = "after prints, max fails"
+                    break
+
+                cpuF1 = cpu1
+                loopMinerStatus = None
+
                 t_initSleep = time.time()
 
-            self.configChangedFlag = False
+                while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
+                    if self.checkSwitchingThreadStopped():
+                        break
 
-            switcherData.loadConfig(thread.activeConfigFile)
+                    if not globalStopped:
+                        try:
+                            cpuF2 = self.getCPUUsages(switcherData.getMiner())
+
+                            if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), switcherData.config_json):
+                                loopMinerStatus = MINER_CRASHED
+                                break
+
+                            if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
+                                if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), switcherData.config_json):
+                                    loopMinerStatus = MINER_FREEZED
+                                    break
+
+                                else:
+                                    cpuF1 = cpuF2
+
+                        except Exception, ex:
+                            exc_type, exc_value, exc_traceback = sys.exc_info()
+                            print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+                            logging.exception("Loop error")
+
+                    #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
+                    time.sleep(LOOP_SLEEP_TIME)
+
+                if self.configChangedFlag:
+                    t_initSleep = time.time()
+
+                self.configChangedFlag = False
+
+                switcherData.loadConfig(thread.activeConfigFile)
+
+            except Exception:
+                switcherData.pl()
+                switcherData.pl("Unexpected error.", HTMLBuilder.COLOR_RED)
+
+                self.printTraceback("Unexpected error")
+
+                ErrorReport().sendReport(self.console, traceback.format_exc())
+
+                break
 
         switcherData.end()
         self.console.parent.onMiningProcessStopped()
