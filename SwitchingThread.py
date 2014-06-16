@@ -9,11 +9,12 @@ import io
 import os
 import logging
 import socket
+import traceback
 import HTMLBuilder
 import SwitcherData
 
 
-MIN_TIME_THREAD_PROBED = 45
+MIN_TIME_THREAD_PROBED = 60
 CPU_TIME    = 0
 TIME_PROBED = 1
 LOOP_SLEEP_TIME = 2
@@ -209,6 +210,8 @@ class SwitchingThread (threading.Thread):
                                 cpuF1 = cpuF2
 
                     except Exception, ex:
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
                         logging.exception("Loop error")
 
                 #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
@@ -342,6 +345,10 @@ class SwitchingThread (threading.Thread):
                 return None
 
         return None
+
+    def printTraceback(self, text):
+        print time.strftime(SwitcherData.DATE_FORMAT_PATTERN, time.localtime()) + " - " + text
+        traceback.print_stack()
 
     # Returns MINER_CRASHED or MINER_FREEZED if the miner is not running, or the CPU usage/timestamp if it is
     def minerStoppedFinal(self, cpu1, miner, config_json):

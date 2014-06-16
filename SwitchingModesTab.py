@@ -266,7 +266,7 @@ class ModesPanel(wx.Panel):
 
         frame_myr.notebookControlChanged()
         parent = self.GetParent()
-        parent.calculateExpected(parent.config_json, parent.modes_panel)
+        parent.calculateExpected()
 
 
     def create_mins_sizer(self, parent):
