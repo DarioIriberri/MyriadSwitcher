@@ -32,6 +32,8 @@ num = 20.11656761
 
 DATA_FILE_NAME = "m_s_data.myr"
 
+DATE_FORMAT_PATTERN = "%m/%d/%Y %H:%M:%S"
+LOG_FORMAT_PATTERN = "%Y-%m-%d-%H%M%S"
 urlScryptAPI    = "https://myr.nut2pools.com/index.php?page=api&action=getuserbalance&api_key=9d60c24d07665b9b8a4831a129bcb6d6ae39aa0474cdeb45a4e87f4a9f9939e0"
 urlGroestlAPI   = "http://myriadcoin-groestl.miningpoolhub.com/index.php?page=api&action=getuserbalance&api_key=9f335766b5075678cc6aa4dd80c11695b4f546cf3e348060216c7fbb80da317f"
 urlSkeinAPI     = "http://myrsk.cryptorus.com/index.php?page=api&action=getuserbalance&api_key=8a3a5cd38982d88a78d9faac706246f003c287695515bd32322cc85f91a3e5de"
@@ -61,8 +63,8 @@ class SwitcherData():
 
         self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 60000)
 
-        time_now = time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())
-        time_now_file = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
+        time_now = time.strftime(DATE_FORMAT_PATTERN, time.localtime())
+        time_now_file = time.strftime(LOG_FORMAT_PATTERN, time.localtime())
         self.fileSuffix  = time_now_file
 
         #if resume or rebooting:
@@ -506,7 +508,7 @@ class SwitcherData():
 
             htmlBuilder.dumpLines()
 
-        except IOError:
+        except (IOError, AttributeError):
             pass
 
     def log(self):
@@ -514,11 +516,11 @@ class SwitcherData():
 
     def end(self):
         self.htmlBuilder.pl()
-        self.htmlBuilder.pl("Process stopped at ... " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        self.htmlBuilder.pl("Process stopped at ... " + time.strftime(DATE_FORMAT_PATTERN, time.localtime()))
 
         self.dumpData(self.htmlBuilder)
 
-        print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "Exiting thread loop..... "
+        print time.strftime(DATE_FORMAT_PATTERN, time.localtime()), "Exiting thread loop..... "
 
     def pl(self, line_p=" ", colorForeground=(255, 255, 255), colorBackground=(0, 0, 0)):
         self.htmlBuilder.pl(line_p, colorForeground, colorBackground)
