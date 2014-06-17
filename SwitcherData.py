@@ -127,10 +127,14 @@ class SwitcherData():
         obj = json.loads(getResult)
         objCoins = json.loads(getResultCoins)
 
-        diffScrypt 	= obj["difficulty_scrypt"]
-        diffGroestl = obj["difficulty_groestl"]
-        diffSkein 	= obj["difficulty_skein"]
-        diffQubit 	= obj["difficulty_qubit"]
+        try:
+            diffScrypt 	= obj["difficulty_scrypt"]
+            diffGroestl = obj["difficulty_groestl"]
+            diffSkein 	= obj["difficulty_skein"]
+            diffQubit 	= obj["difficulty_qubit"]
+
+        except:
+            return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
 
         per = objCoins["per"]
 

@@ -17,8 +17,6 @@ class ErrorReport():
                 fromaddr = 'myriad.switcher@gmail.com'
                 toaddrs  = 'dario.iriberri@gmail.com'
 
-                #text = 'Enter you message here'
-
                 message = 'Subject: Myriad Switcher ' + FrameMYR.VERSION + '.' + str(FrameMYR.REVISION) + ' Error\n\n%s' % (text)
 
                 username = 'myriad.switcher'
