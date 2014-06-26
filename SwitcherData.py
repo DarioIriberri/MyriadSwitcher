@@ -125,19 +125,20 @@ class SwitcherData():
 
         #httpTime = time.time() - startT2
 
-        obj = json.loads(getResult)
-        objCoins = json.loads(getResultCoins)
-
+        per = 0
         try:
+            obj = json.loads(getResult)
+            objCoins = json.loads(getResultCoins)
+
             diffScrypt 	= obj["difficulty_scrypt"]
             diffGroestl = obj["difficulty_groestl"]
             diffSkein 	= obj["difficulty_skein"]
             diffQubit 	= obj["difficulty_qubit"]
 
+            per = objCoins["per"]
+
         except:
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
-
-        per = objCoins["per"]
 
         scryptCorrFactor  = self.config_json["scryptHashRate"]  * num * int(per)
         groestlCorrFactor = self.config_json["groestlHashRate"] * num * int(per)

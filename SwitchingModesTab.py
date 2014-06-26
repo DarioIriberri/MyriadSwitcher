@@ -155,7 +155,7 @@ class ModesPanel(wx.Panel):
         wx.StaticText(self, -1, "", (40, 15))
 
         self.slider = wx.Slider(
-            self, 100, 25, 0, SLIDER_MAX, (30, 60), (254, -1),
+            self, wx.ID_ANY, SLIDER_MAX / 2, 0, SLIDER_MAX, (30, 60), (254, -1),
             wx.SL_HORIZONTAL | wx.SL_LABELS
         )
 
