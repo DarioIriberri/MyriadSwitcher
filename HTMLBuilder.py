@@ -52,14 +52,32 @@ class HTMLBuilder():
 
         self.refresh_milisecs = str(refresh_milisecs)
 
-    def html_begin(self):
+    def html_begin(self, text_size=80):
         html =  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN"
         html += "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"
         html += "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
         html += "<head>"
-        html += "<style>BODY{background-color:#000000;color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:80%;}table{border-collapse:collapse;width:1880px;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
+        html += "<style>BODY{background-color:#000000;color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:1880px;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
         #html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {location.reload();}," + self.refresh_t + ")}</script>"
         html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {window.scrollTo(0, document.body.scrollHeight);location.reload();}," + self.refresh_milisecs + ")}</script>"
+        html += '<link id="page_favicon" href="data:image/x-icon;base64,AAABAAEAGBgAAAEAIACICQAAFgAAACgAAAAYAAAAMAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMiM/QS7dPwbvHT8KqqI/AN2cfwVgH38BQ' \
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADU5vYBAAAAAAAAAADQnv0HvXT8Y6xS/MalRPzsqEr84LmC/RJGP/y3RD38zVlS+4iVk/co2MznAwAAAADf1NgCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' \
+                'AAAAAAAAAAOuw7BPeq/koqEr866M9/f+jPv3/pkX97s2a/R9JQv21MCj9/zAo/P82L/zwamH3n6qg7Bnl1tUPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5Z/hC9xq3rXkmupttmj7i6I9/f+jPv3/pEH89rpz/C9KQ/2jMCj9/zEp/f8xKf3/' \
+                'Qz785Jqb9xqxv/QSzNPeHMfMvwQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4n7ka9la2/3aZtzOzo70MqdI/OuiPfz+pED89b98+0BVT/uLMCj8/zEp/f8wKPz/enr6jdTd8xNxkvqbcH2s466ij3Lp2qQEAAAAAAAAAAAAAAAAAAAAAAAAAADsre4P3Wne2' \
+                'dpb3P/ZWtv95Z7pZrx2/GqzZvxksmD7PNiu8RGRiug0X1j7nToy/O9BOPrtn534JJqx9iZTffz2anCa/2taSPvHpnh888iJBQAAAAAAAAAAAAAAAAAAAADzl9wH5Y7fb8ZluPWUYXX/k2dx6496Y8CNemDAoIptutOwkEYAAAAAubLvAdnT9CCtmsZ9sY9tspR+Zu' \
+                'yMeW7/f2VR/2hVQv9uV0L9q4ZhjdinfQoAAAAAAAAAAAAAAAD8gMhj+ITGZrB1iY1oVUL/aFVC/2hVQv9oVUL/aVVC/3pmT+udiGgg297ABOTgwSx/dGCuaVVB/mhVQv9oVUL/aFVC/2hVQv9oVUL/blhE/aJ/Yq3z3LUOAAAAAAAAAAD9br+S/Fa0+MBgh8lpVUL' \
+                '+aFVC/2hVQv9oVUL/aFVC/2hVQv+Ib1a3v6uHDZKCZptpVkL/aFVC/2hVQv9oVUL/aFVC/2hVQv9oVUL/alZC/6qOccj48MoWAAAAAAAAAAD9XbiS/VSz//tVs/21g4xlk4JpaZeGcIGIcFeybVZB8mhVQv9oVEH/k3pfhYFsVBxrVkHmdl9J8o56XamRf2Opg2dL' \
+                '5mhVQv9sWET8tZVynMXPvBaG2/g0peL4BAAAAAD7gcR4/Fa0+PxWtPv3vtoe1tCyAe7p2wPRuZYRh2tTfmhVQfpoVUL/emFI98uxe2RqWUhPxK+KZ+DQnQTfzaACnINooWhYSPyippe1jtfmcEfI/MQ3xPzyadH7QgAAAADvwM4P+Ym6Pf10wHH8ltEUAAAAAAAAA' \
+                'AAAAAAAso5vEn1kTcloVUL/aFVB/4VrUO/pyZUcAAAAAAAAAAAAAAAAo5J+gJ+mnnhLyPnZMML8/jDC/f8wwv3/Usz8tObv6Ab7tKcm+XpkufmDbYT5oZEsAAAAAAAAAAAAAAAAAAAAAKyPcTdwWELtZ1RB/2pUQP+ghGe42sGUCwAAAAAAAAAAtJ6DhNG3lHVv0f' \
+                'SEMMH8/zDC/P8wwvz/NMP8837Y/C36sKIG+XhiwvhiSP/5fGep+qGUAwAAAAAAAAAAo6amG4qKhzaVcFN5bFZB/WdUQf90Xkn+xayJfv74vQEAAAAAhm5XpHhjT/uosq2TOcP68y/B/P8wwvz/MML8/nHU+2IAAAAA9o18X/FlS/7lbVPw05Z3WLmJZEDTmmlZhnJ' \
+                'fxm1hVN+ukG0ghmVKwWlVQf9oVUL/j3NW8NfBipbOwI9zknVW3WhVQv91YlH6lrawx1LJ92xazvx7TMv8fYPW90gAAAAA66mXD5pwWdpyVkH/c1ZB/HJWQf5sVUH/Z1RB/2dVQ/+jlXmR3LaIKHtiSuloVUL/aFVC/21XQv9pVED/a1ZB/2hVQv9oVUH/eV9J+3yz' \
+                'o5lC6/VraPD4bHTy+TsAAAAAtYdsCIFkTs5nVEH/Z1RB/2dUQf9nVEH/aVVB/31oVd7Xx6Us8uesA8GogWNlVEP8aFVC/2hVQv9oVUL/aFVC/2hVQv9oVUL/ZlVE/3duX/823uP/AOf2/krw+WkAAAAArpJ1AoFsWKJtWUXwc11C/3NdQf91XT/6knZaxc6thjMAA' \
+                'AAAAAAAAPDougWdj3l+c11H72hWRf1rVkL9bVZC/2hVQv9oVEH/eHBd/1DMyf8D5/X/Buf29WTr+DMAAAAAAAAAAJ+QfgTFtJYT6cNqkt+nJ/zgqi3y7dKPJ+DjfwsAAAAAAAAAAAAAAAAAAAAA3M+oH9vWxTDY0aIsjnlZs2dUQv91bFPtgM26fiLp97sF5/b5Ne' \
+                'z3raD2/AQAAAAAAAAAAAAAAAAAAAAA7s99COa5Vnvktk2j6eWZJM3YI8vU3kF91uBQJ+PrgQSU0VIBg807AaPaaAO87cEGg4ptsHJwV/8zzX/2KOCNq2Lpu09Z6uQ/XO34HgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOC/cwHdwYAQ2eFVdsbSAP/G0wL/yNQL8Nr' \
+                'iXkaO0Edsb8YYo3jKJLOy4Io2kb2QuDTLfP8A23r/ANt6/xveht9R5qMeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5eqJC9rhTGfL1xvRxtMD+tHaLoKN0kdvYsEA/2LBAP9wxhffl994OC/hk7EN3IDtKt+Pk17prBkAAAAA39/fAejp5wEA' \
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADX4VEM1d5IOdzjX0ue12IzcMYX327GE/Bxxxndhc06fHrdkRFa56ghXOWoAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACj2WkEh' \
+                '848G4LNNSKM0UQZmM5WBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4H/9BYAL/QcAA/0GAAD9BgAAfQQAAD0EAQAdBAAADQQAAA0EAAAFBAAABQQ4HAEEPAwBBBgEAQYAAAEGAAABBgAAAQYBgAEHAeABB8AABQfgAA0H+AARB/4APQf/wf0E="' \
+                ' rel="icon" type="image/x-icon" />'
         html += " </head>"
         html += " <body>"
         html += "   <table>"
@@ -69,8 +87,8 @@ class HTMLBuilder():
 
         return html
 
-    def buildHTML(self, lines):
-        html = self.html_begin()
+    def buildHTML(self, lines, text_size=80):
+        html = self.html_begin(text_size)
         for line in lines:
             html += line
 
@@ -123,7 +141,7 @@ class HTMLBuilder():
             startT = time.time()
 
             f = open(logFileName, "w")
-            f.write(self.buildHTML(self.lines))
+            f.write(self.buildHTML(self.lines, 100))
             f.close()
 
         htmlTime = time.time() - startT
