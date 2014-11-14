@@ -98,6 +98,7 @@ class PanelConsole(wx.Panel):
                 self.printToConsole(str_out)
                 time.sleep(5)
 
+
     def printToConsole(self, str_out):
         print str_out
         evt = ConsoleEvent(thread_ident=self.thread.ident, html=str_out)

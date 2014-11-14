@@ -21,8 +21,8 @@ qubitS   = " Qubit  "
 MINER_CHOICES = ["sgminer", "cgminer", "bfgminer", "reaper", "cudaminer", "minerd"]
 
 EXCHANGE_POLONIEX = "poloniex"
-EXCHANGE_MINTPAL  = "mintpal"
-exchangesURL = {EXCHANGE_POLONIEX: "https://poloniex.com/public?command=returnTicker", EXCHANGE_MINTPAL: "https://api.mintpal.com/v1/market/stats/MYR/BTC"}
+EXCHANGE_CRYPTSY  = "cryptsy"
+exchangesURL = {EXCHANGE_POLONIEX: "https://poloniex.com/public?command=returnTicker", EXCHANGE_CRYPTSY: "http://pubapi2.cryptsy.com/api.php?method=singlemarketdata&marketid=200"}
 
 MODE_MAX_PER_DAY = 1
 MODE_MAX_PER_WATT = 2
@@ -102,7 +102,8 @@ class SwitcherData():
         startT2 = time.time()
 
         try:
-            getResult = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=info")
+            #getResult = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=info")
+            getResult = self.httpGet("http://birdonwheels5.no-ip.org/api/status?q=getInfo")
 
         except:
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
@@ -130,10 +131,15 @@ class SwitcherData():
             obj = json.loads(getResult)
             objCoins = json.loads(getResultCoins)
 
-            diffScrypt 	= obj["difficulty_scrypt"]
-            diffGroestl = obj["difficulty_groestl"]
-            diffSkein 	= obj["difficulty_skein"]
-            diffQubit 	= obj["difficulty_qubit"]
+            #diffScrypt  = obj["difficulty_scrypt"]
+            #diffGroestl = obj["difficulty_groestl"]
+            #diffSkein 	 = obj["difficulty_skein"]
+            #diffQubit 	 = obj["difficulty_qubit"]
+
+            diffScrypt 	= obj["info"]["difficulty_scrypt"]
+            diffGroestl = obj["info"]["difficulty_groestl"]
+            diffSkein 	= obj["info"]["difficulty_skein"]
+            diffQubit 	= obj["info"]["difficulty_qubit"]
 
             per = objCoins["per"]
 
@@ -153,8 +159,8 @@ class SwitcherData():
             if EXCHANGE_POLONIEX == self.config_json["exchange"]:
                 self.currentPrice = float(objPrice["BTC_MYR"]["last"]) * 100000000
 
-            if EXCHANGE_MINTPAL == self.config_json["exchange"]:
-                self.currentPrice = float(objPrice[0]["last_price"]) * 100000000
+            if EXCHANGE_CRYPTSY == self.config_json["exchange"]:
+                self.currentPrice = float(objPrice["return"]["markets"]["MYR"]["lasttradeprice"]) * 100000000
 
         self.prevHashtableCorrected = self.hashtableCorrected
 

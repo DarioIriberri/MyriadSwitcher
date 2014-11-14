@@ -2,6 +2,8 @@ __author__ = 'Dario'
 
 import wx
 import os
+import time
+import threading
 from wx.lib.agw.ribbon.page import GetSizeInOrientation
 import wx.lib.newevent
 import NotebookMYR
@@ -280,13 +282,19 @@ class FrameMYR(wx.Frame):
         self.enabled_buttons(True)
 
     def onButtonRun(self, event):
-        if self.notebook.saveConfig(self.activeFile):
-            self.enabled_buttons(False)
+        question = "This will delete any previously stored session data. Are you sure you want to continue?"
+        dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.ICON_WARNING)
+        result = dlg.ShowModal() == wx.ID_YES
+        dlg.Destroy()
 
-            self.panelConsole.mine(self.activeFile)
+        if result:
+            if self.notebook.saveConfig(self.activeFile):
+                self.enabled_buttons(False)
 
-            #self.buttonRun.Enable(False)
-            #self.buttonStop.Enable(True)
+                self.panelConsole.mine(self.activeFile)
+
+                #self.buttonRun.Enable(False)
+                #self.buttonStop.Enable(True)
 
     def onButtonResume(self, event):
         if self.notebook.saveConfig(self.activeFile):
@@ -298,8 +306,9 @@ class FrameMYR(wx.Frame):
             #self.buttonStop.Enable(True)
 
     def onButtonStop(self, event):
+        #self.buttonStop.SetLabelText("Stopping   ")
         self.panelConsole.stop(kill_miners=True, wait=False)
-
+        StopLabelSingletonThread(self.buttonStop).start()
         #self.buttonRun.Enable(True)
         #self.buttonStop.Enable(False)
 
@@ -312,6 +321,29 @@ class FrameMYR(wx.Frame):
         self.buttonRun.Enable(True)
         self.buttonResume.Enable(True)
         self.buttonStop.Enable(False)
+        self.buttonStop.SetLabelText("Stop")
+
+class StopLabelSingletonThread (threading.Thread):
+    _instance = None
+    lock = threading.RLock()
+
+    def __new__(self, *args, **kwargs):
+        if not self._instance:
+            self._instance = super(StopLabelSingletonThread, self).__new__(self, *args, **kwargs)
+        return self._instance
+
+    def __init__(self, buttonStop):
+        self.buttonStop = buttonStop
+        threading.Thread.__init__ (self)
+
+    def run(self):
+        with StopLabelSingletonThread.lock:
+            count = 0
+            while self.buttonStop.Enabled and count < 120:
+                count += 1
+                mod = count % 4
+                self.buttonStop.SetLabelText("Wait" + (mod * ".") + ( ( 4 - mod ) * " ") )
+                time.sleep(0.5)
 
 #def __init__(self, coin):
 #        wx.Dialog.__init__(self, None, -1, "%s Donation" %coin,
