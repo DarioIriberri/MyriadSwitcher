@@ -1,6 +1,7 @@
 __author__ = 'Dario'
 
 import PanelConsole
+import SwitcherData
 import wx
 import time
 import cPickle
@@ -34,11 +35,6 @@ foregroundActive  = COLOR_GREEN
 foregroundDisabled = COLOR_DARK_GRAY
 spacerColor = COLOR_BLACK
 
-scryptS  = " Scrypt "
-groestlS = " Groestl"
-skeinS   = " SKein  "
-qubitS   = " Qubit  "
-
 ANCHOR = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
 
 SESSION_FILE_NAME = "m_s_session.myr"
@@ -52,14 +48,32 @@ class HTMLBuilder():
 
         self.refresh_milisecs = str(refresh_milisecs)
 
-    def html_begin(self):
+    def html_begin(self, text_size=80):
         html =  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN"
         html += "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"
         html += "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
         html += "<head>"
-        html += "<style>BODY{background-color:#000000;color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:80%;}table{border-collapse:collapse;width:1880px;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
+        html += "<style>BODY{background-color:#000000;color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:1880px;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
         #html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {location.reload();}," + self.refresh_t + ")}</script>"
         html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {window.scrollTo(0, document.body.scrollHeight);location.reload();}," + self.refresh_milisecs + ")}</script>"
+        html += '<link id="page_favicon" href="data:image/x-icon;base64,AAABAAEAGBgAAAEAIACICQAAFgAAACgAAAAYAAAAMAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMiM/QS7dPwbvHT8KqqI/AN2cfwVgH38BQ' \
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADU5vYBAAAAAAAAAADQnv0HvXT8Y6xS/MalRPzsqEr84LmC/RJGP/y3RD38zVlS+4iVk/co2MznAwAAAADf1NgCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' \
+                'AAAAAAAAAAOuw7BPeq/koqEr866M9/f+jPv3/pkX97s2a/R9JQv21MCj9/zAo/P82L/zwamH3n6qg7Bnl1tUPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5Z/hC9xq3rXkmupttmj7i6I9/f+jPv3/pEH89rpz/C9KQ/2jMCj9/zEp/f8xKf3/' \
+                'Qz785Jqb9xqxv/QSzNPeHMfMvwQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4n7ka9la2/3aZtzOzo70MqdI/OuiPfz+pED89b98+0BVT/uLMCj8/zEp/f8wKPz/enr6jdTd8xNxkvqbcH2s466ij3Lp2qQEAAAAAAAAAAAAAAAAAAAAAAAAAADsre4P3Wne2' \
+                'dpb3P/ZWtv95Z7pZrx2/GqzZvxksmD7PNiu8RGRiug0X1j7nToy/O9BOPrtn534JJqx9iZTffz2anCa/2taSPvHpnh888iJBQAAAAAAAAAAAAAAAAAAAADzl9wH5Y7fb8ZluPWUYXX/k2dx6496Y8CNemDAoIptutOwkEYAAAAAubLvAdnT9CCtmsZ9sY9tspR+Zu' \
+                'yMeW7/f2VR/2hVQv9uV0L9q4ZhjdinfQoAAAAAAAAAAAAAAAD8gMhj+ITGZrB1iY1oVUL/aFVC/2hVQv9oVUL/aVVC/3pmT+udiGgg297ABOTgwSx/dGCuaVVB/mhVQv9oVUL/aFVC/2hVQv9oVUL/blhE/aJ/Yq3z3LUOAAAAAAAAAAD9br+S/Fa0+MBgh8lpVUL' \
+                '+aFVC/2hVQv9oVUL/aFVC/2hVQv+Ib1a3v6uHDZKCZptpVkL/aFVC/2hVQv9oVUL/aFVC/2hVQv9oVUL/alZC/6qOccj48MoWAAAAAAAAAAD9XbiS/VSz//tVs/21g4xlk4JpaZeGcIGIcFeybVZB8mhVQv9oVEH/k3pfhYFsVBxrVkHmdl9J8o56XamRf2Opg2dL' \
+                '5mhVQv9sWET8tZVynMXPvBaG2/g0peL4BAAAAAD7gcR4/Fa0+PxWtPv3vtoe1tCyAe7p2wPRuZYRh2tTfmhVQfpoVUL/emFI98uxe2RqWUhPxK+KZ+DQnQTfzaACnINooWhYSPyippe1jtfmcEfI/MQ3xPzyadH7QgAAAADvwM4P+Ym6Pf10wHH8ltEUAAAAAAAAA' \
+                'AAAAAAAso5vEn1kTcloVUL/aFVB/4VrUO/pyZUcAAAAAAAAAAAAAAAAo5J+gJ+mnnhLyPnZMML8/jDC/f8wwv3/Usz8tObv6Ab7tKcm+XpkufmDbYT5oZEsAAAAAAAAAAAAAAAAAAAAAKyPcTdwWELtZ1RB/2pUQP+ghGe42sGUCwAAAAAAAAAAtJ6DhNG3lHVv0f' \
+                'SEMMH8/zDC/P8wwvz/NMP8837Y/C36sKIG+XhiwvhiSP/5fGep+qGUAwAAAAAAAAAAo6amG4qKhzaVcFN5bFZB/WdUQf90Xkn+xayJfv74vQEAAAAAhm5XpHhjT/uosq2TOcP68y/B/P8wwvz/MML8/nHU+2IAAAAA9o18X/FlS/7lbVPw05Z3WLmJZEDTmmlZhnJ' \
+                'fxm1hVN+ukG0ghmVKwWlVQf9oVUL/j3NW8NfBipbOwI9zknVW3WhVQv91YlH6lrawx1LJ92xazvx7TMv8fYPW90gAAAAA66mXD5pwWdpyVkH/c1ZB/HJWQf5sVUH/Z1RB/2dVQ/+jlXmR3LaIKHtiSuloVUL/aFVC/21XQv9pVED/a1ZB/2hVQv9oVUH/eV9J+3yz' \
+                'o5lC6/VraPD4bHTy+TsAAAAAtYdsCIFkTs5nVEH/Z1RB/2dUQf9nVEH/aVVB/31oVd7Xx6Us8uesA8GogWNlVEP8aFVC/2hVQv9oVUL/aFVC/2hVQv9oVUL/ZlVE/3duX/823uP/AOf2/krw+WkAAAAArpJ1AoFsWKJtWUXwc11C/3NdQf91XT/6knZaxc6thjMAA' \
+                'AAAAAAAAPDougWdj3l+c11H72hWRf1rVkL9bVZC/2hVQv9oVEH/eHBd/1DMyf8D5/X/Buf29WTr+DMAAAAAAAAAAJ+QfgTFtJYT6cNqkt+nJ/zgqi3y7dKPJ+DjfwsAAAAAAAAAAAAAAAAAAAAA3M+oH9vWxTDY0aIsjnlZs2dUQv91bFPtgM26fiLp97sF5/b5Ne' \
+                'z3raD2/AQAAAAAAAAAAAAAAAAAAAAA7s99COa5Vnvktk2j6eWZJM3YI8vU3kF91uBQJ+PrgQSU0VIBg807AaPaaAO87cEGg4ptsHJwV/8zzX/2KOCNq2Lpu09Z6uQ/XO34HgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOC/cwHdwYAQ2eFVdsbSAP/G0wL/yNQL8Nr' \
+                'iXkaO0Edsb8YYo3jKJLOy4Io2kb2QuDTLfP8A23r/ANt6/xveht9R5qMeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5eqJC9rhTGfL1xvRxtMD+tHaLoKN0kdvYsEA/2LBAP9wxhffl994OC/hk7EN3IDtKt+Pk17prBkAAAAA39/fAejp5wEA' \
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADX4VEM1d5IOdzjX0ue12IzcMYX327GE/Bxxxndhc06fHrdkRFa56ghXOWoAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACj2WkEh' \
+                '848G4LNNSKM0UQZmM5WBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4H/9BYAL/QcAA/0GAAD9BgAAfQQAAD0EAQAdBAAADQQAAA0EAAAFBAAABQQ4HAEEPAwBBBgEAQYAAAEGAAABBgAAAQYBgAEHAeABB8AABQfgAA0H+AARB/4APQf/wf0E="' \
+                ' rel="icon" type="image/x-icon" />'
         html += " </head>"
         html += " <body>"
         html += "   <table>"
@@ -69,8 +83,8 @@ class HTMLBuilder():
 
         return html
 
-    def buildHTML(self, lines):
-        html = self.html_begin()
+    def buildHTML(self, lines, text_size=80):
+        html = self.html_begin(text_size)
         for line in lines:
             html += line
 
@@ -79,7 +93,7 @@ class HTMLBuilder():
     def html_end(self):
         html =  "</table>"
         #html += "<tr><td><b style=\"color:rgb(0, 0, 0)\">" + ANCHOR + "</b></td></tr>"
-        #html += "<div id=\"bottom\"/>"
+        html += "<div id=\"bottom\"/>"
         html += "</body>"
         html += "</html>"
 
@@ -123,7 +137,7 @@ class HTMLBuilder():
             startT = time.time()
 
             f = open(logFileName, "w")
-            f.write(self.buildHTML(self.lines))
+            f.write(self.buildHTML(self.lines, 100))
             f.close()
 
         htmlTime = time.time() - startT
@@ -136,18 +150,20 @@ class HTMLBuilder():
         return '{0:>7}'.format(int(coinsR)) if formated else coinsR
 
     def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
-                  active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableCorrected, hashtableTime, config_json):
+                  active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableTotalMinedCoins, hashtableCorrected, hashtableTime, config_json):
 
         status = "FAIL" if status == "MAX_FAIL" else status
 
+        totMined = hashtableMinedCoins[SwitcherData.scryptS] + hashtableMinedCoins[SwitcherData.groestlS] + hashtableMinedCoins[SwitcherData.skeinS] + hashtableMinedCoins[SwitcherData.qubitS]
+
         totalCoinsFormated = "{:7.0f}".format(coins)
 
-        totalSatoshi = coins * currentPrice
+        totalSatoshi = totMined * currentPrice
         dailyCoinsTot = 0
         profitabilityTotal = 0
 
         if globalTime > 0:
-            dailyCoinsTot = self.getCoinsPerDay(coins, globalTime)
+            dailyCoinsTot = self.getCoinsPerDay(totMined, globalTime)
             profitabilityTotal = self.getCoinsPerDay(totalSatoshi, globalTime)
 
         totalSatoshiStr = "{:11.0f}".format(totalSatoshi)
@@ -173,11 +189,16 @@ class HTMLBuilder():
         valCorrectedS     = 0
         valCorrectedQ     = 0
 
+        minedY = '{0:>7}'.format(int(round(hashtableMinedCoins[SwitcherData.scryptS])))
+        minedG = '{0:>7}'.format(int(round(hashtableMinedCoins[SwitcherData.groestlS])))
+        minedS = '{0:>7}'.format(int(round(hashtableMinedCoins[SwitcherData.skeinS])))
+        minedQ = '{0:>7}'.format(int(round(hashtableMinedCoins[SwitcherData.qubitS])))
+
         if status == "SWITCH":
 
             zeroValString = "   ----"
 
-            if active == scryptS:
+            if active == SwitcherData.scryptS:
                 totalCoinsScrypt = coins
                 totalCoinsGroestl = 0
                 totalCoinsSkein   = 0
@@ -188,7 +209,7 @@ class HTMLBuilder():
                 #valCorrectedS = zeroValString
                 #valCorrectedQ = zeroValString
 
-            if active == groestlS:
+            if active == SwitcherData.groestlS:
                 totalCoinsScrypt = 0
                 totalCoinsGroestl = coins
                 totalCoinsSkein   = 0
@@ -199,7 +220,7 @@ class HTMLBuilder():
                 #valCorrectedS = zeroValString
                 #valCorrectedQ = zeroValString
 
-            if active == skeinS:
+            if active == SwitcherData.skeinS:
                 totalCoinsScrypt = 0
                 totalCoinsGroestl = 0
                 totalCoinsSkein   = coins
@@ -210,7 +231,7 @@ class HTMLBuilder():
                 #valCorrectedS = dailyCoinsFormated
                 #valCorrectedQ = zeroValString
 
-            if active == qubitS:
+            if active == SwitcherData.qubitS:
                 totalCoinsScrypt = 0
                 totalCoinsGroestl = 0
                 totalCoinsSkein   = 0
@@ -221,53 +242,70 @@ class HTMLBuilder():
                 #valCorrectedS = zeroValString
                 #valCorrectedQ = dailyCoinsFormated
 
+            ###############################################################################################################################################################
 
-            valCorrectedY = self.getCoinsPerDay(hashtableExpectedCoins[scryptS], hashtableTime[scryptS], True)
-            valCorrectedG = self.getCoinsPerDay(hashtableExpectedCoins[groestlS], hashtableTime[groestlS], True)
-            valCorrectedS = self.getCoinsPerDay(hashtableExpectedCoins[skeinS], hashtableTime[skeinS], True)
-            valCorrectedQ = self.getCoinsPerDay(hashtableExpectedCoins[qubitS], hashtableTime[qubitS], True)
+            #valCorrectedY = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.scryptS], hashtableTime[SwitcherData.scryptS], True)
+            #valCorrectedG = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.groestlS], hashtableTime[SwitcherData.groestlS], True)
+            #valCorrectedS = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.skeinS], hashtableTime[SwitcherData.skeinS], True)
+            #valCorrectedQ = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.qubitS], hashtableTime[SwitcherData.qubitS], True)
+
+            ###############################################################################################################################################################
+
+            #totTime = hashtableTime[SwitcherData.scryptS] + hashtableTime[SwitcherData.groestlS] + hashtableTime[SwitcherData.skeinS] + hashtableTime[SwitcherData.qubitS]
+
+            #valCorrectedY = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.scryptS], totTime, True)
+            #valCorrectedG = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.groestlS], totTime, True)
+            #valCorrectedS = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.skeinS], totTime, True)
+            #valCorrectedQ = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.qubitS], totTime, True)
+
+            ###############################################################################################################################################################
+
+            valCorrectedY = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.scryptS], hashtableTime[SwitcherData.scryptS], True)
+            valCorrectedG = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.groestlS], hashtableTime[SwitcherData.groestlS], True)
+            valCorrectedS = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.skeinS], hashtableTime[SwitcherData.skeinS], True)
+            valCorrectedQ = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.qubitS], hashtableTime[SwitcherData.qubitS], True)
+
+            ###############################################################################################################################################################
 
         else:
-            totalCoinsScrypt  = hashtableExpectedCoins[scryptS]
-            totalCoinsGroestl = hashtableExpectedCoins[groestlS]
-            totalCoinsSkein   = hashtableExpectedCoins[skeinS]
-            totalCoinsQubit   = hashtableExpectedCoins[qubitS]
+            totalCoinsScrypt  = hashtableExpectedCoins[SwitcherData.scryptS]
+            totalCoinsGroestl = hashtableExpectedCoins[SwitcherData.groestlS]
+            totalCoinsSkein   = hashtableExpectedCoins[SwitcherData.skeinS]
+            totalCoinsQubit   = hashtableExpectedCoins[SwitcherData.qubitS]
 
-            valCorrectedY = '{0:>7}'.format(int(hashtableCorrected[scryptS]))
-            valCorrectedG = '{0:>7}'.format(int(hashtableCorrected[groestlS]))
-            valCorrectedS = '{0:>7}'.format(int(hashtableCorrected[skeinS]))
-            valCorrectedQ = '{0:>7}'.format(int(hashtableCorrected[qubitS]))
+            valCorrectedY = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.scryptS]))
+            valCorrectedG = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.groestlS]))
+            valCorrectedS = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.skeinS]))
+            valCorrectedQ = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.qubitS]))
 
-        minedY = '{0:>7}'.format(hashtableMinedCoins[scryptS])
-        minedG = '{0:>7}'.format(hashtableMinedCoins[groestlS])
-        minedS = '{0:>7}'.format(hashtableMinedCoins[skeinS])
-        minedQ = '{0:>7}'.format(hashtableMinedCoins[qubitS])
+        totMinedFormated = '{0:>7}'.format(int(round(totMined)))
+        pctCoins = self.formatPct(totMined, coins, 1)
 
         #stringOthersCoinsY = "{:7.0f}".format(totalCoinsScrypt)  + " " + self.formatPct(totalCoinsScrypt, coins, 0)  + valCorrectedY
         #stringOthersCoinsG = "{:7.0f}".format(totalCoinsGroestl) + " " + self.formatPct(totalCoinsGroestl, coins, 0) + valCorrectedG
         #stringOthersCoinsS = "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(totalCoinsSkein, coins, 0)   + valCorrectedS
         #stringOthersCoinsQ = "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(totalCoinsQubit, coins, 0)   + valCorrectedQ
 
-        stringOthersCoinsY = minedY + "/" + "{:7.0f}".format(totalCoinsScrypt)  + valCorrectedY
-        stringOthersCoinsG = minedG + "/" + "{:7.0f}".format(totalCoinsGroestl) + valCorrectedG
-        stringOthersCoinsS = minedS + "/" + "{:7.0f}".format(totalCoinsSkein)   + valCorrectedS
-        stringOthersCoinsQ = minedQ + "/" + "{:7.0f}".format(totalCoinsQubit)   + valCorrectedQ
+        stringOthersCoinsY = minedY + "/" + "{:7.0f}".format(totalCoinsScrypt)  + " " + self.formatPct(hashtableMinedCoins[SwitcherData.scryptS], totalCoinsScrypt, 1) + valCorrectedY + " "
+        stringOthersCoinsG = minedG + "/" + "{:7.0f}".format(totalCoinsGroestl) + " " + self.formatPct(hashtableMinedCoins[SwitcherData.groestlS], totalCoinsGroestl, 1) + valCorrectedG + " "
+        stringOthersCoinsS = minedS + "/" + "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(hashtableMinedCoins[SwitcherData.skeinS], totalCoinsSkein, 1) + valCorrectedS + " "
+        stringOthersCoinsQ = minedQ + "/" + "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(hashtableMinedCoins[SwitcherData.qubitS], totalCoinsQubit, 1) + valCorrectedQ + " "
 
         stringPrice = '{0:>10} $'.format(int(currentPrice * valCorrected / float(config_json["scryptHashRate"]))) + '{0:>10} $ '.format(int((currentPrice * valCorrected)))
 
         fcY = fcG = fcS = fcQ = hashColorF3[status]
         bcY = bcG = bcS = bcQ = hashColorB3[status]
 
-        if active == scryptS:
+        if active == SwitcherData.scryptS:
             fcY = foregroundActive
 
-        if active == groestlS:
+        if active == SwitcherData.groestlS:
             fcG = foregroundActive
 
-        if active == skeinS:
+        if active == SwitcherData.skeinS:
             fcS = foregroundActive
 
-        if active == qubitS:
+        if active == SwitcherData.qubitS:
             fcQ = foregroundActive
 
 
@@ -306,26 +344,28 @@ class HTMLBuilder():
         self.p( switchtext, tforeground, hashColorB2[status] )
         self.p( currentPriceFormated, priceForegroundColor, hashColorB2[status])
         self.p( stringPrice, tforeground, hashColorB2[status])
+        if (config_json["scryptFactor"]):
+            self.p( " ", colorBackground=spacerColor)
+            self.p( stringOthersCoinsY, fcY, bcY)
         self.p( " ", colorBackground=spacerColor)
-        self.p( stringOthersCoinsY + " ", fcY, bcY)
+        self.p( stringOthersCoinsG, fcG, bcG)
         self.p( " ", colorBackground=spacerColor)
-        self.p( stringOthersCoinsG + " ", fcG, bcG)
+        self.p( stringOthersCoinsS, fcS, bcS)
         self.p( " ", colorBackground=spacerColor)
-        self.p( stringOthersCoinsS + " ", fcS, bcS)
+        self.p( stringOthersCoinsQ, fcQ, bcQ)
         self.p( " ", colorBackground=spacerColor)
-        self.p( stringOthersCoinsQ + " ", fcQ, bcQ)
-        self.p( " ", colorBackground=spacerColor)
-        self.p( totalCoinsFormated + totals , hashColorF4[status], hashColorB4[status])
+        self.p( totMinedFormated + "/" + totalCoinsFormated + " " + pctCoins + " " + totals , hashColorF4[status], hashColorB4[status])
         self.p( " " + '{0:>4}'.format(int(wattsAvg)) + "W ", hashColorF1[status], hashColorB1[status])
         self.p( " ", colorBackground=spacerColor)
         self.p( '{0:>6} '.format(coinsPerWatt), hashColorF1[status], hashColorB1[status])
 
         self.pl()
 
-    def printHeader(self):
+    def printHeader(self, config_json):
         self.pl()
-        self.pl("Time    Elapsed/Stint   Algo      Exch.  Prof 1Mh/s   My profit   Scrypt           /day   Groestl          /day    Skein           /day    Qubit           /day   Tot.Coins     Tot.$   /day   Prof 1Mh/s   My profit   Watts    C/W", COLOR_CYAN)
-        #11:32:34 00 00:00:00 S  Qubit    522$    457958 $    591681 $        0   0%    785        0   0%    586        0   0%   1409        0   0%   1133        0          0 $      0          0 $         0 $    110W    0.00
+        self.pl("Time    Elapsed/Stint  Algo   Ex.   Prof 1Mh/s   My profit   Groestl (" + SwitcherData.groestlS + ")     %    /day   Skein (" + SwitcherData.skeinS + ")       %    /day   Qubit (" + SwitcherData.qubitS + ")       %    /day      Total Coins    %        Total $   /day   Prof 1Mh/s   My profit   Watts    C/W", COLOR_CYAN)
+                #21:39:41 00 00:20:53 S QBT    93 $    168965 $    218302 $        0/      0   0.0   1325        0/      0   0.0   2468        0/      0   0.0   2347        3/      8  35.8         779 $    576      41529 $     53655 $    609W    0.9
+        #self.pl("Time    Elapsed/Stint   Algo      Exch.  Prof 1Mh/s   My profit   Scrypt           /day   Groestl          /day    Skein           /day    Qubit           /day          Total Coins         Tot.$   /day   Prof 1Mh/s   My profit   Watts    C/W", COLOR_CYAN)
 
 
     def getFormatedTime(self, timestamp):
@@ -334,11 +374,11 @@ class HTMLBuilder():
 
         return "{:02.0f}".format(days) + " " + time_str
 
-    def formatPct(self, decim1, decim2, decDigits):
+    def formatPct(self, decim1, decim2, decDigits, pctSign="", decSign="."):
         if not decim2:
-            return ("{:3." + str(decDigits) + "f}%").format(0)
+            return ("{:5" + decSign + str(decDigits) + "f}" + pctSign).format(0)
 
-        return ("{:3." + str(decDigits) + "f}%").format((decim1 / decim2) * 100)
+        return ("{:5" + decSign + str(decDigits) + "f}" + pctSign).format((decim1 / decim2) * 100)
 
     def loadLines(self):
         try:

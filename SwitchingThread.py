@@ -232,7 +232,10 @@ class SwitchingThread (threading.Thread):
 
                 self.printTraceback("Unexpected error")
 
-                ErrorReport().sendReport(self.console, traceback.format_exc())
+                traceback_str = traceback.format_exc()
+
+                print traceback_str
+                ErrorReport().sendReport(self.console, traceback_str)
 
                 break
 

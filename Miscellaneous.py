@@ -182,7 +182,7 @@ class TimingsPanel(wx.Panel):
 
 class LogsExchangePanel(wx.Panel):
     POLONIEX = "poloniex"
-    MINTPAL  = "mintpal"
+    CRYPTSY  = "cryptsy"
 
     CRASHES  = "crashes"
     FREEZES  = "freezes"
@@ -229,7 +229,7 @@ class LogsExchangePanel(wx.Panel):
             print "Error: get_values - logPath"
 
         try:
-            values["exchange"] = self.MINTPAL if exchange_selection == 1 else self.POLONIEX
+            values["exchange"] = self.CRYPTSY if exchange_selection == 1 else self.POLONIEX
         except:
             print "Error: get_values - exchange"
 
@@ -300,7 +300,7 @@ class LogsExchangePanel(wx.Panel):
 
     def set_exchange(self, exchange):
         try:
-           self.exchange_box.combo_exchange.Select( 1 if exchange == self.MINTPAL else 0 )
+           self.exchange_box.combo_exchange.Select( 1 if exchange == self.CRYPTSY else 0 )
 
         except:
             print "Error: set_exchange "
@@ -398,7 +398,7 @@ class ExchangeElement(wx.StaticBoxSizer):
     def __init__(self, parent, static_box):
         wx.StaticBoxSizer.__init__(self, static_box, wx.HORIZONTAL)
 
-        self.combo_exchange = wx.ComboBox(parent, -1, size=(154, -1), choices=["poloniex", "mintpal"], style=wx.CB_READONLY)
+        self.combo_exchange = wx.ComboBox(parent, -1, size=(154, -1), choices=["poloniex", "cryptsy"], style=wx.CB_READONLY)
         parent.Bind(wx.EVT_COMBOBOX, parent.GetParent().on_control_changed, self.combo_exchange)
         self.Add(self.combo_exchange, 0, wx.BOTTOM | wx.LEFT, 5)
 

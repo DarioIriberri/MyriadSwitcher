@@ -13,16 +13,20 @@ from collections import Counter
 
 SECONDS_PER_DAY = 86400
 
-scryptS  = " Scrypt "
-groestlS = " Groestl"
-skeinS   = " SKein  "
-qubitS   = " Qubit  "
+scryptS  = "SCY"
+groestlS = "GRO"
+skeinS   = "SKN"
+qubitS   = "QBT"
+#scryptS  = " Scrypt "
+#groestlS = " Groestl"
+#skeinS   = " SKein  "
+#qubitS   = " Qubit  "
 
 MINER_CHOICES = ["sgminer", "cgminer", "bfgminer", "reaper", "cudaminer", "minerd"]
 
 EXCHANGE_POLONIEX = "poloniex"
-EXCHANGE_MINTPAL  = "mintpal"
-exchangesURL = {EXCHANGE_POLONIEX: "https://poloniex.com/public?command=returnTicker", EXCHANGE_MINTPAL: "https://api.mintpal.com/v1/market/stats/MYR/BTC"}
+EXCHANGE_CRYPTSY  = "cryptsy"
+exchangesURL = {EXCHANGE_POLONIEX: "https://poloniex.com/public?command=returnTicker", EXCHANGE_CRYPTSY: "http://pubapi2.cryptsy.com/api.php?method=singlemarketdata&marketid=200"}
 
 MODE_MAX_PER_DAY = 1
 MODE_MAX_PER_WATT = 2
@@ -36,8 +40,9 @@ DATE_FORMAT_PATTERN = "%m/%d/%Y %H:%M:%S"
 LOG_FORMAT_PATTERN = "%Y-%m-%d-%H%M%S"
 
 urlScryptAPI    = "https://myr.nut2pools.com/index.php?page=api&action=getuserbalance&api_key=9d60c24d07665b9b8a4831a129bcb6d6ae39aa0474cdeb45a4e87f4a9f9939e0"
-urlGroestlAPI   = "http://myriadcoin-groestl.miningpoolhub.com/index.php?page=api&action=getuserbalance&api_key=9f335766b5075678cc6aa4dd80c11695b4f546cf3e348060216c7fbb80da317f"
+urlGroestlAPI   = "http://myriadcoin-groestl.miningpoolhub.com/index.php?page=api&action=getuserbalance&api_key=0d0c81b565ee0eb34e3b35fd49f96b5d06987b6b9922ebe8b1cbcb9f6198ad78"
 urlSkeinAPI     = "http://myrsk.cryptorus.com/index.php?page=api&action=getuserbalance&api_key=8a3a5cd38982d88a78d9faac706246f003c287695515bd32322cc85f91a3e5de"
+#urlSkeinAPI     = "https://myrskein.suprnova.cc/index.php?page=api&action=getuserbalance&api_key=aa2589ba1fec4cab2dd96d40e191b47f02779400dab8986389d6d3b45ce617e5"
 urlQubitAPI     = "http://myr.nonce-pool.com/index.php?page=api&action=getuserbalance&api_key=bef60a0f9091956d60e15354ccaf32c0b0d1dbda94681b356c55701f64201154"
 
 class SwitcherData():
@@ -62,7 +67,7 @@ class SwitcherData():
 
         self.config_json = self.loadConfig(activeFile)
 
-        self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 60000)
+        self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 1000)
 
         time_now = time.strftime(DATE_FORMAT_PATTERN, time.localtime())
         time_now_file = time.strftime(LOG_FORMAT_PATTERN, time.localtime())
@@ -102,7 +107,8 @@ class SwitcherData():
         startT2 = time.time()
 
         try:
-            getResult = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=info")
+            #getResult = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=info")
+            getResult = self.httpGet("http://birdonwheels5.no-ip.org/api/status?q=getInfo")
 
         except:
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
@@ -130,10 +136,15 @@ class SwitcherData():
             obj = json.loads(getResult)
             objCoins = json.loads(getResultCoins)
 
-            diffScrypt 	= obj["difficulty_scrypt"]
-            diffGroestl = obj["difficulty_groestl"]
-            diffSkein 	= obj["difficulty_skein"]
-            diffQubit 	= obj["difficulty_qubit"]
+            #diffScrypt  = obj["difficulty_scrypt"]
+            #diffGroestl = obj["difficulty_groestl"]
+            #diffSkein 	 = obj["difficulty_skein"]
+            #diffQubit 	 = obj["difficulty_qubit"]
+
+            diffScrypt 	= obj["info"]["difficulty_scrypt"]
+            diffGroestl = obj["info"]["difficulty_groestl"]
+            diffSkein 	= obj["info"]["difficulty_skein"]
+            diffQubit 	= obj["info"]["difficulty_qubit"]
 
             per = objCoins["per"]
 
@@ -153,8 +164,8 @@ class SwitcherData():
             if EXCHANGE_POLONIEX == self.config_json["exchange"]:
                 self.currentPrice = float(objPrice["BTC_MYR"]["last"]) * 100000000
 
-            if EXCHANGE_MINTPAL == self.config_json["exchange"]:
-                self.currentPrice = float(objPrice[0]["last_price"]) * 100000000
+            if EXCHANGE_CRYPTSY == self.config_json["exchange"]:
+                self.currentPrice = float(objPrice["return"]["markets"]["MYR"]["lasttradeprice"]) * 100000000
 
         self.prevHashtableCorrected = self.hashtableCorrected
 
@@ -220,6 +231,7 @@ class SwitcherData():
         self.printData(status, prevSwitchtext, switchtext)
 
         self.htmlBuilder.log(self.config_json, self.logFileName)
+        self.dumpData(self.htmlBuilder)
 
     def getMiner(self):
         return self.hashtableMiners[self.current] if self.current in self.hashtableMiners.keys() else None
@@ -281,7 +293,8 @@ class SwitcherData():
         return not (config_json["scryptFactor"] or config_json["groestlFactor"] or config_json["skeinFactor"] or config_json["qubitFactor"])
 
     def httpGet(self, url):
-        return urllib2.urlopen(url).read()
+        req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
+        return urllib2.urlopen(req).read()
 
     def buildHashtableMiners(self, config_json):
         hashtableMiners = {}
@@ -408,7 +421,7 @@ class SwitcherData():
         except:
             return 0
 
-        return int(round(confirmed + unconfirmed))
+        return confirmed + unconfirmed
 
     def calculateWatts(self, status, resume):
         currentWatts = 0
@@ -470,9 +483,9 @@ class SwitcherData():
 
                 self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
                                           self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped,
-                                           self.hashtableExpectedCoins, hashtableCoinsMinedStint, self.hashtableCorrected, self.hashtableTime, self.config_json)
+                                           self.hashtableExpectedCoins, hashtableCoinsMinedStint, self.hashtableMinedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
-            self.htmlBuilder.printHeader()
+            self.htmlBuilder.printHeader(self.config_json)
 
             self.coinsStint = 0
             self.wattsStint = 0
@@ -488,7 +501,7 @@ class SwitcherData():
 
         self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
                                    self.nextValCorrected, self.totalCoins, self.wattsAvg, self.current, self.globalStopped,
-                                   self.hashtableExpectedCoins, self.hashtableMinedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
+                                   self.hashtableExpectedCoins, self.hashtableMinedCoins, None, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
         self.first = False
 
@@ -519,6 +532,7 @@ class SwitcherData():
             pass
 
     def log(self):
+        #self.dumpData(self.htmlBuilder)
         self.htmlBuilder.log(self.config_json, self.logFileName)
 
     def end(self):

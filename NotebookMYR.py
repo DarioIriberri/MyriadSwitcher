@@ -186,7 +186,7 @@ class NotebookMYR(wx.Notebook):
                 "timeout"				: 	30,
                 "sleepSHORTDebug"		: 	20,
                 "sleepLONGDebug"		: 	20,
-                "exchange"				: 	"\"mintpal\"",
+                "exchange"				: 	"\"cryptsy\"",
                 "debug"					: 	0,
                 "monitor"				: 	1,
                 "reboot"				: 	0,
