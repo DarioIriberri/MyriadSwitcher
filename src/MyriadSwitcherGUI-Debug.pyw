@@ -10,5 +10,5 @@ if __name__ == "__main__":
     #warnings.simplefilter('ignore', DeprecationWarning)
 
     app = wx.App(False)
-    frame = FrameMYR.FrameMYR()
+    frame = FrameMYR.FrameMYR("../")
     app.MainLoop()

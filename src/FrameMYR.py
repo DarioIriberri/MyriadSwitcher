@@ -1,23 +1,25 @@
 __author__ = 'Dario'
 
+from notebook import NotebookMYR
+from switcher import SwitcherData
 import wx
 import os
 import time
 import threading
 from wx.lib.agw.ribbon.page import GetSizeInOrientation
 import wx.lib.newevent
-import NotebookMYR
 import PanelConsole
-import SwitcherData
 from Tkinter import Tk
 
 
 VERSION  = "0.2"
-REVISION = 28
+REVISION = 29
 
 
 class FrameMYR(wx.Frame):
-    def __init__(self):
+    def __init__(self, resouce_path):
+        self.resouce_path = resouce_path
+
         f = open('activeConfig')
         lines = f.readlines()
         f.close()
@@ -123,7 +125,7 @@ class FrameMYR(wx.Frame):
         self.sizerTotal.Add(sizerButtons, 0, wx.EXPAND)
         self.sizerTotal.Add(self.panelConsole, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 3)
 
-        self.icon = wx.Icon('img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
+        self.icon = wx.Icon(self.resouce_path + 'img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
         self.SetIcon(self.icon)
         self.SetSizer(self.sizerTotal)
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUBAR))

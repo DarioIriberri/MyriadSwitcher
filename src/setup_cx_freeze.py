@@ -1,4 +1,12 @@
 from cx_Freeze import setup, Executable
+#import sys
+#sys.path.append("/src")
+#sys.path.append("/notebook")
+#sys.path.append("/difficulty")
+#sys.path.append("/switcher")
+#sys.path.append("/src/notebook")
+#sys.path.append("/src/difficulty")
+#sys.path.append("/src/switcher")
 import FrameMYR
 
 currentRevision = FrameMYR.REVISION

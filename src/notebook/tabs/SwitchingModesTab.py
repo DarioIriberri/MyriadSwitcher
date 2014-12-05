@@ -1,8 +1,9 @@
 __author__ = 'Dario'
 
+
 import wx
 import sys
-import NotebookTab as nbt
+from notebook.tabs import NotebookTab as nbt
 
 SLIDER_MAX = 1000
 

@@ -1,8 +1,8 @@
 __author__ = 'Dario'
 
+from notebook.tabs import NotebookTab as nbt
 import wx
 import os.path
-import NotebookTab as nbt
 import wx.lib.filebrowsebutton as Filebrowser
 
 

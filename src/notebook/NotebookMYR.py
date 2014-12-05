@@ -1,12 +1,10 @@
 __author__ = 'Dario'
 
 import wx
-import MainConfigTab
-import SwitchingModesTab
-import Miscellaneous
 import json
 import copy
 import io
+from notebook.tabs import SwitchingModesTab, MainConfigTab, MiscellaneousTab
 
 
 class NotebookMYR(wx.Notebook):
@@ -99,21 +97,21 @@ class NotebookMYR(wx.Notebook):
         if tab_flags & self.MAIN_TAB:
             self.tabMainConfig = MainConfigTab.TabPanel(self, frame_myr)
             self.AddPage(self.tabMainConfig, "Main Config")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap('img/aquachecked.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/aquachecked.ico', wx.BITMAP_TYPE_ICO)))
 
             i += 1
 
         if tab_flags & self.SWITCH_TAB:
             self.tabSwitchModes = SwitchingModesTab.TabPanel(self, frame_myr)
             self.AddPage(self.tabSwitchModes, "Switching Modes")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap('img/switching16.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/switching16.ico', wx.BITMAP_TYPE_ICO)))
 
             i += 1
 
         if tab_flags & self.MISC_TAB:
-            self.tabMiscellaneous = Miscellaneous.TabPanel(self, frame_myr)
+            self.tabMiscellaneous = MiscellaneousTab.TabPanel(self, frame_myr)
             self.AddPage(self.tabMiscellaneous, "Miscellaneous")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap('img/advanced.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/advanced.ico', wx.BITMAP_TYPE_ICO)))
 
         return self
 

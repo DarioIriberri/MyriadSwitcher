@@ -1,5 +1,8 @@
 __author__ = 'Dario'
 
+import SwitcherData
+import ErrorReport, HTMLBuilder
+
 import threading
 import psutil
 import subprocess
@@ -10,9 +13,6 @@ import os
 import logging
 import socket
 import traceback
-import HTMLBuilder
-import SwitcherData
-from ErrorReport import ErrorReport
 
 
 MIN_TIME_THREAD_PROBED = 60

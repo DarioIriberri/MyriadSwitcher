@@ -1,10 +1,10 @@
 from wx.lib.agw.speedmeter import styles
+from switcher import SwitchingThread
 
 __author__ = 'Dario'
 
 
 import wx
-import SwitchingThread
 import wx.html2 as webview
 import wx.lib.newevent
 
