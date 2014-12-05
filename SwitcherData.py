@@ -415,7 +415,7 @@ class SwitcherData():
 
     def getAlgoCoins(self, url):
         try:
-            getAlgoData  = json.loads(self.httpGet(url))
+            getAlgoData  = json.loads(self.httpGet(url, 10))
 
             confirmed = float(getAlgoData['getuserbalance']['data']['confirmed'])
             unconfirmed = float(getAlgoData['getuserbalance']['data']['unconfirmed'])
