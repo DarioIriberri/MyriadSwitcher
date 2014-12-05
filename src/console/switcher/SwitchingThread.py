@@ -1,7 +1,8 @@
 __author__ = 'Dario'
 
 from console import HTMLBuilder
-import SwitcherData, ErrorReport
+import SwitcherData
+from ErrorReport import ErrorReport
 
 import threading
 import psutil
@@ -69,7 +70,7 @@ class SwitchingThread (threading.Thread):
         cpu1               = None
         scriptPath         = None
         prevSwitchtext     = None
-        globalStopped      = False
+        globalStopped      = True
         wasStopped         = False
         stopReason         = None
         maxMinerFails      = False
@@ -87,6 +88,7 @@ class SwitchingThread (threading.Thread):
                     if threadStopped:
                         break
                     else:
+                        loopMinerStatus = self.waitLoop(cpu1, switcherData.config_json["sleepSHORT"], globalStopped, switcherData)
                         continue
 
                 # New Algo found to switch to!
@@ -186,41 +188,7 @@ class SwitchingThread (threading.Thread):
                     breakAt = "after prints, max fails"
                     break
 
-                cpuF1 = cpu1
-                loopMinerStatus = None
-
-                t_initSleep = time.time()
-
-                while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
-                    if self.checkSwitchingThreadStopped():
-                        break
-
-                    if not globalStopped:
-                        try:
-                            cpuF2 = self.getCPUUsages(switcherData.getMiner())
-
-                            if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), switcherData.config_json):
-                                loopMinerStatus = MINER_CRASHED
-                                break
-
-                            if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
-                                if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), switcherData.config_json):
-                                    loopMinerStatus = MINER_FREEZED
-                                    break
-
-                                else:
-                                    cpuF1 = cpuF2
-
-                        except Exception, ex:
-                            logging.exception("Loop error")
-
-                    #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
-                    time.sleep(LOOP_SLEEP_TIME)
-
-                if self.configChangedFlag:
-                    t_initSleep = time.time()
-
-                self.configChangedFlag = False
+                loopMinerStatus = self.waitLoop(cpu1, sleepTime, globalStopped, switcherData)
 
                 switcherData.loadConfig(thread.activeConfigFile)
 
@@ -236,6 +204,39 @@ class SwitchingThread (threading.Thread):
 
         switcherData.end()
         self.console.parent.onMiningProcessStopped()
+
+    def waitLoop(self, cpu1, sleepTime, globalStopped, switcherData):
+        cpuF1 = cpu1
+        t_initSleep = time.time()
+
+        while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
+            if self.checkSwitchingThreadStopped():
+                return None
+
+            if not globalStopped:
+                try:
+                    cpuF2 = self.getCPUUsages(switcherData.getMiner())
+
+                    if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), switcherData.config_json):
+                        return MINER_CRASHED
+
+                    if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
+                        if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), switcherData.config_json):
+                            return MINER_FREEZED
+
+                        else:
+                            cpuF1 = cpuF2
+
+                except Exception, ex:
+                    logging.exception("Loop error")
+
+            #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
+            time.sleep(LOOP_SLEEP_TIME)
+
+        if self.configChangedFlag:
+            t_initSleep = time.time()
+
+        self.configChangedFlag = False
 
     def configChanged(self):
         self.configChangedFlag = True
