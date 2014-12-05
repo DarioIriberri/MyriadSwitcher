@@ -137,7 +137,7 @@ class HTMLBuilder():
             startT = time.time()
 
             f = open(logFileName, "w")
-            f.write(self.buildHTML(self.lines, 100))
+            f.write(self.buildHTML(self.lines, 80))
             f.close()
 
         htmlTime = time.time() - startT

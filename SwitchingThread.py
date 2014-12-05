@@ -87,6 +87,7 @@ class SwitchingThread (threading.Thread):
                     if threadStopped:
                         break
                     else:
+                        loopMinerStatus = self.waitLoop(cpu1, switcherData.config_json["sleepSHORT"], globalStopped, switcherData)
                         continue
 
                 # New Algo found to switch to!
