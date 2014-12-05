@@ -13,7 +13,7 @@ from Tkinter import Tk
 
 
 VERSION  = "0.2"
-REVISION = 23
+REVISION = 24
 BRANCH   = "PBQ"
 
 
@@ -169,7 +169,8 @@ class FrameMYR(wx.Frame):
 
     @staticmethod
     def getVersion():
-        return VERSION + "." + str(REVISION) + "-" + BRANCH
+        #return VERSION + "." + str(REVISION) + "-" + BRANCH
+        return VERSION + "." + str(REVISION)
 
     # Sets the main window title
     def setTitle(self, activeFile):

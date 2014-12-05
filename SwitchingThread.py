@@ -186,43 +186,7 @@ class SwitchingThread (threading.Thread):
                     breakAt = "after prints, max fails"
                     break
 
-                cpuF1 = cpu1
-                loopMinerStatus = None
-
-                t_initSleep = time.time()
-
-                while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
-                    if self.checkSwitchingThreadStopped():
-                        break
-
-                    if not globalStopped:
-                        try:
-                            cpuF2 = self.getCPUUsages(switcherData.getMiner())
-
-                            if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), switcherData.config_json):
-                                loopMinerStatus = MINER_CRASHED
-                                break
-
-                            if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
-                                if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), switcherData.config_json):
-                                    loopMinerStatus = MINER_FREEZED
-                                    break
-
-                                else:
-                                    cpuF1 = cpuF2
-
-                        except Exception, ex:
-                            exc_type, exc_value, exc_traceback = sys.exc_info()
-                            print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-                            logging.exception("Loop error")
-
-                    #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
-                    time.sleep(LOOP_SLEEP_TIME)
-
-                if self.configChangedFlag:
-                    t_initSleep = time.time()
-
-                self.configChangedFlag = False
+                loopMinerStatus = self.waitLoop(cpu1, sleepTime, globalStopped, switcherData)
 
                 switcherData.loadConfig(thread.activeConfigFile)
 
@@ -241,6 +205,39 @@ class SwitchingThread (threading.Thread):
 
         switcherData.end()
         self.console.parent.onMiningProcessStopped()
+
+    def waitLoop(self, cpu1, sleepTime, globalStopped, switcherData):
+        cpuF1 = cpu1
+        t_initSleep = time.time()
+
+        while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
+            if self.checkSwitchingThreadStopped():
+                return None
+
+            if not globalStopped and switcherData.config_json["monitor"]:
+                try:
+                    cpuF2 = self.getCPUUsages(switcherData.getMiner())
+
+                    if self.minerCrashed(cpu1, cpuF2, switcherData.getMiner(), switcherData.config_json):
+                        return MINER_CRASHED
+
+                    if (cpuF2[TIME_PROBED] - cpuF1[TIME_PROBED]) > MIN_TIME_THREAD_PROBED:
+                        if self.minerFreezed(cpuF1, cpuF2, switcherData.getMiner(), switcherData.config_json):
+                            return MINER_FREEZED
+
+                        else:
+                            cpuF1 = cpuF2
+
+                except Exception, ex:
+                    logging.exception("Loop error")
+
+            #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
+            time.sleep(LOOP_SLEEP_TIME)
+
+        if self.configChangedFlag:
+            t_initSleep = time.time()
+
+        self.configChangedFlag = False
 
     def configChanged(self):
         self.configChangedFlag = True

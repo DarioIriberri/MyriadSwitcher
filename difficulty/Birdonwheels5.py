@@ -5,9 +5,9 @@ import json
 import threading
 
 
-class Birdsonwheels5 (threading.Thread):
+class Birdonwheels5 (threading.Thread):
     def __init__(self, parent):
-        super(Birdsonwheels5, self).__init__()
+        super(Birdonwheels5, self).__init__()
 
         self.parent = parent
 
