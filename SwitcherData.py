@@ -7,8 +7,10 @@ import socket
 import urllib2
 import cPickle
 import copy
-import HTMLBuilder
 from collections import Counter
+
+import HTMLBuilder
+import difficulty.Difficulties as Difficulties
 
 
 SECONDS_PER_DAY = 86400
@@ -65,6 +67,8 @@ class SwitcherData():
 
         self.console = console
 
+        self.difficulties = Difficulties.Difficulties(self)
+
         self.config_json = self.loadConfig(activeFile)
 
         self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 1000)
@@ -100,18 +104,16 @@ class SwitcherData():
         skeinFactor	    = hashtableFactors[skeinS]
         qubitFactor	    = hashtableFactors[qubitS]
 
-        getResult = None
         getResultCoins = None
         getResultPrice = None
 
         startT2 = time.time()
 
         try:
-            #getResult = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=info")
-            getResult = self.httpGet("http://birdonwheels5.no-ip.org/api/status?q=getInfo")
+            self.difficulties.fetchDifficulties()
 
         except:
-            return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
+            return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "
 
         try:
             getResultCoins = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=coins")
@@ -125,26 +127,17 @@ class SwitcherData():
             priceOK = True
 
         except:
-            #Write-Host "Something went wrong while retrieving the exchange rate data :-(                                                                                                                                                          " -foreground "white" -background "black"
             self.currentPrice = 0
             priceOK = False
 
-        #httpTime = time.time() - startT2
-
         per = 0
         try:
-            obj = json.loads(getResult)
             objCoins = json.loads(getResultCoins)
 
-            #diffScrypt  = obj["difficulty_scrypt"]
-            #diffGroestl = obj["difficulty_groestl"]
-            #diffSkein 	 = obj["difficulty_skein"]
-            #diffQubit 	 = obj["difficulty_qubit"]
-
-            diffScrypt 	= obj["info"]["difficulty_scrypt"]
-            diffGroestl = obj["info"]["difficulty_groestl"]
-            diffSkein 	= obj["info"]["difficulty_skein"]
-            diffQubit 	= obj["info"]["difficulty_qubit"]
+            diffScrypt   = self.difficulties.getScryptDifficulty()
+            diffGroestl  = self.difficulties.getGroestlDifficulty()
+            diffSkein 	 = self.difficulties.getSkeinDifficulty()
+            diffQubit 	 = self.difficulties.getQubitDifficulty()
 
             per = objCoins["per"]
 
@@ -292,9 +285,17 @@ class SwitcherData():
     def noAlgoSelected(self, config_json):
         return not (config_json["scryptFactor"] or config_json["groestlFactor"] or config_json["skeinFactor"] or config_json["qubitFactor"])
 
-    def httpGet(self, url):
+    def httpGet(self, url, timeout=None):
+        prev_timeout = socket.getdefaulttimeout()
+        if timeout:
+            socket.setdefaulttimeout(timeout)
+
         req = urllib2.Request(url, headers={'User-Agent' : "Magic Browser"})
-        return urllib2.urlopen(req).read()
+        resp = urllib2.urlopen(req).read()
+
+        socket.setdefaulttimeout(prev_timeout)
+
+        return resp
 
     def buildHashtableMiners(self, config_json):
         hashtableMiners = {}
