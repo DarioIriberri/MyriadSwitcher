@@ -1,14 +1,14 @@
-from wx.lib.agw.speedmeter import styles
-from switcher import SwitchingThread
-
 __author__ = 'Dario'
 
+import time
 
+from wx.lib.agw.speedmeter import styles
 import wx
 import wx.html2 as webview
 import wx.lib.newevent
 
-import time
+from console.switcher import SwitchingThread
+
 
 ConsoleEvent, EVT_CONSOLE_EVENT = wx.lib.newevent.NewEvent()
 MAX_STOP_TIME = 45

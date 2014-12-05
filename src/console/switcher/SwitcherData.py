@@ -1,6 +1,6 @@
 __author__ = 'Dario'
 
-from switcher import HTMLBuilder
+from console import HTMLBuilder
 
 import time
 import json

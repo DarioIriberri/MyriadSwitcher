@@ -1,6 +1,7 @@
 __author__ = 'Dario'
 
 import PanelConsole
+
 import wx
 import time
 import cPickle

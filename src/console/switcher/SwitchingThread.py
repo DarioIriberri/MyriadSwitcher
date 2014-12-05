@@ -1,7 +1,7 @@
 __author__ = 'Dario'
 
-import SwitcherData
-import ErrorReport, HTMLBuilder
+from console import HTMLBuilder
+import SwitcherData, ErrorReport
 
 import threading
 import psutil

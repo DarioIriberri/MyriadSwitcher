@@ -1,14 +1,15 @@
+from console import PanelConsole
+
 __author__ = 'Dario'
 
 from notebook import NotebookMYR
-from switcher import SwitcherData
+from console.switcher import SwitcherData
 import wx
 import os
 import time
 import threading
 from wx.lib.agw.ribbon.page import GetSizeInOrientation
 import wx.lib.newevent
-import PanelConsole
 from Tkinter import Tk
 
 
