@@ -213,7 +213,7 @@ class SwitchingThread (threading.Thread):
             if self.checkSwitchingThreadStopped():
                 return None
 
-            if not globalStopped:
+            if not globalStopped and switcherData.config_json["monitor"]:
                 try:
                     cpuF2 = self.getCPUUsages(switcherData.getMiner())
 
