@@ -8,7 +8,7 @@ class Birdonwheels5(DifficultySource):
         DifficultySource.__init__(self, parent, queue, timeout)
 
     def fetchDifficulties(self):
-        return self.fetchDifficultiesURL("http://birdonwheels5.no-ip.org/api/status?q=getInfo1")
+        return self.fetchDifficultiesURL("http://birdonwheels5.no-ip.org/api/status?q=getInfo")
 
     def getScryptDifficulty(self):
         return self.obj["info"]["difficulty_scrypt"]
