@@ -13,7 +13,7 @@ from Tkinter import Tk
 
 
 VERSION  = "0.2"
-REVISION = 26
+REVISION = 28
 
 
 class FrameMYR(wx.Frame):
