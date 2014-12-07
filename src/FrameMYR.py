@@ -8,9 +8,8 @@ import wx
 import os
 import time
 import threading
-from wx.lib.agw.ribbon.page import GetSizeInOrientation
-import wx.lib.newevent
 from Tkinter import Tk
+from event.EventLib import EVT_STATUS_BAR_EVENT
 
 
 VERSION  = "0.2"
@@ -91,6 +90,7 @@ class FrameMYR(wx.Frame):
         #self.panelNotebook.SetTransparent(255)
         #self.panelConsole = wx.Panel(self)
         self.panelConsole = PanelConsole.PanelConsole(self, size=(1500, -1))
+        self.panelConsole.addMessageEventListener(self.set_status_text)
         #self.panelConsole = webview.WebView.New(PanelConsole.PanelConsole)
         self.panelConsole.SetBackgroundColour("Black")
 
@@ -134,7 +134,6 @@ class FrameMYR(wx.Frame):
         self.Layout()
         self.Show()
 
-        self.StatusBarEvent, EVT_STATUS_BAR_EVENT = wx.lib.newevent.NewEvent()
         EVT_STATUS_BAR_EVENT(self, self.on_mouse_over)
 
         self.Maximize()
@@ -179,6 +178,10 @@ class FrameMYR(wx.Frame):
 
     def on_mouse_over(self, event):
         self.status_bar.SetStatusText(event.message)
+
+    def set_status_text(self, status_text):
+        if status_text:
+            self.status_bar.SetStatusText(status_text)
 
     def onAbout(self, event):
         # Create a message dialog box
@@ -326,6 +329,7 @@ class FrameMYR(wx.Frame):
         self.buttonStop.Enable(False)
         self.buttonStop.SetLabelText("Stop")
 
+
 class StopLabelSingletonThread (threading.Thread):
     _instance = None
     lock = threading.RLock()
@@ -347,23 +351,3 @@ class StopLabelSingletonThread (threading.Thread):
                 mod = count % 4
                 self.buttonStop.SetLabelText("Wait" + (mod * ".") + ( ( 4 - mod ) * " ") )
                 time.sleep(0.5)
-
-#def __init__(self, coin):
-#        wx.Dialog.__init__(self, None, -1, "%s Donation" %coin,
-#            style=wx.DEFAULT_DIALOG_STYLE|wx.THICK_FRAME|wx.RESIZE_BORDER|
-#                wx.TAB_TRAVERSAL)
-#        #hwin = wx.html.HtmlWindow(self, -1, size=(400,200))
-#        hwin = wx.html2.WebView.New(self, -1, size=(400, 200))
-#        vers = {}
-#        vers["python"] = sys.version.split()[0]
-#        vers["wxpy"] = wx.VERSION_STRING
-#        hwin.SetPage('<html><head><title>Myriad Switcher 0.1 User Guide</title></head>	<body><b><a href="bitcoin:1PS2WmKorxCeFoNZbZ5XKgbiDjofxFgcPL?amount=0.00100000">1PS2WmKorxCeFoNZbZ5XKgbiDjofxFgcPL</a></b></body></html>', '')
-#        #hwin.SetPage('<html><head><title>Myriad Switcher 0.1 User Guide</title></head>	<body><b><a href="http://www.as.com">1PS2WmKorxCeFoNZbZ5XKgbiDjofxFgcPL</a></b></body></html>', "")
-#        btn = hwin.FindWindowById(wx.ID_OK)
-#        #irep = hwin.GetInternalRepresentation()
-#        #hwin.SetSize((irep.GetWidth()+25, irep.GetHeight()+10))
-#        self.SetClientSize(hwin.GetSize())
-#        self.CentreOnParent(wx.BOTH)
-#        self.SetFocus()
-
-#----------------------------------------------------------------------

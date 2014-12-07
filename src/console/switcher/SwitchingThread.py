@@ -17,9 +17,9 @@ import traceback
 
 
 MIN_TIME_THREAD_PROBED = 60
-CPU_TIME    = 0
-TIME_PROBED = 1
-LOOP_SLEEP_TIME = 2
+CPU_TIME               = 0
+TIME_PROBED            = 1
+LOOP_SLEEP_TIME        = 2
 
 MINER_CRASHED = "crashes"
 MINER_FREEZED = "freezes"
@@ -58,7 +58,6 @@ class SwitchingThread (threading.Thread):
         self.console.parent.onMiningProcessStarted()
 
         switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
-        #config_json = self.loadConfig(thread.activeConfigFile)
 
         if self.resume or self.rebooting:
             switcherData.loadData()
@@ -68,6 +67,7 @@ class SwitchingThread (threading.Thread):
         #Init vars
         switchtext         = None
         cpu1               = None
+        prevScriptPath     = None
         scriptPath         = None
         prevSwitchtext     = None
         globalStopped      = True
@@ -134,6 +134,8 @@ class SwitchingThread (threading.Thread):
                 globalStopped = switcherData.globalStopped
                 wasStopped    = switcherData.wasStopped
 
+                prevScriptPath = scriptPath
+
                 if globalStopped:
                     self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
@@ -142,7 +144,7 @@ class SwitchingThread (threading.Thread):
 
                     switchtext = "S " + switcherData.current
 
-                if ( restart and not maxMinerFails and not globalStopped ) or ( wasStopped and not globalStopped ):
+                if self.checkRestart(prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
                     sleepTime = switcherData.config_json["sleepLONG"]
 
                     t1 = time.time()
@@ -204,6 +206,14 @@ class SwitchingThread (threading.Thread):
 
         switcherData.end()
         self.console.parent.onMiningProcessStopped()
+
+    def checkRestart(self, prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
+        return ( restart and not maxMinerFails and not globalStopped ) or \
+               ( wasStopped and not globalStopped ) or \
+               self.scriptChanged(prevScriptPath, scriptPath, restart, globalStopped)
+
+    def scriptChanged(self, prevScriptPath, scriptPath, restart, globalStopped):
+        return not restart and not globalStopped and ( prevScriptPath and scriptPath and (prevScriptPath != scriptPath) )
 
     def waitLoop(self, cpu1, sleepTime, globalStopped, switcherData):
         cpuF1 = cpu1

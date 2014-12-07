@@ -1,6 +1,6 @@
 __author__ = 'Dario'
 
-import PanelConsole
+from event.EventLib import *
 
 import wx
 import time
@@ -46,10 +46,11 @@ SESSION_FILE_NAME = "m_s_session.myr"
 
 
 class HTMLBuilder():
-    def __init__(self, console, refresh_milisecs):
+    def __init__(self, console, refresh_milisecs=180000):
         self.line  = str()
         self.lines = []
         self.console = console
+        self.htmlEvent = None
 
         self.refresh_milisecs = str(refresh_milisecs)
 
@@ -111,8 +112,11 @@ class HTMLBuilder():
         self.lines.append(self.line)
         self.line = str()
 
-        evt = PanelConsole.ConsoleEvent(html=self.buildHTML(self.lines))
-        wx.PostEvent(self.console, evt)
+        wx.PostEvent(self.console, ConsoleEvent(html=self.buildHTML(self.lines)))
+        #self.fireHTMLEvent(self.buildHTML(self.lines))
+        #self.console.onConsoleEvent(self.buildHTML(self.lines))
+        #thread = threading.Thread(target=self.console.onConsoleEvent, args = (self.buildHTML(self.lines),))
+        #thread.start()
 
         #self.wv.SetPage(self.buildHTML(self.lines), "/")
         #self.wv.LoadURL("https://dl.dropboxusercontent.com/u/19353176/Myriad_log/2014-05-04-040554.html")

@@ -30,6 +30,8 @@ MODE_MAX_PER_HYBRID = 3
 
 num = 20.11656761
 
+CURRENT_BLOCK_REWARD = 1000
+
 DATA_FILE_NAME = "m_s_data.myr"
 
 DATE_FORMAT_PATTERN = "%m/%d/%Y %H:%M:%S"
@@ -50,6 +52,7 @@ class SwitcherData():
         self.wattsStint                         = 0
         self.storedGlobalTime                   = 0
         self.watts                              = 0
+        self.config_json                        = None
 
         self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
         self.hashtableExpectedCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
@@ -61,6 +64,7 @@ class SwitcherData():
         self.config_json = self.loadConfig(activeFile)
 
         self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 60000)
+        #self.htmlBuilder.addHTMLEventListener(self.console.onConsoleEvent)
 
         time_now = time.strftime(DATE_FORMAT_PATTERN, time.localtime())
         time_now_file = time.strftime(LOG_FORMAT_PATTERN, time.localtime())
@@ -95,20 +99,32 @@ class SwitcherData():
 
         getResultCoins = None
         getResultPrice = None
+        blockReward    = None
 
         startT2 = time.time()
 
         try:
-            self.difficulties.fetchDifficulties()
+            output_text = self.difficulties.fetchDifficulties()
+            self.console.fireMessageEvent(output_text)
+
+            diffScrypt   = self.difficulties.getScryptDifficulty()
+            diffGroestl  = self.difficulties.getGroestlDifficulty()
+            diffSkein 	 = self.difficulties.getSkeinDifficulty()
+            diffQubit 	 = self.difficulties.getQubitDifficulty()
 
         except:
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
 
         try:
-            getResultCoins = self.httpGet("http://myriad.theblockexplorer.com/api.php?mode=coins")
+            self.difficulties.fetchBlockReward()
+            blockReward = self.difficulties.getBlockReward()
+
+            if not blockReward:
+                blockReward = CURRENT_BLOCK_REWARD
 
         except:
-            return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "
+            blockReward = CURRENT_BLOCK_REWARD
+            #return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "
 
         try:
             getResultPrice = self.httpGet(exchangesURL.get(self.config_json["exchange"]))
@@ -122,24 +138,10 @@ class SwitcherData():
 
         #httpTime = time.time() - startT2
 
-        per = 0
-        try:
-            objCoins = json.loads(getResultCoins)
-
-            diffScrypt   = self.difficulties.getScryptDifficulty()
-            diffGroestl  = self.difficulties.getGroestlDifficulty()
-            diffSkein 	 = self.difficulties.getSkeinDifficulty()
-            diffQubit 	 = self.difficulties.getQubitDifficulty()
-
-            per = objCoins["per"]
-
-        except:
-            return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
-
-        scryptCorrFactor  = self.config_json["scryptHashRate"]  * num * int(per)
-        groestlCorrFactor = self.config_json["groestlHashRate"] * num * int(per)
-        skeinCorrFactor   = self.config_json["skeinHashRate"]  * num * int(per)
-        qubitCorrFactor   = self.config_json["qubitHashRate"]   * num * int(per)
+        scryptCorrFactor  = self.config_json["scryptHashRate"]  * num * float(blockReward)
+        groestlCorrFactor = self.config_json["groestlHashRate"] * num * float(blockReward)
+        skeinCorrFactor   = self.config_json["skeinHashRate"]  * num * float(blockReward)
+        qubitCorrFactor   = self.config_json["qubitHashRate"]   * num * float(blockReward)
 
         self.previousPrice = self.currentPrice
 
@@ -337,8 +339,8 @@ class SwitcherData():
         try:
             f = open(activeFile)
         except IOError:
-            print "Config file not found: " + activeFile
-            #return None
+            #print "Config file not found: " + activeFile
+            return self.config_json
 
         config = f.read()
         f.close()
