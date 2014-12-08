@@ -1,6 +1,7 @@
+from console.switcher import HTMLBuilder
+
 __author__ = 'Dario'
 
-from console import HTMLBuilder
 import SwitcherData
 from ErrorReport import ErrorReport
 

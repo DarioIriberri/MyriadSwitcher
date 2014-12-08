@@ -1,9 +1,9 @@
-from console import PanelConsole
-
 __author__ = 'Dario'
+
 
 from notebook import NotebookMYR
 from console.switcher import SwitcherData
+from console import PanelConsole
 import wx
 import os
 import time
@@ -13,11 +13,11 @@ from event.EventLib import EVT_STATUS_BAR_EVENT
 
 
 VERSION  = "0.2"
-REVISION = 29
+REVISION = 30
 
 
 class FrameMYR(wx.Frame):
-    def __init__(self, resouce_path):
+    def __init__(self, resouce_path=""):
         self.resouce_path = resouce_path
 
         f = open('activeConfig')

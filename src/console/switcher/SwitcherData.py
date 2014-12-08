@@ -1,13 +1,13 @@
 __author__ = 'Dario'
 
-from console import HTMLBuilder
-
 import time
 import json
 import operator
 import socket
 import urllib2
 import cPickle
+
+import console.switcher.HTMLBuilder as HTMLBuilder
 import difficulty.Difficulties as Difficulties
 
 
@@ -18,7 +18,22 @@ groestlS = " Groestl"
 skeinS   = " SKein  "
 qubitS   = " Qubit  "
 
-MINER_CHOICES = ["sgminer", "cgminer", "bfgminer", "reaper", "cudaminer", "minerd"]
+MINER_CHOICES = ["sgminer",
+                 "cgminer",
+                 "bfgminer",
+                 "reaper",
+                 "reaper_cpuonly",
+                 "cudaminer",
+                 "minerd",
+                 "vertminer",
+                 "ScryptGPU",
+                 "ScryptCPU64",
+                 "skeingpu",
+                 "SkeinCPU64",
+                 "GroestlGPU",
+                 "GroestlCPU64",
+                 "QubitGPU",
+                 "QubitCPU64"]
 
 EXCHANGE_POLONIEX = "poloniex"
 EXCHANGE_CRYPTSY  = "cryptsy"
@@ -218,6 +233,7 @@ class SwitcherData():
         self.printData(status, prevSwitchtext, switchtext)
 
         self.htmlBuilder.log(self.config_json, self.logFileName)
+        self.dumpData(self.htmlBuilder)
 
     def getMiner(self):
         return self.hashtableMiners[self.current] if self.current in self.hashtableMiners.keys() else None

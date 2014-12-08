@@ -1,5 +1,6 @@
 __author__ = 'Dario'
 
+import SwitcherData
 from event.EventLib import *
 
 import wx
@@ -34,11 +35,6 @@ hashColorB4  = { "SWITCH" : COLOR_DARK_GREEN, 	"OK" : COLOR_BLACK, 		"FAIL" : CO
 foregroundActive  = COLOR_GREEN
 foregroundDisabled = COLOR_DARK_GRAY
 spacerColor = COLOR_BLACK
-
-scryptS  = " Scrypt "
-groestlS = " Groestl"
-skeinS   = " SKein  "
-qubitS   = " Qubit  "
 
 ANCHOR = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
 
@@ -202,7 +198,7 @@ class HTMLBuilder():
 
             zeroValString = "   ----"
 
-            if active == scryptS:
+            if active == SwitcherData.scryptS:
                 totalCoinsScrypt = coins
                 totalCoinsGroestl = 0
                 totalCoinsSkein   = 0
@@ -213,7 +209,7 @@ class HTMLBuilder():
                 #valCorrectedS = zeroValString
                 #valCorrectedQ = zeroValString
 
-            if active == groestlS:
+            if active == SwitcherData.groestlS:
                 totalCoinsScrypt = 0
                 totalCoinsGroestl = coins
                 totalCoinsSkein   = 0
@@ -224,7 +220,7 @@ class HTMLBuilder():
                 #valCorrectedS = zeroValString
                 #valCorrectedQ = zeroValString
 
-            if active == skeinS:
+            if active == SwitcherData.skeinS:
                 totalCoinsScrypt = 0
                 totalCoinsGroestl = 0
                 totalCoinsSkein   = coins
@@ -235,7 +231,7 @@ class HTMLBuilder():
                 #valCorrectedS = dailyCoinsFormated
                 #valCorrectedQ = zeroValString
 
-            if active == qubitS:
+            if active == SwitcherData.qubitS:
                 totalCoinsScrypt = 0
                 totalCoinsGroestl = 0
                 totalCoinsSkein   = 0
@@ -247,21 +243,21 @@ class HTMLBuilder():
                 #valCorrectedQ = dailyCoinsFormated
 
 
-            valCorrectedY = self.getCoinsPerDay(hashtableExpectedCoins[scryptS], hashtableTime[scryptS], True)
-            valCorrectedG = self.getCoinsPerDay(hashtableExpectedCoins[groestlS], hashtableTime[groestlS], True)
-            valCorrectedS = self.getCoinsPerDay(hashtableExpectedCoins[skeinS], hashtableTime[skeinS], True)
-            valCorrectedQ = self.getCoinsPerDay(hashtableExpectedCoins[qubitS], hashtableTime[qubitS], True)
+            valCorrectedY = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.scryptS], hashtableTime[SwitcherData.scryptS], True)
+            valCorrectedG = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.groestlS], hashtableTime[SwitcherData.groestlS], True)
+            valCorrectedS = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.skeinS], hashtableTime[SwitcherData.skeinS], True)
+            valCorrectedQ = self.getCoinsPerDay(hashtableExpectedCoins[SwitcherData.qubitS], hashtableTime[SwitcherData.qubitS], True)
 
         else:
-            totalCoinsScrypt  = hashtableExpectedCoins[scryptS]
-            totalCoinsGroestl = hashtableExpectedCoins[groestlS]
-            totalCoinsSkein   = hashtableExpectedCoins[skeinS]
-            totalCoinsQubit   = hashtableExpectedCoins[qubitS]
+            totalCoinsScrypt  = hashtableExpectedCoins[SwitcherData.scryptS]
+            totalCoinsGroestl = hashtableExpectedCoins[SwitcherData.groestlS]
+            totalCoinsSkein   = hashtableExpectedCoins[SwitcherData.skeinS]
+            totalCoinsQubit   = hashtableExpectedCoins[SwitcherData.qubitS]
 
-            valCorrectedY = '{0:>7}'.format(int(hashtableCorrected[scryptS]))
-            valCorrectedG = '{0:>7}'.format(int(hashtableCorrected[groestlS]))
-            valCorrectedS = '{0:>7}'.format(int(hashtableCorrected[skeinS]))
-            valCorrectedQ = '{0:>7}'.format(int(hashtableCorrected[qubitS]))
+            valCorrectedY = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.scryptS]))
+            valCorrectedG = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.groestlS]))
+            valCorrectedS = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.skeinS]))
+            valCorrectedQ = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.qubitS]))
 
         #minedY = '{0:>7}'.format(hashtableMinedCoins[scryptS])
         #minedG = '{0:>7}'.format(hashtableMinedCoins[groestlS])
@@ -283,16 +279,16 @@ class HTMLBuilder():
         fcY = fcG = fcS = fcQ = hashColorF3[status]
         bcY = bcG = bcS = bcQ = hashColorB3[status]
 
-        if active == scryptS:
+        if active == SwitcherData.scryptS:
             fcY = foregroundActive
 
-        if active == groestlS:
+        if active == SwitcherData.groestlS:
             fcG = foregroundActive
 
-        if active == skeinS:
+        if active == SwitcherData.skeinS:
             fcS = foregroundActive
 
-        if active == qubitS:
+        if active == SwitcherData.qubitS:
             fcQ = foregroundActive
 
 
