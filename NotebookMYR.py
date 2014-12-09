@@ -1,12 +1,10 @@
 __author__ = 'Dario'
 
 import wx
-import MainConfigTab
-import SwitchingModesTab
-import Miscellaneous
 import json
 import copy
 import io
+import SwitchingModesTab, MainConfigTab, MiscellaneousTab
 
 
 class NotebookMYR(wx.Notebook):
@@ -111,7 +109,7 @@ class NotebookMYR(wx.Notebook):
             i += 1
 
         if tab_flags & self.MISC_TAB:
-            self.tabMiscellaneous = Miscellaneous.TabPanel(self, frame_myr)
+            self.tabMiscellaneous = MiscellaneousTab.TabPanel(self, frame_myr)
             self.AddPage(self.tabMiscellaneous, "Miscellaneous")
             self.SetPageImage(i, self.il.Add(wx.Bitmap('img/advanced.ico', wx.BITMAP_TYPE_ICO)))
 

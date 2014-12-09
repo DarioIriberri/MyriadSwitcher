@@ -1,5 +1,6 @@
 __author__ = 'Dario'
 
+
 import wx
 import sys
 import NotebookTab as nbt

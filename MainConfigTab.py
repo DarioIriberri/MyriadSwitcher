@@ -1,9 +1,10 @@
 __author__ = 'Dario'
 
+import NotebookTab as nbt
 import wx
 import os.path
-import NotebookTab as nbt
 import wx.lib.filebrowsebutton as Filebrowser
+from event.EventLib import StatusBarEvent
 
 
 class TabPanel(nbt.NotebookTab):
@@ -250,12 +251,10 @@ class AlgoPanel(wx.Panel):
             frame_myr.notebookControlChanged()
 
     def on_mouse_over_active_algo(self, event):
-        evt = frame_myr.StatusBarEvent(message="Enable / Disable " + self.algo)
-        wx.PostEvent(frame_myr, evt)
+        wx.PostEvent(frame_myr, StatusBarEvent(message="Enable / Disable " + self.algo))
 
     def on_mouse_leave_active_algo(self, event):
-        evt = frame_myr.StatusBarEvent(message="")
-        wx.PostEvent(frame_myr, evt)
+        wx.PostEvent(frame_myr, StatusBarEvent(message=""))
 
     def checkFileExists(self):
         active_algo = self.active_algo.GetValue()

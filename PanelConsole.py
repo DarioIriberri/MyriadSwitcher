@@ -1,16 +1,15 @@
-from wx.lib.agw.speedmeter import styles
-
 __author__ = 'Dario'
-
-
-import wx
-import SwitchingThread
-import wx.html2 as webview
-import wx.lib.newevent
 
 import time
 
-ConsoleEvent, EVT_CONSOLE_EVENT = wx.lib.newevent.NewEvent()
+import wx
+import wx.html2 as webview
+from event.Event import Event
+from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
+
+from SwitchingThread import SwitchingThread
+
+
 MAX_STOP_TIME = 45
 
 
@@ -22,6 +21,7 @@ class PanelConsole(wx.Panel):
 
         self.thread = None
         self.threadCount = 0
+        self.messageEvent = None
 
         self.wv = webview.WebView.New(self)
 
@@ -30,12 +30,30 @@ class PanelConsole(wx.Panel):
         sizer.Add(self.wv, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        #self.Bind(EVT_CONSOLE_EVENT, self.onConsole)
-        EVT_CONSOLE_EVENT(self, self.onConsole)
+        self.Bind(EVT_CONSOLE_EVENT, self.onConsole)
+        #EVT_CONSOLE_EVENT(self, self.onConsole)
 
         self.wv.Show(False)
 
+    def addMessageEventListener(self, eventListener):
+        messageEvent = Event(eventListener)
+
+        if not self.messageEvent:
+            self.messageEvent = messageEvent
+        else:
+            self.messageEvent += messageEvent
+
+    def fireMessageEvent(self, output_text):
+        if self.messageEvent:
+            self.messageEvent(output_text)
+
+    #def onConsoleEvent(self, html):
+    #    self.wv.SetPage(html, "")
+    #    self.wv.Reload()
+
     def onConsole(self, event):
+        #print "console     " + str(time.time()) + "   -   " + event.html
+        #self.wv.SetPage(str(time.time()), "")
         self.wv.SetPage(event.html, "")
         self.wv.Reload()
         #self.wv.Find(HTMLBuilder.ANCHOR)
@@ -48,7 +66,7 @@ class PanelConsole(wx.Panel):
 
     def getThread(self, rebooting, resume):
         self.threadCount += 1
-        return SwitchingThread.SwitchingThread("SwitchThread", self.threadCount, self, rebooting, resume)
+        return SwitchingThread("SwitchThread", self.threadCount, self, rebooting, resume)
 
     def mine(self, activeConfigFile, rebooting=False, resume=False):
         self.wv.Show(True)
@@ -58,6 +76,7 @@ class PanelConsole(wx.Panel):
             self.thread.stop(True)
 
         self.thread = self.getThread(rebooting, resume)
+
         self.thread.setActiveConfigFile(activeConfigFile)
         self.thread.start()
 
@@ -97,6 +116,7 @@ class PanelConsole(wx.Panel):
                 str_out = "Damn it"
                 self.printToConsole(str_out)
                 time.sleep(5)
+
 
     def printToConsole(self, str_out):
         print str_out
