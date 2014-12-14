@@ -1,3 +1,6 @@
+from wx.tools.Editra.src.prefdlg import AdvancedPanel
+from MainConfigTab import MainConfigTab
+
 __author__ = 'Dario'
 
 import wx
@@ -26,7 +29,6 @@ class NotebookMYR(wx.Notebook):
 
     WIDTHS = [WIDTH_DUAL_PANELS, WIDTH_TRIPLE_PANELS]
     NOTEBOOKS = {}
-    TABS = []
 
     STATUS_SIMPLE = 1
     STATUS_DUAL   = 2
@@ -37,7 +39,7 @@ class NotebookMYR(wx.Notebook):
     DICT_TYPE[STATUS_DUAL]   = NOTEBOOK_DUAL_TYPE
     DICT_TYPE[STATUS_TRIPLE] = NOTEBOOK_TRIPLE_TYPE
 
-    def __init__(self, parent, frame_myr_p, sizer=None, border=4, expandable=True, type=NOTEBOOK_SIMPLE_TYPE, tab_flags=ALL_TABS, id=1123):
+    def __init__(self, parent, frame_myr_p, sizer=None, notebook=None, border=4, expandable=True, type=NOTEBOOK_SIMPLE_TYPE, tab_flags=ALL_TABS, id=1123):
         wx.Notebook.__init__(self, parent, id=id, style=
         wx.BK_DEFAULT
                              #wx.BK_TOP
@@ -67,23 +69,24 @@ class NotebookMYR(wx.Notebook):
 
         #self.print_object()
 
-        notebook = self.buildTabs(tab_flags)
-        self.sizer.Add(notebook, 1, wx.ALL | wx.EXPAND, border)
+        new_notebook = self.buildTabs(tab_flags, notebook)
+        self.sizer.Add(new_notebook, 1, wx.ALL | wx.EXPAND, border)
 
         if expandable:
             notebookDualPanels = []
-            notebookDualPanels.append(NotebookMYR(parent, frame_myr, sizer, border, expandable=False, type=self.NOTEBOOK_DUAL_TYPE, tab_flags=NotebookMYR.MAIN_TAB, id=21))
-            notebookDualPanels.append(NotebookMYR(parent, frame_myr, sizer, border, expandable=False, type=self.NOTEBOOK_DUAL_TYPE, tab_flags=NotebookMYR.SWITCH_TAB | NotebookMYR.MISC_TAB, id=223))
+            notebookDualPanels.append(NotebookMYR(parent, frame_myr, sizer, new_notebook, border, expandable=False, type=self.NOTEBOOK_DUAL_TYPE, tab_flags=NotebookMYR.MAIN_TAB, id=21))
+            notebookDualPanels.append(NotebookMYR(parent, frame_myr, sizer, new_notebook, border, expandable=False, type=self.NOTEBOOK_DUAL_TYPE, tab_flags=NotebookMYR.SWITCH_TAB | NotebookMYR.MISC_TAB, id=223))
             self.NOTEBOOKS[self.STATUS_DUAL] = notebookDualPanels
 
             notebookTriplePanels = []
-            notebookTriplePanels.append(NotebookMYR(parent, frame_myr, sizer, border, expandable=False, type=self.NOTEBOOK_TRIPLE_TYPE, tab_flags=NotebookMYR.MAIN_TAB, id=31))
-            notebookTriplePanels.append(NotebookMYR(parent, frame_myr, sizer, border, expandable=False, type=self.NOTEBOOK_TRIPLE_TYPE, tab_flags=NotebookMYR.SWITCH_TAB, id=32))
-            notebookTriplePanels.append(NotebookMYR(parent, frame_myr, sizer, border, expandable=False, type=self.NOTEBOOK_TRIPLE_TYPE, tab_flags=NotebookMYR.MISC_TAB, id=33))
+            notebookTriplePanels.append(NotebookMYR(parent, frame_myr, sizer, new_notebook, border, expandable=False, type=self.NOTEBOOK_TRIPLE_TYPE, tab_flags=NotebookMYR.MAIN_TAB, id=31))
+            notebookTriplePanels.append(NotebookMYR(parent, frame_myr, sizer, new_notebook, border, expandable=False, type=self.NOTEBOOK_TRIPLE_TYPE, tab_flags=NotebookMYR.SWITCH_TAB, id=32))
+            notebookTriplePanels.append(NotebookMYR(parent, frame_myr, sizer, new_notebook, border, expandable=False, type=self.NOTEBOOK_TRIPLE_TYPE, tab_flags=NotebookMYR.MISC_TAB, id=33))
             self.NOTEBOOKS[self.STATUS_TRIPLE] = notebookTriplePanels
 
         parent.SetSizer(sizer)
         frame_size = frame_myr.GetSize()
+
         self.expansionStatus = self.getExpansionStatus(frame_size)
 
         if expandable:
@@ -96,44 +99,35 @@ class NotebookMYR(wx.Notebook):
     def print_object(self):
         print ("id = " + str(self.id) + "  ---  type = " + str(self.type) + "  ---  tab_flags = " + str(self.tab_flags))
 
-    def buildTabs(self, tab_flags):
+    def buildTabs(self, tab_flags, notebook=None):
         i = 0
         if tab_flags & self.MAIN_TAB:
+            tab = notebook.tabMainConfig if notebook else None
             self.tabMainConfig = ConfigTab(self, frame_myr)
             self.AddPage(self.tabMainConfig, "Main Config")
             self.SetPageImage(i, self.il.Add(wx.Bitmap('img/aquachecked.ico', wx.BITMAP_TYPE_ICO)))
 
-            self.TABS.append(self.tabMainConfig)
-
             i += 1
 
         if tab_flags & self.SWITCH_TAB:
+            tab = notebook.tabSwitchModes if notebook else None
             self.tabSwitchModes = SwitchingModesTab(self, frame_myr)
             self.AddPage(self.tabSwitchModes, "Switching Modes")
             self.SetPageImage(i, self.il.Add(wx.Bitmap('img/switching16.ico', wx.BITMAP_TYPE_ICO)))
 
-            self.TABS.append(self.tabSwitchModes)
-
             i += 1
 
         if tab_flags & self.MISC_TAB:
+            tab = notebook.tabMiscellaneous if notebook else None
             self.tabMiscellaneous = MiscellaneousTab(self, frame_myr)
             self.AddPage(self.tabMiscellaneous, "Miscellaneous")
             self.SetPageImage(i, self.il.Add(wx.Bitmap('img/advanced.ico', wx.BITMAP_TYPE_ICO)))
 
-            self.TABS.append(self.tabMiscellaneous)
-
         return self
 
     # Method to save the panel data into the currently active config file
-    def saveConfig(self, activeFile, mainMode):
-        if self.expansionStatus != 1:
-            self.transferData(self.expansionStatus, 1)
-
-        if not self.checkFilesExist():
-            return False
-
-        string_out = self.getConfigText(mainMode)
+    def saveConfig(self, activeFile):
+        string_out = self.getConfigText()
 
         #f = open(activeFile, "w")
         f = io.open(activeFile, 'wt', encoding='utf-8').write(string_out.replace("\\", "\\\\"))
@@ -160,16 +154,12 @@ class NotebookMYR(wx.Notebook):
         print 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
         event.Skip()
 
-    def onMainModeToggle(self, event):
-        #self.RemovePage(0)
-        #self.AddPage(MainConfigTab(self, frame_myr), "111111111")
-        for tab in self.TABS:
-            wx.PostEvent(tab, ConfigModeEvent(advanced=event.EventObject.GetValue()))
-
-        event.Skip()
-
-    def notebookControlChanged(self, event):
-        frame_myr.notebookControlChanged(event)
+    def OnConfigToggle(self, event):
+        self.RemovePage(0)
+        self.AddPage(MainConfigTab(self, frame_myr), "111111111")
+        #for tab in self.TABS:
+        #    wx.PostEvent(tab, ConfigModeEvent(advanced=event.EventObject.GetValue()))
+        #event.Skip()
 
     #todo Get defaults from each panel
     def loadDefaults(self):
@@ -213,17 +203,17 @@ class NotebookMYR(wx.Notebook):
                 "rebootIf"				: 	"crashes or freezes"
         }
 
-        self.loadAllConfigDict(defaults)
+        #self.loadAllConfigDict(defaults)
 
     # Loads the data in config_json into all the instance notebooks and their tabs
-    def loadAllConfigDict(self, config_json):
-        self.loadTabs(config_json)
-
-        if self.expandable:
-            for i in range (2, len(self.NOTEBOOKS) + 1):
-                nb = self.NOTEBOOKS[i]
-                for nbsub in nb:
-                    nbsub.loadTabs(config_json)
+    #def loadAllConfigDict(self, config_json):
+    #    self.loadTabs(config_json)
+    #
+    #    if self.expandable:
+    #        for i in range (2, len(self.NOTEBOOKS) + 1):
+    #            nb = self.NOTEBOOKS[i]
+    #            for nbsub in nb:
+    #                nbsub.loadTabs(config_json)
 
     # Method to load the current active configuration file data into the panels
     def loadConfig(self, activeFile):
@@ -240,8 +230,6 @@ class NotebookMYR(wx.Notebook):
                     for nbsub in nb:
                         nbsub.loadConfig(activeFile)
 
-            frame_myr.setMainMode(json.loads(config)['mainMode'])
-
         except:
             dlg = wx.MessageDialog(self, 'The config file ' + activeFile + " is unreadable.",
                                        'Configuration Error',
@@ -257,78 +245,61 @@ class NotebookMYR(wx.Notebook):
             #self.loadDefaults()
         return True
 
-    def getMainConfig(self, json):
-        try:
-            return json.loads(json)['mainMode']
-        except:
-            return "simple"
-
-
-    def loadTabs(self, config_json):
-        #self.tabMainConfig.set_json(config_json)
-        #self.tabSwitchModes.set_json(config_json)
-        #self.tabMiscellaneous.set_json(config_json)
-
-        for i in range(0, self.GetPageCount()):
-            page = self.GetPage(i)
-            page.set_json(config_json)
-
-    def loadConfigMultiDict(self, notebooks):
-        config_json = dict()
-
-        for notebook in notebooks:
-            config_json.update(notebook.getConfigDict())
-
-        self.loadTabs(config_json)
-
-        return config_json
+    #def loadTabs(self, config_json):
+    #    for i in range(0, self.GetPageCount()):
+    #        page = self.GetPage(i)
+    #        page.set_json(config_json)
+    #
+    #def loadConfigMultiDict(self, notebooks):
+    #    config_json = dict()
+    #
+    #    for notebook in notebooks:
+    #        config_json.update(notebook.getConfigDict())
+    #
+    #    self.loadTabs(config_json)
+    #
+    #    return config_json
 
     def loadConfigText(self, textConfig):
         config_json = json.loads(textConfig)
 
-        self.loadTabs(config_json)
+        #self.loadTabs(config_json)
 
-    def getConfigDict(self):
-        config_json = dict()
-
-        #config_json.update(self.tabMainConfig.get_json())
-        #config_json.update(self.tabSwitchModes.get_json())
-        #config_json.update(self.tabMiscellaneous.get_json())
-
-        for i in range(0, self.GetPageCount()):
-            page = self.GetPage(i)
-            config_json.update(page.get_json())
-
-        return config_json
-
-    def getConfigText(self, mainMode):
-        config_json = self.getConfigDict()
-        config_json["mainMode"] = mainMode
-
-        string_out = "{\n"
-
-        for i, (key, value) in enumerate(config_json.iteritems()):
-            key_str = "\"" + key + "\""
-
-            if type(value) is unicode or type(value) is str:
-                string_out += ( key_str + " : \"" + value + "\"")
-
-            else:
-                if type(value) is bool:
-                    string_out += ( key_str + " : " + str(int(value)))
-
-                else:
-                    if type(value) is int or float:
-                        string_out += ( key_str + " : " + str(value))
-
-            if not ( i == len(config_json) -1 ) :
-                string_out += ", "
-
-            string_out += "\n"
-
-        string_out += "}"
-
-        return string_out
+    #def getConfigDict(self):
+    #    config_json = dict()
+    #
+    #    for i in range(0, self.GetPageCount()):
+    #        page = self.GetPage(i)
+    #        config_json.update(page.get_json())
+    #
+    #    return config_json
+    #
+    #def getConfigText(self):
+    #    config_json = self.getConfigDict()
+    #    string_out = "{\n"
+    #
+    #    for i, (key, value) in enumerate(config_json.iteritems()):
+    #        key_str = "\"" + key + "\""
+    #
+    #        if type(value) is unicode or type(value) is str:
+    #            string_out += ( key_str + " : \"" + value + "\"")
+    #
+    #        else:
+    #            if type(value) is bool:
+    #                string_out += ( key_str + " : " + str(int(value)))
+    #
+    #            else:
+    #                if type(value) is int or float:
+    #                    string_out += ( key_str + " : " + str(value))
+    #
+    #        if not ( i == len(config_json) -1 ) :
+    #            string_out += ", "
+    #
+    #        string_out += "\n"
+    #
+    #    string_out += "}"
+    #
+    #    return string_out
 
     def get_type(self):
         return self.type
@@ -354,7 +325,7 @@ class NotebookMYR(wx.Notebook):
             event.Skip()
             return
 
-        self.transferData(self.expansionStatus, new_expansion_status)
+        #self.transferData(self.expansionStatus, new_expansion_status)
 
         self.expansionStatus = new_expansion_status
         self.show_notebook()
@@ -363,12 +334,12 @@ class NotebookMYR(wx.Notebook):
 
         event.Skip()
 
-    def transferData(self, source, destination):
-        source_notebooks = self.NOTEBOOKS[source]
-        destination_notebooks = self.NOTEBOOKS[destination]
-
-        for nb in destination_notebooks:
-            nb.loadConfigMultiDict(source_notebooks)
+    #def transferData(self, source, destination):
+    #    source_notebooks = self.NOTEBOOKS[source]
+    #    destination_notebooks = self.NOTEBOOKS[destination]
+    #
+    #    for nb in destination_notebooks:
+    #        nb.loadConfigMultiDict(source_notebooks)
 
 
     def getExpansionStatus(self, size):

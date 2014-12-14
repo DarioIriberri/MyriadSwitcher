@@ -1,6 +1,6 @@
 __author__ = 'Dario'
 
-from event.EventLib import *
+from event.EventLib import ConsoleEvent
 import SwitcherData
 
 import wx

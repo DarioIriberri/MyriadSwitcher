@@ -13,8 +13,8 @@ class NotebookTab(wx.Panel):
         try:
             value = json[field_name]
 
-        except:
-            print("Error: get_value(" + field_name + ") - Not Found in json")
+        except KeyError:
+            #print("Error: get_value(" + field_name + ") - Not Found in json")
             pass
 
         return value

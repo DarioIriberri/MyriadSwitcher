@@ -1,7 +1,10 @@
 __author__ = 'Dario'
 
 import wx
+import sys
 import FrameMYR
+from MainConfigTab import MainConfigTab
+from SimpleConfigTab import SimpleConfigTab
 
 
 if __name__ == "__main__":

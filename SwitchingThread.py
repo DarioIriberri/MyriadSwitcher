@@ -55,7 +55,7 @@ class SwitchingThread (threading.Thread):
         if self.rebooting:
             time.sleep(30)
 
-        self.console.parent.onMiningProcessStarted()
+        self.console.onMiningProcessStarted()
 
         switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
 
@@ -205,7 +205,7 @@ class SwitchingThread (threading.Thread):
                 break
 
         switcherData.end()
-        self.console.parent.onMiningProcessStopped()
+        self.console.onMiningProcessStopped()
 
     def checkRestart(self, prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
         return ( restart and not maxMinerFails and not globalStopped ) or \

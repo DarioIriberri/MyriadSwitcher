@@ -9,9 +9,9 @@ try:
 except ImportError:
     import wx.lib.agw.multidirdialog as MDD
 
-class TabPanel(nbt.NotebookTab):
+class MiscellaneousTab(nbt.NotebookTab):
     #----------------------------------------------------------------------
-    def __init__(self, parent, frame_myr_p):
+    def __init__(self, parent, frame_myr_p, tab=None):
 
         nbt.NotebookTab.__init__(self, parent=parent, id=wx.ID_ANY)
 
@@ -59,7 +59,7 @@ class TabPanel(nbt.NotebookTab):
         self.log_panel.set_values(config_json, "logActive", "logPath", "exchange", "monitor", "reboot", "maxErrors", "rebootIf" )
 
     def on_control_changed(self, event):
-        frame_myr.notebookControlChanged()
+        frame_myr.notebookControlChanged(event)
 
     def checkFilesExist(self):
         return self.log_panel.checkFileExists()
