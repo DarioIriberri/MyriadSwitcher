@@ -293,7 +293,7 @@ class FrameMYRClass(wx.Frame):
 
 
     def onSave(self, event):
-        if self.notebook.saveConfig(self.activeFile, self.getMainMode()):
+        if self.notebook.saveConfig(self.activeFile):
             self.panelConsole.configChanged()
             self.enabled_buttons(False)
             #else:
@@ -311,7 +311,7 @@ class FrameMYRClass(wx.Frame):
             activeFile = filename
             #f.close()
 
-            if self.notebook.saveConfig(activeFile, self.getMainMode()):
+            if self.notebook.saveConfig(activeFile):
                 self.activeFile = activeFile
                 self.workingDir = dirname
                 self.setTitle(activeFile)
@@ -372,7 +372,7 @@ class FrameMYRClass(wx.Frame):
         dlg.Destroy()
 
         if result:
-            if self.notebook.saveConfig(self.activeFile, self.getMainMode()):
+            if self.notebook.saveConfig(self.activeFile):
                 self.enabled_buttons(False)
 
                 self.panelConsole.mine(self.activeFile)
@@ -381,7 +381,7 @@ class FrameMYRClass(wx.Frame):
                 #self.buttonStop.Enable(True)
 
     def onButtonResume(self, event):
-        if self.notebook.saveConfig(self.activeFile, self.getMainMode()):
+        if self.notebook.saveConfig(self.activeFile):
             self.enabled_buttons(False)
 
             self.panelConsole.mine(self.activeFile, resume=True)

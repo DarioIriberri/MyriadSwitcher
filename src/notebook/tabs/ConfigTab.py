@@ -84,7 +84,7 @@ class ConfigTab(nbt.NotebookTab):
         self.simpleConfig.set_json(config_json)
 
     def get_json(self):
-        json = {}
+        json = {"mainMode" : frame_myr.getMainMode()}
 
         try:
             json.update(self.advancedConfig.get_json())

@@ -94,7 +94,7 @@ class NotebookMYR(wx.Notebook):
 
         self.NOTEBOOKS[self.STATUS_SIMPLE] = [self]
 
-    def print_object(self):
+    def __print_object(self):
         print ("id = " + str(self.id) + "  ---  type = " + str(self.type) + "  ---  tab_flags = " + str(self.tab_flags))
 
     def buildTabs(self, tab_flags):
@@ -127,14 +127,14 @@ class NotebookMYR(wx.Notebook):
         return self
 
     # Method to save the panel data into the currently active config file
-    def saveConfig(self, activeFile, mainMode):
+    def saveConfig(self, activeFile):
         if self.expansionStatus != 1:
             self.transferData(self.expansionStatus, 1)
 
         if not self.checkFilesExist():
             return False
 
-        string_out = self.getConfigText(mainMode)
+        string_out = self.getConfigText()
 
         #f = open(activeFile, "w")
         f = io.open(activeFile, 'wt', encoding='utf-8').write(string_out.replace("\\", "\\\\"))
@@ -192,6 +192,7 @@ class NotebookMYR(wx.Notebook):
                 "skeinHashRate"			: 	300,
                 "qubitHashRate"			: 	7,
                 "globalCorrectionFactor": 	95,
+                "mainMode"			    : 	"simple",
                 "scryptFactor"			: 	1,
                 "groestlFactor"			: 	1,
                 "skeinFactor"			: 	1,
@@ -258,13 +259,6 @@ class NotebookMYR(wx.Notebook):
             #self.loadDefaults()
         return True
 
-    def getMainConfig(self, json):
-        try:
-            return json.loads(json)['mainMode']
-        except:
-            return "simple"
-
-
     def loadTabs(self, config_json):
         #self.tabMainConfig.set_json(config_json)
         #self.tabSwitchModes.set_json(config_json)
@@ -302,9 +296,8 @@ class NotebookMYR(wx.Notebook):
 
         return config_json
 
-    def getConfigText(self, mainMode):
+    def getConfigText(self):
         config_json = self.getConfigDict()
-        config_json["mainMode"] = mainMode
 
         string_out = "{\n"
 
