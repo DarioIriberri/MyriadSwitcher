@@ -11,9 +11,11 @@ import cPickle
 SECONDS_PER_DAY = 86400
 
 COLOR_DARK_BLUE     = (0, 0, 139)
+COLOR_BLUE          = (0, 0, 255)
 COLOR_DARK_GREEN    = (0, 139, 0)
 COLOR_DARK_RED      = (139, 0, 0)
 COLOR_DARK_MAGENTA  = (139, 0, 139)
+COLOR_LIGHT_GRAY    = (240, 240, 240)
 COLOR_DARK_GRAY     = (155, 155, 155)
 COLOR_WHITE         = (255, 255, 255)
 COLOR_BLACK         = (0, 0, 0)

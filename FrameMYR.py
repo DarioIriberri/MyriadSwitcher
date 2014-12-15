@@ -102,7 +102,7 @@ class FrameMYR(wx.Frame):
         #self.panelConsole = webview.WebView.New(PanelConsole.PanelConsole)
         self.panelConsole.SetBackgroundColour("Black")
 
-        self.shell = PanelMiners(parent = self.resizable_panel)
+        self.miners = PanelMiners(parent = self.resizable_panel)
         #self.shell.miner1.AppendText("Myriad Switcher miner output..." + os.linesep + os.linesep)
         #self.shell.miner0.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only')
         #self.shell.miner1.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only')
@@ -345,15 +345,15 @@ class FrameMYR(wx.Frame):
 
     def showSimple(self):
         self.buttonToggle.SetLabel("Simple Mode")
-        self.resizable_panel.SplitHorizontally(self.panelConsole, self.shell, self.resizable_panel.GetSize()[1] * self.getGravity())
+        self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners, self.resizable_panel.GetSize()[1] * self.getGravity())
         #self.shell.rearrangeMiners(self.shell.GetSize()[0])
         #self.resizable_panel.Unsplit(self.advancedConfig)
 
     def showAdvanced(self):
         self.buttonToggle.SetLabel("Adv. Mode")
         self.getGravity()
-        self.resizable_panel.SplitHorizontally(self.panelConsole, self.shell)
-        self.resizable_panel.Unsplit(self.shell)
+        self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners)
+        self.resizable_panel.Unsplit(self.miners)
 
     def getGravity(self):
         if self.getMainMode() == "advanced":

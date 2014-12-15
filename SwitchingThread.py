@@ -152,8 +152,8 @@ class SwitchingThread (threading.Thread):
                     if not switcherData.config_json["debug"]:
                         self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
-                        workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
-                        retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
+                        retCode = self.startMiners(scriptPath, switcherData.config_json["mainMode"])
+
                         #retCode = subprocess.Popen('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
                         #subprocess.call('cd /d "' + unicode(workingDirectory) + '" && start cmd /c "' + unicode(scriptPath) + '"', shell=True)
                         #subprocess.call('cd /d "' + workingDirectory + '" && start cmd /c "' + scriptPath + '"', shell=True)
@@ -247,6 +247,18 @@ class SwitchingThread (threading.Thread):
             t_initSleep = time.time()
 
         self.configChangedFlag = False
+
+    def startMiners(self, scriptPath, mainMode):
+        retCode = None
+
+        if "advanced" == mainMode:
+            workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
+            retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
+
+        else:
+            pass
+
+        return retCode
 
     def configChanged(self):
         self.configChangedFlag = True

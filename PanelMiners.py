@@ -2,7 +2,7 @@ __author__ = 'Dario'
 
 import os
 import wx
-from PanelShell import PanelShell
+from PanelMinerInstance import PanelMinerInstance
 from wx.lib.splitter import MultiSplitterWindow
 
 
@@ -13,9 +13,9 @@ class PanelMiners(MultiSplitterWindow):
         self.parent = parent
         self.num_miners = num_miners
 
-        self.miner0 = PanelShell(self, "Device 0")
-        self.miner1 = PanelShell(self, "Device 1")
-        self.miner2 = PanelShell(self, "Device 2")
+        self.miner0 = PanelMinerInstance(self, "Miner #0")
+        self.miner1 = PanelMinerInstance(self, "Miner #1")
+        self.miner2 = PanelMinerInstance(self, "Miner #2")
         #self.miner3 = PanelShell(parent = self)
         self.SetOrientation(wx.HORIZONTAL)
 
