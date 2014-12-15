@@ -80,7 +80,7 @@ class SwitchingThread (threading.Thread):
             try:
                 dataError = switcherData.fetchData(thread.activeConfigFile)
 
-                threadStopped = self.checkSwitchingThreadStopped()
+                threadStopped = self.isStopped()
 
                 if dataError:
                     switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
@@ -182,7 +182,7 @@ class SwitchingThread (threading.Thread):
 
                 switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
 
-                if self.checkSwitchingThreadStopped():
+                if self.isStopped():
                     breakAt = "after prints, thread stopped"
                     break
 
@@ -220,7 +220,7 @@ class SwitchingThread (threading.Thread):
         t_initSleep = time.time()
 
         while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
-            if self.checkSwitchingThreadStopped():
+            if self.isStopped()():
                 return None
 
             if not globalStopped and switcherData.config_json["monitor"]:
@@ -302,8 +302,8 @@ class SwitchingThread (threading.Thread):
 
         return (cpu, timeCPUProbed)
 
-    def checkSwitchingThreadStopped(self):
-        return self.isStopped()
+    #def checkSwitchingThreadStopped(self):
+    #    return self.isStopped()
 
     def waitForMinerToStart(self, miner, ramp_up_time):
         if miner is None:

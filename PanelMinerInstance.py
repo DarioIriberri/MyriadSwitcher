@@ -18,6 +18,7 @@ STATUS_DISABLED             = "DISABLED"
 STATUS_ENABLED              = "ENABLED"
 STATUS_ENABLED_PENDING      = "ENABLED_PENDING"
 STATUS_RUNNING              = "RUNNING"
+STATUS_RUNNING_PENDING      = "STATUS_RUNNING_PENDING"
 
 
 class PanelMinerInstance(wx.Panel):
@@ -40,6 +41,9 @@ class PanelMinerInstance(wx.Panel):
         self.shellStdout.SetDefaultStyle(wx.TextAttr(wx.BLACK, wx.NullColour, wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False)))
         self.shellStderr.SetDefaultStyle(wx.TextAttr(wx.RED,   wx.NullColour, wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False)))
 
+        self.shellStdout.SetEditable(False)
+        self.shellStderr.SetEditable(False)
+
         #self.shell = rt.RichTextCtrl(self, style=wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER)
         #self.textAttr = rt.RichTextAttr()
         #self.textAttr.SetTextColour(wx.BLACK)
@@ -53,7 +57,6 @@ class PanelMinerInstance(wx.Panel):
 
         #self.shell = wx.PyOnDemandOutputWindow(self)
         #self.SetDefaultStyle(wx.TextAttr("BLACK", wx.NullColour, wx.Font(10, wx.SCRIPT, wx.ITALIC, wx.BOLD, True)))
-        #self.shell.SetEditable(False)
 
         self.killed = False
 
@@ -86,12 +89,27 @@ class PanelMinerInstance(wx.Panel):
         #self.killed = False
 
     def killProcess(self, forcibly = False):
-        if self.__isRunning():
+        if self.__isProcessRunning():
             self.killed = True
 
         if not self.waitForStreams or forcibly:
             self.__obliterate()
             self.handler.moveOn()
+
+    def isMinerRunning(self):
+        if not self.__isProcessRunning():
+            return False
+
+        children = self.process.children()
+
+        if not children or len(children) == 0:
+            return False
+
+        for childProcess in children:
+            if not childProcess.is_running():
+                return False
+
+        return True
 
     def clearAll(self):
         self.shellStdout.Clear()
@@ -116,25 +134,10 @@ class PanelMinerInstance(wx.Panel):
 
             self.__kill()
 
-        while self.__minerIsRunning():
+        while self.isMinerRunning():
             time.sleep(1)
 
         self.handler.moveOn()
-
-    def __minerIsRunning(self):
-        if not self.__isRunning():
-            return False
-
-        children = self.process.children()
-
-        if not children or len(children) == 0:
-            return False
-
-        for childProcess in children:
-            if not childProcess.is_running():
-                return False
-
-        return True
 
     def __outputThread(self, shell, stream, waitForStreams):
         for line in iter(stream.readline, b''):
@@ -152,7 +155,7 @@ class PanelMinerInstance(wx.Panel):
         #    print("__outputThread")
         #    self.__kill(stream)
 
-    def __isRunning(self):
+    def __isProcessRunning(self):
         try:
             return self.process.is_running()
 
@@ -163,7 +166,7 @@ class PanelMinerInstance(wx.Panel):
         #return self.process and not self.process.returncode
 
     def __kill(self, stream = None):
-        if self.__isRunning():
+        if self.__isProcessRunning():
             #self.WriteText(os.linesep + "Killing... " + str(self.p))
             #self.p.terminate()
             ret = self.__obliterate()
@@ -259,7 +262,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.deviceLabel.Bind(wx.EVT_TOGGLEBUTTON, self.onDeviceToggle)
 
-        self.deviceCombo = wx.ComboBox(self, size=(300, 26), choices=self.devices, style=wx.CB_READONLY)
+        self.deviceCombo = wx.ComboBox(self, size=(200, 26), choices=self.devices, style=wx.CB_READONLY)
         self.deviceCombo.Bind(wx.EVT_COMBOBOX, self.onDeviceSelected)
         self.deviceNum = wx.ComboBox(self, size=(50, 26), choices=self.numDevices, style=wx.CB_READONLY)
 
@@ -271,11 +274,12 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         sizer.Add(self.deviceLabel, 0, wx.EXPAND | wx.TOP, -1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(34, -1)), 0, wx.EXPAND, 0)
-        sizer.Add(self.deviceCombo, 0, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
+        sizer.Add(self.deviceCombo, 2, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(6, -1)), 0, wx.EXPAND, 0)
         sizer.Add(self.deviceNum, 0, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(34, -1)), 0, wx.EXPAND, 0)
         sizer.Add(devEditor, 0, wx.EXPAND | wx.TOP, -1)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(80, -1)), 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer)
 
@@ -309,11 +313,13 @@ class PanelMinerInstanceHandler(wx.Panel):
             self.statusDisabled(label)
 
     def onDeviceEdit(self, event):
-        #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
-        self.parent.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
-        #self.parent.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
+        #if not self.status == STATUS_RUNNING:
+        if not self.parent.isMinerRunning():
+            #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
+            self.parent.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
+            #self.parent.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
 
-        self.statusRunning()
+            self.statusRunningPending()
 
         event.Skip()
 
@@ -350,7 +356,7 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
         self.deviceLabel.SetForegroundColour((0, 0, 0))
         self.deviceLabel.Enable(False)
-        self.parent.printMessage(label + " is disabled. Please, pick a device to enable it.")
+        self.parent.printMessage(label + " is disabled. Pick a device to enable it.")
 
         self.deviceCombo.Enable(True)
         self.deviceNum.Enable(True)
@@ -415,6 +421,48 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.killedAlreadyFlag = False
 
         self.statusEnabled(self.parent.deviceLabel)
+
+    def statusRunningPending(self, label = None):
+        self.status = STATUS_RUNNING_PENDING
+
+        thread = threading.Thread(target=self.statusRunningPendingThread())
+        thread.start()
+
+        #self.parent.printText(self.deviceCombo.GetValue() + " is ready to mine!", True)
+
+        #self.deviceCombo.Enable(True)
+        #self.deviceNum.Enable(True)
+
+        self.Layout()
+
+    def statusRunningPendingThread(self):
+        i = 0
+
+        MAX_ITERATIONS = 60
+
+        while not self.parent.isMinerRunning() and i < MAX_ITERATIONS:
+            a = i % 2
+            if a:
+                self.deviceLabel.SetBackgroundColour(clr.COLOR_GREEN)
+                self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
+            else:
+                self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
+                self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
+
+            self.Layout()
+
+            i = i + 1
+
+            time.sleep(0.5)
+
+        if i >= MAX_ITERATIONS:
+            print "Fuck, start timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
+            self.parent.killProcess(forcibly = True)
+
+            self.statusEnabled(self.parent.deviceLabel)
+
+        else:
+            self.statusRunning(self.parent.deviceLabel)
 
     def moveOn(self, flag = True):
         if self.status == STATUS_RUNNING:
