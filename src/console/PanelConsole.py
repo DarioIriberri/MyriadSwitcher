@@ -5,19 +5,19 @@ import time
 import wx
 import wx.html2 as webview
 from event.Event import Event
-from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
-
 from console.switcher.SwitchingThread import SwitchingThread
+from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
 
 
 MAX_STOP_TIME = 45
 
 
 class PanelConsole(wx.Panel):
-    def __init__(self, parent, size):
+    def __init__(self, parent, frame_myr, size=None):
         wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY)
 
         self.parent = parent
+        self.frame_myr = frame_myr
 
         self.thread = None
         self.threadCount = 0
@@ -63,6 +63,12 @@ class PanelConsole(wx.Panel):
         #print "Console says = " + event.html
         #self.wv.SetPage("<html><header><title>This is title</title></header><body>Hello world</body></html>", "")
         #self.wv.LoadURL("https://dl.dropboxusercontent.com/u/19353176/Myriad_log/2014-05-04-040554.html")
+
+    def onMiningProcessStarted(self):
+        self.frame_myr.onMiningProcessStarted()
+
+    def onMiningProcessStopped(self):
+        self.frame_myr.onMiningProcessStopped()
 
     def getThread(self, rebooting, resume):
         self.threadCount += 1

@@ -9,14 +9,16 @@ try:
 except ImportError:
     import wx.lib.agw.multidirdialog as MDD
 
-class TabPanel(nbt.NotebookTab):
+class MiscellaneousTab(nbt.NotebookTab):
     #----------------------------------------------------------------------
-    def __init__(self, parent, frame_myr_p):
+    def __init__(self, parent, frame_myr_p, tab=None):
 
         nbt.NotebookTab.__init__(self, parent=parent, id=wx.ID_ANY)
 
         global frame_myr
         frame_myr = frame_myr_p
+
+        #self.Bind(EVT_CONFIG_MODE_EVENT, self.onMainModeToggle)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.timings_panel = TimingsPanel(self)
@@ -59,11 +61,13 @@ class TabPanel(nbt.NotebookTab):
         self.log_panel.set_values(config_json, "logActive", "logPath", "exchange", "monitor", "reboot", "maxErrors", "rebootIf" )
 
     def on_control_changed(self, event):
-        frame_myr.notebookControlChanged()
+        frame_myr.notebookControlChanged(event)
 
     def checkFilesExist(self):
         return self.log_panel.checkFileExists()
 
+    def onMainModeToggle(self, event):
+        self.log_panel.errors_box.loadErrorCombo(event.advanced)
 
 class TimingsPanel(wx.Panel):
     def __init__( self, parent ):
@@ -449,6 +453,8 @@ class LogElement(wx.StaticBoxSizer):
         frame_myr.notebookControlChanged()
 
 class ErrorsElement(wx.StaticBoxSizer):
+    ERROR_OPTS = ["crashes", "freezes", "crashes or freezes"]
+
     def __init__(self, parent, static_box):
         wx.StaticBoxSizer.__init__(self, static_box, wx.HORIZONTAL)
 
@@ -463,8 +469,10 @@ class ErrorsElement(wx.StaticBoxSizer):
 
         self.maxErrors = wx.SpinCtrl(parent, -1, min=1, max=100, size=(48, -1))
 
-        opts = ["crashes", "freezes", "crashes or freezes"]
-        self.rebootIf = wx.ComboBox(parent, -1, size=(54, -1), choices=opts, style=wx.CB_READONLY | wx.ALIGN_RIGHT)
+        self.rebootIf = wx.ComboBox(parent, -1, size=(54, -1), choices=self.ERROR_OPTS, style=wx.CB_READONLY | wx.ALIGN_RIGHT)
+
+        #self.loadErrorCombo(frame_myr.getMainMode() == "advanced")
+
         parent.Bind(wx.EVT_COMBOBOX, parent.GetParent().on_control_changed, self.rebootIf)
 
         sizerReboot.Add( self.reboot, 0, wx.ALIGN_CENTRE_VERTICAL | wx.BOTTOM | wx.EXPAND, 4 )
@@ -492,3 +500,14 @@ class ErrorsElement(wx.StaticBoxSizer):
         self.rebootIf.Enable(active_reboot)
         if trigger_to_frame:
             frame_myr.notebookControlChanged()
+
+    def loadErrorCombo(self, isAdvancedMode):
+        if isAdvancedMode:
+            self.rebootIf.Clear()
+            self.rebootIf.Append(ErrorsElement.ERROR_OPTS[0])
+            self.rebootIf.Append(ErrorsElement.ERROR_OPTS[1])
+            self.rebootIf.Append(ErrorsElement.ERROR_OPTS[2])
+
+        else:
+            self.rebootIf.Clear()
+            self.rebootIf.Append(ErrorsElement.ERROR_OPTS[2])

@@ -7,7 +7,7 @@ import socket
 import urllib2
 import cPickle
 
-import console.switcher.HTMLBuilder as HTMLBuilder
+import HTMLBuilder
 import difficulty.Difficulties as Difficulties
 
 

@@ -4,7 +4,11 @@ import wx
 import json
 import copy
 import io
-from notebook.tabs import SwitchingModesTab, MainConfigTab, MiscellaneousTab
+from event.EventLib import ConfigModeEvent
+from notebook.tabs.ConfigTab import ConfigTab
+from notebook.tabs.SwitchingModesTab import SwitchingModesTab
+from notebook.tabs.MiscellaneousTab import MiscellaneousTab
+import FrameMYR
 
 
 class NotebookMYR(wx.Notebook):
@@ -23,6 +27,7 @@ class NotebookMYR(wx.Notebook):
 
     WIDTHS = [WIDTH_DUAL_PANELS, WIDTH_TRIPLE_PANELS]
     NOTEBOOKS = {}
+    TABS = []
 
     STATUS_SIMPLE = 1
     STATUS_DUAL   = 2
@@ -95,35 +100,41 @@ class NotebookMYR(wx.Notebook):
     def buildTabs(self, tab_flags):
         i = 0
         if tab_flags & self.MAIN_TAB:
-            self.tabMainConfig = MainConfigTab.TabPanel(self, frame_myr)
+            self.tabMainConfig = ConfigTab(self, frame_myr)
             self.AddPage(self.tabMainConfig, "Main Config")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/aquachecked.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH + 'img/aquachecked.ico', wx.BITMAP_TYPE_ICO)))
+
+            self.TABS.append(self.tabMainConfig)
 
             i += 1
 
         if tab_flags & self.SWITCH_TAB:
-            self.tabSwitchModes = SwitchingModesTab.TabPanel(self, frame_myr)
+            self.tabSwitchModes = SwitchingModesTab(self, frame_myr)
             self.AddPage(self.tabSwitchModes, "Switching Modes")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/switching16.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH + 'img/switching16.ico', wx.BITMAP_TYPE_ICO)))
+
+            self.TABS.append(self.tabSwitchModes)
 
             i += 1
 
         if tab_flags & self.MISC_TAB:
-            self.tabMiscellaneous = MiscellaneousTab.TabPanel(self, frame_myr)
+            self.tabMiscellaneous = MiscellaneousTab(self, frame_myr)
             self.AddPage(self.tabMiscellaneous, "Miscellaneous")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/advanced.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH + 'img/advanced.ico', wx.BITMAP_TYPE_ICO)))
+
+            self.TABS.append(self.tabMiscellaneous)
 
         return self
 
     # Method to save the panel data into the currently active config file
-    def saveConfig(self, activeFile):
+    def saveConfig(self, activeFile, mainMode):
         if self.expansionStatus != 1:
             self.transferData(self.expansionStatus, 1)
 
         if not self.checkFilesExist():
             return False
 
-        string_out = self.getConfigText()
+        string_out = self.getConfigText(mainMode)
 
         #f = open(activeFile, "w")
         f = io.open(activeFile, 'wt', encoding='utf-8').write(string_out.replace("\\", "\\\\"))
@@ -149,6 +160,17 @@ class NotebookMYR(wx.Notebook):
         sel = self.GetSelection()
         print 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
         event.Skip()
+
+    def onMainModeToggle(self, event):
+        #self.RemovePage(0)
+        #self.AddPage(MainConfigTab(self, frame_myr), "111111111")
+        for tab in self.TABS:
+            wx.PostEvent(tab, ConfigModeEvent(advanced=event.EventObject.GetValue()))
+
+        event.Skip()
+
+    def notebookControlChanged(self, event):
+        frame_myr.notebookControlChanged(event)
 
     #todo Get defaults from each panel
     def loadDefaults(self):
@@ -219,6 +241,8 @@ class NotebookMYR(wx.Notebook):
                     for nbsub in nb:
                         nbsub.loadConfig(activeFile)
 
+            frame_myr.setMainMode(json.loads(config)['mainMode'])
+
         except:
             dlg = wx.MessageDialog(self, 'The config file ' + activeFile + " is unreadable.",
                                        'Configuration Error',
@@ -234,7 +258,18 @@ class NotebookMYR(wx.Notebook):
             #self.loadDefaults()
         return True
 
+    def getMainConfig(self, json):
+        try:
+            return json.loads(json)['mainMode']
+        except:
+            return "simple"
+
+
     def loadTabs(self, config_json):
+        #self.tabMainConfig.set_json(config_json)
+        #self.tabSwitchModes.set_json(config_json)
+        #self.tabMiscellaneous.set_json(config_json)
+
         for i in range(0, self.GetPageCount()):
             page = self.GetPage(i)
             page.set_json(config_json)
@@ -257,14 +292,20 @@ class NotebookMYR(wx.Notebook):
     def getConfigDict(self):
         config_json = dict()
 
+        #config_json.update(self.tabMainConfig.get_json())
+        #config_json.update(self.tabSwitchModes.get_json())
+        #config_json.update(self.tabMiscellaneous.get_json())
+
         for i in range(0, self.GetPageCount()):
             page = self.GetPage(i)
             config_json.update(page.get_json())
 
         return config_json
 
-    def getConfigText(self):
+    def getConfigText(self, mainMode):
         config_json = self.getConfigDict()
+        config_json["mainMode"] = mainMode
+
         string_out = "{\n"
 
         for i, (key, value) in enumerate(config_json.iteritems()):

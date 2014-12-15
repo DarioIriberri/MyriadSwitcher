@@ -8,8 +8,8 @@ from notebook.tabs import NotebookTab as nbt
 SLIDER_MAX = 1000
 
 
-class TabPanel(nbt.NotebookTab):
-    def __init__(self, parent, frame_myr_p):
+class SwitchingModesTab(nbt.NotebookTab):
+    def __init__(self, parent, frame_myr_p, tab=None):
         nbt.NotebookTab.__init__(self, parent=parent, id=wx.ID_ANY)
 
         global frame_myr
@@ -47,6 +47,8 @@ class TabPanel(nbt.NotebookTab):
 
 
     def calculateExpected(self):
+        if not self.config_json:
+            return
         #min_coins = int(config_json["minCoins"])
         #self.config_json = config_json
 
@@ -177,7 +179,6 @@ class ModesPanel(wx.Panel):
 
         #self.SetBackgroundColour("White")
 
-        # Setup event handling and initial state for controls:
         for radio, text in self.group1_ctrls:
             self.Bind(wx.EVT_RADIOBUTTON, self.OnModeSelect, radio )
 

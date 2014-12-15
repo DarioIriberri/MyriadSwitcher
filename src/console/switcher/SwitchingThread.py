@@ -1,9 +1,4 @@
-from console.switcher import HTMLBuilder
-
 __author__ = 'Dario'
-
-import SwitcherData
-from ErrorReport import ErrorReport
 
 import threading
 import psutil
@@ -15,6 +10,8 @@ import os
 import logging
 import socket
 import traceback
+from console.switcher.ErrorReport import ErrorReport
+from console.switcher import HTMLBuilder, SwitcherData
 
 
 MIN_TIME_THREAD_PROBED = 60
@@ -56,7 +53,7 @@ class SwitchingThread (threading.Thread):
         if self.rebooting:
             time.sleep(30)
 
-        self.console.parent.onMiningProcessStarted()
+        self.console.onMiningProcessStarted()
 
         switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
 
@@ -81,7 +78,7 @@ class SwitchingThread (threading.Thread):
             try:
                 dataError = switcherData.fetchData(thread.activeConfigFile)
 
-                threadStopped = self.checkSwitchingThreadStopped()
+                threadStopped = self.isStopped()
 
                 if dataError:
                     switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
@@ -153,8 +150,8 @@ class SwitchingThread (threading.Thread):
                     if not switcherData.config_json["debug"]:
                         self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
 
-                        workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
-                        retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
+                        retCode = self.startMiners(scriptPath, switcherData.config_json["mainMode"])
+
                         #retCode = subprocess.Popen('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
                         #subprocess.call('cd /d "' + unicode(workingDirectory) + '" && start cmd /c "' + unicode(scriptPath) + '"', shell=True)
                         #subprocess.call('cd /d "' + workingDirectory + '" && start cmd /c "' + scriptPath + '"', shell=True)
@@ -183,7 +180,7 @@ class SwitchingThread (threading.Thread):
 
                 switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
 
-                if self.checkSwitchingThreadStopped():
+                if self.isStopped():
                     breakAt = "after prints, thread stopped"
                     break
 
@@ -206,7 +203,7 @@ class SwitchingThread (threading.Thread):
                 break
 
         switcherData.end()
-        self.console.parent.onMiningProcessStopped()
+        self.console.onMiningProcessStopped()
 
     def checkRestart(self, prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
         return ( restart and not maxMinerFails and not globalStopped ) or \
@@ -221,7 +218,7 @@ class SwitchingThread (threading.Thread):
         t_initSleep = time.time()
 
         while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
-            if self.checkSwitchingThreadStopped():
+            if self.isStopped():
                 return None
 
             if not globalStopped and switcherData.config_json["monitor"]:
@@ -248,6 +245,18 @@ class SwitchingThread (threading.Thread):
             t_initSleep = time.time()
 
         self.configChangedFlag = False
+
+    def startMiners(self, scriptPath, mainMode):
+        retCode = None
+
+        if "advanced" == mainMode:
+            workingDirectory = scriptPath[0:scriptPath.rfind("\\")]
+            retCode = subprocess.call('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
+
+        else:
+            pass
+
+        return retCode
 
     def configChanged(self):
         self.configChangedFlag = True
@@ -291,8 +300,8 @@ class SwitchingThread (threading.Thread):
 
         return (cpu, timeCPUProbed)
 
-    def checkSwitchingThreadStopped(self):
-        return self.isStopped()
+    #def checkSwitchingThreadStopped(self):
+    #    return self.isStopped()
 
     def waitForMinerToStart(self, miner, ramp_up_time):
         if miner is None:
