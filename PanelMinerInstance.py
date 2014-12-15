@@ -20,6 +20,11 @@ STATUS_ENABLED_PENDING      = "ENABLED_PENDING"
 STATUS_RUNNING              = "RUNNING"
 STATUS_RUNNING_PENDING      = "STATUS_RUNNING_PENDING"
 
+MIN_TIME_THREAD_PROBED = 60
+
+WAIT_FOR_STREAMS = True
+#WAIT_FOR_STREAMS = False
+
 
 class PanelMinerInstance(wx.Panel):
     def __init__(self, parent, deviceLabel):
@@ -31,6 +36,9 @@ class PanelMinerInstance(wx.Panel):
         self.threadStreams = None
         self.threadErr = None
         self.threadErr = None
+
+        self.previousCPUUsage = None
+        self.currentCPUUsage  = None
 
         self.resizable_panel = wx.SplitterWindow(self, wx.ID_ANY)
         self.resizable_panel.SetMinimumPaneSize(1)
@@ -83,6 +91,8 @@ class PanelMinerInstance(wx.Panel):
         #self.process = psutil.Popen(command, stdout=subprocess.PIPE, shell=True)
         #self.process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 
+        self.killed = False
+
         self.threadStreams = threading.Thread(target=self.__runStreamThreads, args = [waitForStreams])
         self.threadStreams.start()
 
@@ -109,7 +119,7 @@ class PanelMinerInstance(wx.Panel):
             if not childProcess.is_running():
                 return False
 
-        return True
+        return not self.__minerFreezed()
 
     def clearAll(self):
         self.shellStdout.Clear()
@@ -134,10 +144,13 @@ class PanelMinerInstance(wx.Panel):
 
             self.__kill()
 
+        #Check Miners...
         while self.isMinerRunning():
-            time.sleep(1)
+            time.sleep(10)
 
-        self.handler.moveOn()
+        #if the kill signal is set, the miner was stopped by the user
+        if not self.killed:
+            self.handler.minerFailed()
 
     def __outputThread(self, shell, stream, waitForStreams):
         for line in iter(stream.readline, b''):
@@ -173,7 +186,7 @@ class PanelMinerInstance(wx.Panel):
             #time.sleep(4)
             self.printMessage(os.linesep + "Killed... " + ("" if not stream else str(stream)))
 
-        self.killed = False
+        #self.killed = False
         self.handler.moveOn()
 
     def __obliterate(self):
@@ -188,6 +201,35 @@ class PanelMinerInstance(wx.Panel):
 
         except psutil.NoSuchProcess:
             return 0
+
+    def __getCPUUsage(self):
+        try:
+            miner = self.process.children()[0]
+        except:
+            return None
+
+        return CPUUsage(miner.pid, miner.get_cpu_times().user, time.time())
+
+    def __minerFreezed(self):
+        freezed = False
+        #if config_json["debug"] or not config_json["monitor"]:
+        #    return None
+
+        self.currentCPUUsage = self.__getCPUUsage()
+
+        if not self.currentCPUUsage:
+            return True
+
+        if self.previousCPUUsage:
+            if (self.currentCPUUsage.timeCPUProbed - self.previousCPUUsage.timeCPUProbed) < MIN_TIME_THREAD_PROBED:
+                return False
+
+            if self.previousCPUUsage:
+                freezed = self.currentCPUUsage.cpuTime == self.previousCPUUsage.cpuTime
+
+        self.previousCPUUsage = self.currentCPUUsage
+
+        return freezed
 
     def __appendText(self, shell, text):
         try:
@@ -208,6 +250,13 @@ class PanelMinerInstance(wx.Panel):
         #wx.PyOnDemandOutputWindow.write(self.shell, text)
 
 
+class CPUUsage():
+    def __init__(self, pid, cpuTime, timeCPUProbed):
+        self.pid = pid
+        self.timeCPUProbed = timeCPUProbed
+        self.cpuTime = cpuTime
+
+
 class PanelMinerInstanceHandler(wx.Panel):
     def __init__(self, parent, size=wx.DefaultSize):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY, size=size)
@@ -216,6 +265,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.status = STATUS_DISABLED
         self.killedAlreadyFlag = False
+        self.command = None
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -314,14 +364,19 @@ class PanelMinerInstanceHandler(wx.Panel):
 
     def onDeviceEdit(self, event):
         #if not self.status == STATUS_RUNNING:
+        self.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+
+        event.Skip()
+
+    def execute(self, command, waitForStreams):
+        self.command = command
+
         if not self.parent.isMinerRunning():
+            self.parent.execute(command, waitForStreams)
             #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
-            self.parent.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
             #self.parent.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
 
             self.statusRunningPending()
-
-        event.Skip()
 
     #def setRunningDevice(self, running):
     #    label = self.parent.deviceLabel
@@ -387,11 +442,6 @@ class PanelMinerInstanceHandler(wx.Panel):
         thread = threading.Thread(target=self.statusEnabledPendingThread)
         thread.start()
 
-        #self.parent.printText(self.deviceCombo.GetValue() + " is ready to mine!", True)
-
-        #self.deviceCombo.Enable(True)
-        #self.deviceNum.Enable(True)
-
         self.Layout()
 
     def statusEnabledPendingThread(self):
@@ -400,17 +450,16 @@ class PanelMinerInstanceHandler(wx.Panel):
         MAX_ITERATIONS = 60
 
         while not self.killedAlreadyFlag and i < MAX_ITERATIONS:
-            a = i % 2
-            if a:
+            if i % 2:
                 self.deviceLabel.SetBackgroundColour(clr.COLOR_RED)
-                self.deviceLabel.SetForegroundColour((clr.COLOR_WHITE))
+                self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
             else:
                 self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
                 self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
 
             self.Layout()
 
-            i = i + 1
+            i += 1
 
             time.sleep(0.5)
 
@@ -424,25 +473,21 @@ class PanelMinerInstanceHandler(wx.Panel):
 
     def statusRunningPending(self, label = None):
         self.status = STATUS_RUNNING_PENDING
+        self.deviceLabel.Enable(True)
 
-        thread = threading.Thread(target=self.statusRunningPendingThread())
+        thread = threading.Thread(target=self.statusRunningPendingThread)
         thread.start()
-
-        #self.parent.printText(self.deviceCombo.GetValue() + " is ready to mine!", True)
-
-        #self.deviceCombo.Enable(True)
-        #self.deviceNum.Enable(True)
 
         self.Layout()
 
     def statusRunningPendingThread(self):
         i = 0
 
+        MIN_ITERATIONS = 6
         MAX_ITERATIONS = 60
 
-        while not self.parent.isMinerRunning() and i < MAX_ITERATIONS:
-            a = i % 2
-            if a:
+        while ( not self.parent.isMinerRunning() and i < MAX_ITERATIONS ) or i < MIN_ITERATIONS:
+            if i % 2:
                 self.deviceLabel.SetBackgroundColour(clr.COLOR_GREEN)
                 self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
             else:
@@ -450,13 +495,16 @@ class PanelMinerInstanceHandler(wx.Panel):
                 self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
 
             self.Layout()
+            self.parent.Layout()
+            self.parent.parent.Layout()
+            self.parent.parent.parent.Layout()
 
-            i = i + 1
+            i += 1
 
             time.sleep(0.5)
 
         if i >= MAX_ITERATIONS:
-            print "Fuck, start timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
+            #print "Fuck, start timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
             self.parent.killProcess(forcibly = True)
 
             self.statusEnabled(self.parent.deviceLabel)
@@ -470,3 +518,12 @@ class PanelMinerInstanceHandler(wx.Panel):
         else:
             if self.status == STATUS_ENABLED_PENDING:
                 self.killedAlreadyFlag = flag
+
+    def minerFailed(self):
+        #todo: if restart:
+        self.statusEnabled()
+
+        time.sleep(2)
+
+        if self.command:
+            self.execute(self.command, WAIT_FOR_STREAMS)
