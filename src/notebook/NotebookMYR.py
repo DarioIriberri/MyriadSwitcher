@@ -4,10 +4,10 @@ import wx
 import json
 import copy
 import io
-from ConfigTab import ConfigTab
-from SwitchingModesTab import SwitchingModesTab
-from MiscellaneousTab import MiscellaneousTab
 from event.EventLib import ConfigModeEvent
+from notebook.tabs.ConfigTab import ConfigTab
+from notebook.tabs.SwitchingModesTab import SwitchingModesTab
+from notebook.tabs.MiscellaneousTab import MiscellaneousTab
 
 
 class NotebookMYR(wx.Notebook):
@@ -101,7 +101,7 @@ class NotebookMYR(wx.Notebook):
         if tab_flags & self.MAIN_TAB:
             self.tabMainConfig = ConfigTab(self, frame_myr)
             self.AddPage(self.tabMainConfig, "Main Config")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap('img/aquachecked.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/aquachecked.ico', wx.BITMAP_TYPE_ICO)))
 
             self.TABS.append(self.tabMainConfig)
 
@@ -110,7 +110,7 @@ class NotebookMYR(wx.Notebook):
         if tab_flags & self.SWITCH_TAB:
             self.tabSwitchModes = SwitchingModesTab(self, frame_myr)
             self.AddPage(self.tabSwitchModes, "Switching Modes")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap('img/switching16.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/switching16.ico', wx.BITMAP_TYPE_ICO)))
 
             self.TABS.append(self.tabSwitchModes)
 
@@ -119,7 +119,7 @@ class NotebookMYR(wx.Notebook):
         if tab_flags & self.MISC_TAB:
             self.tabMiscellaneous = MiscellaneousTab(self, frame_myr)
             self.AddPage(self.tabMiscellaneous, "Miscellaneous")
-            self.SetPageImage(i, self.il.Add(wx.Bitmap('img/advanced.ico', wx.BITMAP_TYPE_ICO)))
+            self.SetPageImage(i, self.il.Add(wx.Bitmap(frame_myr.resouce_path + 'img/advanced.ico', wx.BITMAP_TYPE_ICO)))
 
             self.TABS.append(self.tabMiscellaneous)
 

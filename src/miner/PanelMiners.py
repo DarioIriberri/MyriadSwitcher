@@ -1,6 +1,5 @@
 __author__ = 'Dario'
 
-import os
 import wx
 from PanelMinerInstance import PanelMinerInstance
 from wx.lib.splitter import MultiSplitterWindow

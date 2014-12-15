@@ -2,8 +2,7 @@ __author__ = 'Dario'
 
 import wx
 import os
-import NotebookTab as nbt
-from event.EventLib import EVT_CONFIG_MODE_EVENT
+from notebook.tabs import NotebookTab as nbt
 
 try:
     from agw import multidirdialog as MDD

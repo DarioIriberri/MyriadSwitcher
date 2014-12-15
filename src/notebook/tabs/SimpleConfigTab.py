@@ -1,17 +1,19 @@
 __author__ = 'Dario'
 
-import wx
 import io
-import os
-from ConfigTabPanels import BaseConfigTab, HeaderPanel
+
+import wx
 from wx.lib.mixins.listctrl import TextEditMixin
 from ObjectListView import ObjectListView, ColumnDefn
+
+from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
 
 POOLS_SCRYPT  = "poolsScrypt.conf"
 POOLS_GROESTL = "poolsGroestl.conf"
 POOLS_SKEIN   = "poolsSkein.conf"
 POOLS_QUBIT   = "poolsQubit.conf"
+
 
 class SimpleConfigTab(BaseConfigTab):
     def __init__(self, parent, configTab):
@@ -275,7 +277,7 @@ class PoolDialog(wx.Dialog):
         self.btnMoveUp.Enable(False)
         self.btnMoveDown.Enable(False)
 
-        self.btnAdd.SetBitmap(wx.Bitmap('img/add16.ico'), wx.LEFT)
+        self.btnAdd.SetBitmap(wx.Bitmap(frame_myr.resouce_path + 'img/add16.ico'), wx.LEFT)
         self.btnRemove.SetBitmap(wx.Bitmap('img/remove16.ico'), wx.LEFT)
         self.btnMoveUp.SetBitmap(wx.Bitmap('img/up16.ico'), wx.LEFT)
         self.btnMoveDown.SetBitmap(wx.Bitmap('img/down16.ico'), wx.LEFT)

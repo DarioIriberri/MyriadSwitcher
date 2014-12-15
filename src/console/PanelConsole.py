@@ -5,9 +5,8 @@ import time
 import wx
 import wx.html2 as webview
 from event.Event import Event
+from console.switcher.SwitchingThread import SwitchingThread
 from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
-
-from SwitchingThread import SwitchingThread
 
 
 MAX_STOP_TIME = 45

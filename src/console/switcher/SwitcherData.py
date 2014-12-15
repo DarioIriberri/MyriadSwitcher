@@ -1,7 +1,5 @@
 __author__ = 'Dario'
 
-import HTMLBuilder
-
 import time
 import json
 import operator
@@ -10,6 +8,7 @@ import urllib2
 import cPickle
 import copy
 from collections import Counter
+import HTMLBuilder
 import difficulty.Difficulties as Difficulties
 
 

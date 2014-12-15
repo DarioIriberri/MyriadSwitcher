@@ -2,7 +2,7 @@ __author__ = 'Dario'
 
 import wx
 from event.EventLib import StatusBarEvent
-import NotebookTab as nbt
+from notebook.tabs import NotebookTab as nbt
 
 
 class BaseConfigTab(nbt.NotebookTab):

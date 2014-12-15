@@ -1,9 +1,11 @@
 __author__ = 'Dario'
 
-from ConfigTabPanels import BaseConfigTab, HeaderPanel
-import wx
 import os.path
+
+import wx
 import wx.lib.filebrowsebutton as Filebrowser
+
+from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
 
 class MainConfigTab(BaseConfigTab):

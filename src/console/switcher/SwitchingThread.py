@@ -1,9 +1,5 @@
 __author__ = 'Dario'
 
-import HTMLBuilder
-import SwitcherData
-from ErrorReport import ErrorReport
-
 import threading
 import psutil
 import subprocess
@@ -14,6 +10,8 @@ import os
 import logging
 import socket
 import traceback
+from console.switcher.ErrorReport import ErrorReport
+from console.switcher import HTMLBuilder, SwitcherData
 
 
 MIN_TIME_THREAD_PROBED = 60
@@ -220,7 +218,7 @@ class SwitchingThread (threading.Thread):
         t_initSleep = time.time()
 
         while (time.time() < (t_initSleep + sleepTime)) and not self.configChangedFlag:
-            if self.isStopped()():
+            if self.isStopped():
                 return None
 
             if not globalStopped and switcherData.config_json["monitor"]:

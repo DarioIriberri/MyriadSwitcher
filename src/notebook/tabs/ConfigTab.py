@@ -1,11 +1,10 @@
 __author__ = 'Dario'
 
 import wx
-import json
 
-import NotebookTab as nbt
-from SimpleConfigTab import SimpleConfigTab
-from MainConfigTab import MainConfigTab
+from notebook.tabs import NotebookTab as nbt
+from notebook.tabs.SimpleConfigTab import SimpleConfigTab
+from notebook.tabs.MainConfigTab import MainConfigTab
 from event.EventLib import EVT_CONFIG_TAB_EVENT, EVT_CONFIG_MODE_EVENT
 
 

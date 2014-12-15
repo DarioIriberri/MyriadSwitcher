@@ -1,10 +1,7 @@
 __author__ = 'Dario'
 
 import wx
-import sys
 import FrameMYR
-from MainConfigTab import MainConfigTab
-from SimpleConfigTab import SimpleConfigTab
 
 
 if __name__ == "__main__":
@@ -13,5 +10,5 @@ if __name__ == "__main__":
     #warnings.simplefilter('ignore', DeprecationWarning)
 
     app = wx.App(False)
-    frame = FrameMYR.FrameMYR()
+    frame = FrameMYR.FrameMYR("../")
     app.MainLoop()

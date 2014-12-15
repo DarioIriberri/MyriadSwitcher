@@ -1,7 +1,7 @@
 __author__ = 'Dario'
 
 from event.EventLib import ConsoleEvent
-import SwitcherData
+from console.switcher import SwitcherData
 
 import wx
 import time
@@ -161,7 +161,8 @@ class HTMLBuilder():
 
         status = "FAIL" if status == "MAX_FAIL" else status
 
-        totMined = hashtableMinedCoins[SwitcherData.scryptS] + hashtableMinedCoins[SwitcherData.groestlS] + hashtableMinedCoins[SwitcherData.skeinS] + hashtableMinedCoins[SwitcherData.qubitS]
+        totMined = hashtableMinedCoins[SwitcherData.scryptS] + hashtableMinedCoins[SwitcherData.groestlS] + hashtableMinedCoins[
+            SwitcherData.skeinS] + hashtableMinedCoins[SwitcherData.qubitS]
 
         totalCoinsFormated = "{:7.0f}".format(coins)
 
@@ -267,10 +268,14 @@ class HTMLBuilder():
 
             ###############################################################################################################################################################
 
-            valCorrectedY = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.scryptS], hashtableTime[SwitcherData.scryptS], True)
-            valCorrectedG = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.groestlS], hashtableTime[SwitcherData.groestlS], True)
-            valCorrectedS = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.skeinS], hashtableTime[SwitcherData.skeinS], True)
-            valCorrectedQ = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.qubitS], hashtableTime[SwitcherData.qubitS], True)
+            valCorrectedY = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.scryptS], hashtableTime[
+                SwitcherData.scryptS], True)
+            valCorrectedG = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.groestlS], hashtableTime[
+                SwitcherData.groestlS], True)
+            valCorrectedS = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.skeinS], hashtableTime[
+                SwitcherData.skeinS], True)
+            valCorrectedQ = self.getCoinsPerDay(hashtableTotalMinedCoins[SwitcherData.qubitS], hashtableTime[
+                SwitcherData.qubitS], True)
 
             ###############################################################################################################################################################
 
@@ -293,10 +298,14 @@ class HTMLBuilder():
         #stringOthersCoinsS = "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(totalCoinsSkein, coins, 0)   + valCorrectedS
         #stringOthersCoinsQ = "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(totalCoinsQubit, coins, 0)   + valCorrectedQ
 
-        stringOthersCoinsY = minedY + "/" + "{:7.0f}".format(totalCoinsScrypt)  + " " + self.formatPct(hashtableMinedCoins[SwitcherData.scryptS], totalCoinsScrypt, 1) + valCorrectedY + " "
-        stringOthersCoinsG = minedG + "/" + "{:7.0f}".format(totalCoinsGroestl) + " " + self.formatPct(hashtableMinedCoins[SwitcherData.groestlS], totalCoinsGroestl, 1) + valCorrectedG + " "
-        stringOthersCoinsS = minedS + "/" + "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(hashtableMinedCoins[SwitcherData.skeinS], totalCoinsSkein, 1) + valCorrectedS + " "
-        stringOthersCoinsQ = minedQ + "/" + "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(hashtableMinedCoins[SwitcherData.qubitS], totalCoinsQubit, 1) + valCorrectedQ + " "
+        stringOthersCoinsY = minedY + "/" + "{:7.0f}".format(totalCoinsScrypt)  + " " + self.formatPct(hashtableMinedCoins[
+                                                                                                           SwitcherData.scryptS], totalCoinsScrypt, 1) + valCorrectedY + " "
+        stringOthersCoinsG = minedG + "/" + "{:7.0f}".format(totalCoinsGroestl) + " " + self.formatPct(hashtableMinedCoins[
+                                                                                                           SwitcherData.groestlS], totalCoinsGroestl, 1) + valCorrectedG + " "
+        stringOthersCoinsS = minedS + "/" + "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(hashtableMinedCoins[
+                                                                                                           SwitcherData.skeinS], totalCoinsSkein, 1) + valCorrectedS + " "
+        stringOthersCoinsQ = minedQ + "/" + "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(hashtableMinedCoins[
+                                                                                                           SwitcherData.qubitS], totalCoinsQubit, 1) + valCorrectedQ + " "
 
         stringPrice = '{0:>10} $'.format(int(currentPrice * valCorrected / float(config_json["scryptHashRate"]))) + '{0:>10} $ '.format(int((currentPrice * valCorrected)))
 

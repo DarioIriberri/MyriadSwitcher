@@ -1,15 +1,14 @@
 __author__ = 'Dario'
 
-
-import SwitcherData
-from NotebookMYR import NotebookMYR
-from PanelConsole import PanelConsole
-from PanelMiners import PanelMiners
 import wx
 import os
 import time
 import threading
 from Tkinter import Tk
+from console.PanelConsole import PanelConsole
+from console.switcher import SwitcherData
+from miner.PanelMiners import PanelMiners
+from notebook.NotebookMYR import NotebookMYR
 from event.EventLib import EVT_STATUS_BAR_EVENT
 
 

@@ -6,10 +6,8 @@ import time
 import psutil
 import subprocess
 import threading
-import signal
-import HTMLBuilder as clr
 from wx._core import PyDeadObjectError
-import wx.richtext as rt
+from console.switcher import HTMLBuilder as clr
 
 DEVICE_NONE_SELECTED = "Pick a device..."
 ALL_DEVICES          = "All"
