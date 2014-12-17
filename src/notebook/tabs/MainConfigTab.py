@@ -9,8 +9,8 @@ from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
 
 class MainConfigTab(BaseConfigTab):
-    def __init__(self, parent, configTab):
-        BaseConfigTab.__init__(self, parent, configTab)
+    def __init__(self, parent, parent_panel, configTab):
+        BaseConfigTab.__init__(self, parent, parent_panel, configTab)
 
     def getRightPanel(self, parent):
         self.rightPanel = RightPanelAdvanced(self, parent)
@@ -20,7 +20,7 @@ class MainConfigTab(BaseConfigTab):
     def getHeaderPanel(self):
         return HeaderPanel(self, "Miner Scripts")
 
-    def checkFilesExist(self):
+    def check_files_exist(self):
         #return True
         return ( self.rightPanel.algo_panel_scrypt.checkFileExists() and
                  self.rightPanel.algo_panel_groestl.checkFileExists() and

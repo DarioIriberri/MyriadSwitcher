@@ -8,8 +8,11 @@ from Tkinter import Tk
 from console.PanelConsole import PanelConsole
 from console.switcher import SwitcherData
 from miner.PanelMiners import PanelMiners
-from notebook.NotebookMYR import NotebookMYR
-from event.EventLib import EVT_STATUS_BAR_EVENT
+from notebook.ExpandableNotebook import ExpandableNotebook
+from notebook.tabs.ConfigTab import ConfigTab
+from notebook.tabs.SwitchingModesTab import SwitchingModesTab
+from notebook.tabs.MiscellaneousTab import MiscellaneousTab
+from event.EventLib import EVT_STATUS_BAR_EVENT, EVT_DUMMY_EVENT, DummyEvent
 
 
 VERSION  = "0.3"
@@ -26,28 +29,17 @@ class FrameMYRClass(wx.Frame):
         FrameMYRClass.RESOURCE_PATH = resouce_path
         #FrameMYR.FrameMYR.RESOURCE_PATH = resouce_path
 
-        self.gravity = GRAVITY
-
-        f = open('activeConfig')
-        lines = f.readlines()
-        f.close()
-
-        if (lines and len(lines) > 0):
-            self.activeFile = lines[0]
-        else:
-            self.activeFile = "myriadSwitcher.conf"
-
-        self.workingDir = os.getcwd()
+        self.gravity = None
 
         wx.Frame.__init__(self, None, wx.ID_ANY,
-                          "Myriad Switcher Configurator... " + self.activeFile,
-                          size=(750, 390)
+                          "Myriad Switcher Configurator... ",
+                          size=(750, 383)
         )
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
 
-        self.setTitle(self.activeFile)
+        #self.setTitle(self.activeFile)
         #self.Bind(wx.EVT_SIZE, self.OnResize)
 
         self.status_bar = self.CreateStatusBar()
@@ -78,11 +70,17 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onSave, menuSave)
         self.Bind(wx.EVT_MENU, self.onSaveAs, menuSaveAs)
         self.Bind(wx.EVT_MENU, self.onExit, menuExit)
-        self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_MENU, self.onAbout, menuAbout)
         self.Bind(wx.EVT_MENU, self.onRTFM, menuRTFM)
         self.Bind(wx.EVT_MENU, self.onDonateMYR, menuDonateMYR)
         self.Bind(wx.EVT_MENU, self.onDonateBTC, menuDonateBTC)
+        self.Bind(wx.EVT_CLOSE, self.onClose)
+        self.Bind(wx.EVT_BUTTON, self.onButtonRun, self.buttonRun)
+        self.Bind(wx.EVT_BUTTON, self.onButtonResume, self.buttonResume)
+        self.Bind(wx.EVT_BUTTON, self.onButtonStop, self.buttonStop)
+        self.Bind(wx.EVT_BUTTON, self.onButtonCancel, self.buttonCancel)
+        self.Bind(wx.EVT_BUTTON, self.onButtonDefaults, buttonReset)
+        self.Bind(wx.EVT_BUTTON, self.onSave, self.buttonSave)
 
         # Creating the menubar.
         menuBar = wx.MenuBar()
@@ -97,59 +95,42 @@ class FrameMYRClass(wx.Frame):
 
         # Create the Notebook
         self.panelNotebook = wx.Panel(self)
-        #self.panelNotebook.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWFRAME))
-        #self.panelNotebook.SetBackgroundColour("White")
-        #self.panelNotebook.SetTransparent(255)
-        #self.panelConsole = wx.Panel(self)
+
         self.panelConsole = PanelConsole(self.resizable_panel, self)
         self.panelConsole.addMessageEventListener(self.set_status_text)
         #self.panelConsole = webview.WebView.New(PanelConsole.PanelConsole)
         self.panelConsole.SetBackgroundColour("Black")
 
         self.miners = PanelMiners(parent = self.resizable_panel)
-        #self.shell.miner1.AppendText("Myriad Switcher miner output..." + os.linesep + os.linesep)
-        #self.shell.miner0.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only')
-        #self.shell.miner1.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only')
 
-        #p = subprocess.Popen(["cmd", "/C", "del *.bin"]
-        #subprocess.Popen("E:/SPH-SGMINER - Single/sgminer.exe --config cgminer-MYRQ.conf --text-only", stdout=subprocess.PIPE).communicate()[0]
-        #self.shell.push("p = subprocess.Popen('del \"E:\SPH-SGMINER - Single\*.bin\"', stdout=subprocess.PIPE, shell=True).communicate()[0]", silent = True)
-        #self.execute("subprocess.Popen('\"E:/SPH-SGMINER - Single/sgminer.exe\" --config \"E:/SPH-SGMINER - Single/cgminer-MYRQ.conf\" --text-only', stdout=subprocess.PIPE, shell=True).communicate()[0]")
-        #self.shell.run("p = subprocess.Popen('\"E:/SPH-SGMINER - Single/sgminer.exe\" --config \"E:/SPH-SGMINER - Single/cgminer-MYRQ.conf\" --text-only', stdout=subprocess.PIPE, shell=true).communicate()[0]")
-        #self.shell.run("p = subprocess.Popen('\"cmd\", \"/C\", \"E:/SPH-SGMINER - Single/sgminer.exe\" --config \"E:/SPH-SGMINER - Single/cgminer-MYRQ.conf\" --text-only', stdout=subprocess.PIPE, shell=true).communicate()[0]")
-        #self.shell.run("subprocess.Popen([\'\"E:\\SPH-SGMINER - Single\\cgminer-startup.........................MYRQ - Switch.bat\"\'], stdout=subprocess.PIPE).communicate()[0]")
-        #self.shell.run("subprocess.Popen(\'cgminer-startup.........................MYRQ - Switch.bat\', executable='E:\SPH-SGMINER - Single\cgminer-startup.........................MYRQ - Switch.bat', stdout=subprocess.PIPE).communicate()[0]")
-        #self.shell.run("subprocess.Popen(\'cgminer-startup.........................MYRQ - Switch.bat\', stdout=subprocess.PIPE).communicate()[0]")
+        self.notebook = ExpandableNotebook(self.panelNotebook, self)
+        self.notebook.addTab(ConfigTab, "Main Config", FrameMYRClass.RESOURCE_PATH + 'img/aquachecked.ico')
+        self.notebook.addTab(SwitchingModesTab, "Switching Modes", FrameMYRClass.RESOURCE_PATH + 'img/switching16.ico')
+        self.notebook.addTab(MiscellaneousTab, "Miscellaneous", FrameMYRClass.RESOURCE_PATH + 'img/advanced.ico')
+        #self.notebook.addTab(MiscellaneousTab, "Miscellaneous2", FrameMYRClass.RESOURCE_PATH + 'img/advanced.ico')
+        self.notebook.buildNotebook()
 
-        #self.SetTransparent(210)
+        self.setMainMode(self.notebook.loadConfig()['mainMode'])
+        self.setTitle(self.notebook.activeFile)
 
-        self.sizerNotebookAll = wx.BoxSizer(wx.HORIZONTAL)
-        self.notebook = NotebookMYR(self.panelNotebook, self, self.sizerNotebookAll, border=4, expandable=True)
-        #self.notebookAdv = NotebookMYR(self.panelNotebook, self, MainConfigTab, "Advanced", self.sizerNotebookAll, 4, expandable=True)
-        #self.notebookAdv.Hide()
-        self.notebook.loadConfig(self.activeFile)
-        #self.notebookAdv.loadConfig(self.activeFile)
-        #self.notebookSimple.loadConfig(self.activeFile)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.onMainModeToggle, self.buttonToggle)
+        #self.notebook.broadcastBind(self, wx.EVT_TOGGLEBUTTON, self.buttonToggle, event_id="main_config")
 
-        #self.notebook.show_notebook()
+        #self.notebook.broadcast_bind(self, EVT_NOTEBOOK_BROADCAST_EVENT, event_id="lalala")
+        #self.notebook.Bind(EVT_NOTEBOOK_BROADCAST_EVENT, self.notebook.onBroadcastEventToAllTabs)
+        #wx.PostEvent(self, NotebookBroadcastEvent(data="main_config"))
+        #self.notebook.broadcastEventToAllTabs(data=11, kjgkg="d")
 
         self.sizerTotal = wx.BoxSizer(wx.VERTICAL)
 
         # Buttons section
-        flagsButtonRun = wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, 6).Proportion(0)
+        button_bottom_gap = 4
+        flagsButtonRun = wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap).Proportion(0)
         sizerButtons = wx.BoxSizer(wx.HORIZONTAL)
-        sizerButtons.AddF(self.buttonSave, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, 6))
-        sizerButtons.AddF(self.buttonCancel, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, 6))
-        sizerButtons.AddF(buttonReset, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, 6))
-        sizerButtons.AddF(self.buttonToggle, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, 6))
-        self.Bind(wx.EVT_BUTTON, self.onButtonRun, self.buttonRun)
-        self.Bind(wx.EVT_BUTTON, self.onButtonResume, self.buttonResume)
-        self.Bind(wx.EVT_BUTTON, self.onButtonStop, self.buttonStop)
-        self.Bind(wx.EVT_BUTTON, self.onButtonCancel, self.buttonCancel)
-        self.Bind(wx.EVT_BUTTON, self.onButtonReset, buttonReset)
-        self.Bind(wx.EVT_BUTTON, self.onSave, self.buttonSave)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.onMainModeToggle, self.buttonToggle)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.notebook.onMainModeToggle, self.buttonToggle)
+        sizerButtons.AddF(self.buttonSave, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
+        sizerButtons.AddF(self.buttonCancel, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
+        sizerButtons.AddF(buttonReset, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
+        sizerButtons.AddF(self.buttonToggle, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
 
         spacerFlags = wx.SizerFlags().Expand().Border(wx.ALL, 1).Proportion(1)
         sizerButtons.AddF((-1, -1), spacerFlags)
@@ -157,23 +138,24 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.AddF(self.buttonResume, flagsButtonRun)
         sizerButtons.AddF(self.buttonStop, flagsButtonRun)
 
-        self.sizerTotal.Add(self.panelNotebook, 1, wx.ALL | wx.EXPAND)
+        self.sizerTotal.Add(self.panelNotebook, 1, wx.EXPAND | wx.ALL, 1)
         self.sizerTotal.Add(sizerButtons, 0, wx.EXPAND)
 
         self.resizable_panel.SetSashGravity(GRAVITY)
         #self.resizable_panel.SplitHorizontally(self.panelConsole, self.shell)
         self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 3)
-        #self.sizerTotal.Add(self.panelConsole, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 3)
 
         self.icon = wx.Icon(FrameMYRClass.RESOURCE_PATH + 'img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
-        #self.SetIcon(self.icon)
+
         self.SetSizer(self.sizerTotal)
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUBAR))
 
         self.Layout()
         self.Show()
 
-        EVT_STATUS_BAR_EVENT(self, self.on_mouse_over)
+        self.Bind(EVT_STATUS_BAR_EVENT, self.on_mouse_over)
+        self.notebook.broadcastEventToAllTabs(event_id="main_config",
+                                              event_value=("advanced" == self.getMainMode()))
 
         self.Maximize()
 
@@ -189,10 +171,9 @@ class FrameMYRClass(wx.Frame):
         self.buttonStop.Enable(False)
         self.buttonResume.Enable(os.path.isfile(SwitcherData.DATA_FILE_NAME))
 
-
     def chechReboot(self):
         if os.path.isfile("reboot"):
-            self.panelConsole.mine(self.activeFile, rebooting=True)
+            self.panelConsole.mine(self.notebook.activeFile, rebooting=True)
 
     # Required for NotebookMyr
     def notebookControlChanged(self, event=None):
@@ -202,12 +183,6 @@ class FrameMYRClass(wx.Frame):
     def enabled_buttons(self, enabled):
         self.buttonCancel.Enable(enabled)
         self.buttonSave.Enable(enabled)
-
-    # Changes the active config file
-    def save_active_file(self, activeFile):
-        f = open("activeConfig", "w")
-        f.write(activeFile)
-        f.close()
 
     @staticmethod
     def getVersion():
@@ -251,10 +226,6 @@ class FrameMYRClass(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
-        #dlg = AboutBox()
-        #dlg.ShowModal()
-        #dlg.Destroy()
-
     def writeClipboard(self, address):
         r = Tk()
         r.withdraw()
@@ -274,77 +245,82 @@ class FrameMYRClass(wx.Frame):
         event.Skip()
 
     def onOpen(self, event):
-        """ Open a file"""
-        dlg = wx.FileDialog(self, "Choose a file", self.workingDir, os.getcwd(), "*.conf", wx.OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            filename = dlg.GetFilename()
-            dirname = dlg.GetDirectory()
-            #f = open(os.path.join(dirname, filename), 'r')
-            activeFile = filename
-            #f.close()
-
-            if self.notebook.loadConfig(dirname + "\\" + activeFile):
-                self.setTitle(activeFile)
-                self.activeFile = activeFile
-                self.save_active_file(self.activeFile)
-                self.enabled_buttons(False)
-
-        dlg.Destroy()
+        activeFile = self.notebook.openConfig()
+        if activeFile:
+            self.setTitle(activeFile)
+            self.enabled_buttons(False)
 
 
     def onSave(self, event):
-        if self.notebook.saveConfig(self.activeFile):
+        #if self.notebook.saveConfig(self.activeFile, {"mainMode" : self.getMainMode()}):
+        if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
             self.panelConsole.configChanged()
             self.enabled_buttons(False)
             #else:
             #    self.onButtonCancel(None)
 
     def onSaveAs(self, event):
-        dlg = wx.FileDialog(
-            self, message="Save file as ...", defaultDir=self.workingDir,
-            defaultFile=self.activeFile, wildcard="*.conf", style=wx.SAVE | wx.OVERWRITE_PROMPT
-        )
-        if dlg.ShowModal() == wx.ID_OK:
-            filename = dlg.GetFilename()
-            dirname = dlg.GetDirectory()
-            #f = open(os.path.join(self.dirname, filename), 'r')
-            activeFile = filename
-            #f.close()
-
-            if self.notebook.saveConfig(activeFile):
-                self.activeFile = activeFile
-                self.workingDir = dirname
-                self.setTitle(activeFile)
-                self.save_active_file(self.activeFile)
-                self.enabled_buttons(False)
-
-        dlg.Destroy()
+        activeFile = self.notebook.saveConfigAs({"mainMode" : self.getMainMode()})
+        if activeFile:
+            self.setTitle(activeFile)
+            self.enabled_buttons(False)
 
     def onButtonCancel(self, event):
-        self.notebook.loadConfig(self.activeFile)
+        self.notebook.loadConfig()
         self.enabled_buttons(False)
+        self.notebook.broadcastEventToAllTabs(event_id="main_config",
+                                              event_value=("advanced" == self.notebook.getStoredConfigParam("mainMode")))
 
-    def onButtonReset(self, event):
+    def onButtonDefaults(self, event):
         self.notebook.loadDefaults()
         self.enabled_buttons(True)
+        self.notebook.broadcastEventToAllTabs(event_id="main_config",
+                                              event_value=("advanced" == self.notebook.getStoredConfigParam("mainMode")))
 
     def onMainModeToggle(self, event):
         self.enabled_buttons(True)
 
         if self.buttonToggle.GetValue():
-            self.showAdvanced()
-        else:
             self.showSimple()
+        else:
+            self.showAdvanced()
+
+        self.notebook.broadcastEventToAllTabs(event_id="main_config",
+                                              event_value=("advanced" == self.getMainMode()))
+
+    def onButtonRun(self, event):
+        question = "This will delete any previously stored session data. Are you sure you want to continue?"
+        dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.ICON_WARNING)
+        result = dlg.ShowModal() == wx.ID_YES
+        dlg.Destroy()
+
+        if result:
+            if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
+                self.enabled_buttons(False)
+                self.panelConsole.mine(self.notebook.activeFile)
+
+    def onButtonResume(self, event):
+        if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
+            self.enabled_buttons(False)
+            self.panelConsole.mine(self.notebook.activeFile, resume=True)
+
+    def onButtonStop(self, event):
+        #self.buttonStop.SetLabelText("Stopping   ")
+        self.panelConsole.stop(kill_miners=True, wait=False)
+        StopLabelSingletonThread(self.buttonStop).start()
+        #self.buttonRun.Enable(True)
+        #self.buttonStop.Enable(False)
+
 
     def getMainMode(self):
-        return "advanced" if self.buttonToggle.GetValue() else "simple"
+        return "simple" if self.buttonToggle.GetValue() else "advanced"
 
     def setMainMode(self, mainMode):
         if mainMode == "simple":
-            self.buttonToggle.SetValue(False)
+            self.buttonToggle.SetValue(True)
             self.showSimple()
         else:
-            self.buttonToggle.SetValue(True)
+            self.buttonToggle.SetValue(False)
             self.showAdvanced()
 
     def showSimple(self):
@@ -360,41 +336,13 @@ class FrameMYRClass(wx.Frame):
         self.resizable_panel.Unsplit(self.miners)
 
     def getGravity(self):
-        if self.getMainMode() == "advanced":
-            self.gravity = float(self.panelConsole.GetSize()[1]) / self.resizable_panel.GetSize()[1]
+        if not self.gravity:
+            self.gravity = GRAVITY
+        else:
+            if self.getMainMode() == "advanced":
+                self.gravity = float(self.panelConsole.GetSize()[1]) / self.resizable_panel.GetSize()[1]
 
         return self.gravity
-
-    def onButtonRun(self, event):
-        question = "This will delete any previously stored session data. Are you sure you want to continue?"
-        dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.ICON_WARNING)
-        result = dlg.ShowModal() == wx.ID_YES
-        dlg.Destroy()
-
-        if result:
-            if self.notebook.saveConfig(self.activeFile):
-                self.enabled_buttons(False)
-
-                self.panelConsole.mine(self.activeFile)
-
-                #self.buttonRun.Enable(False)
-                #self.buttonStop.Enable(True)
-
-    def onButtonResume(self, event):
-        if self.notebook.saveConfig(self.activeFile):
-            self.enabled_buttons(False)
-
-            self.panelConsole.mine(self.activeFile, resume=True)
-
-            #self.buttonRun.Enable(False)
-            #self.buttonStop.Enable(True)
-
-    def onButtonStop(self, event):
-        #self.buttonStop.SetLabelText("Stopping   ")
-        self.panelConsole.stop(kill_miners=True, wait=False)
-        StopLabelSingletonThread(self.buttonStop).start()
-        #self.buttonRun.Enable(True)
-        #self.buttonStop.Enable(False)
 
     def onMiningProcessStarted(self):
         self.buttonRun.Enable(False)

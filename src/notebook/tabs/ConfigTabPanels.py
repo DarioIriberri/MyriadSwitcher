@@ -1,8 +1,9 @@
+from notebook.tabs import NotebookTab as nbt
+
 __author__ = 'Dario'
 
 import wx
 from event.EventLib import StatusBarEvent
-from notebook.tabs import NotebookTab as nbt
 
 
 class BaseConfigTab(nbt.NotebookTab):
@@ -11,8 +12,10 @@ class BaseConfigTab(nbt.NotebookTab):
     SKEIN   = "Skein "
     QUBIT   = "Qubit "
 
-    def __init__(self, parent, configTab):
-        nbt.NotebookTab.__init__(self, parent=parent, id=wx.ID_ANY)
+    def __init__(self, parent, parent_panel, configTab):
+        nbt.NotebookTab.__init__(self, parent_panel=parent, id=wx.ID_ANY)
+
+        self.parentNotebook = parent_panel
 
         self.configTab = configTab
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -77,8 +80,8 @@ class BaseConfigTab(nbt.NotebookTab):
         return json
 
     def on_control_changed(self, event=None):
+        #self.on_control_changed(event)
         self.configTab.on_control_changed(event)
-        #self.configTab.on_control_changed()
 
 
 class HeaderPanel(wx.Panel):
@@ -252,10 +255,10 @@ class AlgoPanelData(wx.Panel):
             self.parent.on_control_changed(event)
 
     def on_mouse_over_active_algo(self, event):
-        wx.PostEvent(self.parent, StatusBarEvent(message="Enable / Disable " + self.algo))
+        wx.PostEvent(self.parent.baseConfigTab.parentNotebook.getParentWindow(), StatusBarEvent(message="Enable / Disable " + self.algo))
 
     def on_mouse_leave_active_algo(self, event):
-        wx.PostEvent(self.parent, StatusBarEvent(message=""))
+        wx.PostEvent(self.parent.baseConfigTab.parentNotebook.getParentWindow(), StatusBarEvent(message=""))
 
 
 class LowerConfigPanel(wx.Panel):
@@ -293,6 +296,7 @@ class LowerConfigPanel(wx.Panel):
         self.combo_factor = wx.ComboBox(self, -1, size=(52, 28), choices=factors, style=wx.CB_READONLY)
         self.Bind(wx.EVT_COMBOBOX, self.parent.on_control_changed, self.combo_factor)
         sizer.AddF(wx.StaticText(self, wx.ID_ANY, size=(194, -1)), wx.SizerFlags().Border(wx.LEFT, 6))
+        #sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(194, -1)), 0, wx.EXPAND | wx.LEFT, 6)
         sizer.AddF(text_factor, wx.SizerFlags().Expand().Border(wx.TOP, 24))
         sizer.Add(self.combo_factor, 0, wx.TOP, 20)
 

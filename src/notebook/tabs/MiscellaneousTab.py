@@ -1,8 +1,9 @@
+from notebook.tabs import NotebookTab as nbt
+
 __author__ = 'Dario'
 
 import wx
 import os
-from notebook.tabs import NotebookTab as nbt
 
 try:
     from agw import multidirdialog as MDD
@@ -11,12 +12,8 @@ except ImportError:
 
 class MiscellaneousTab(nbt.NotebookTab):
     #----------------------------------------------------------------------
-    def __init__(self, parent, frame_myr_p, tab=None):
-
-        nbt.NotebookTab.__init__(self, parent=parent, id=wx.ID_ANY)
-
-        global frame_myr
-        frame_myr = frame_myr_p
+    def __init__(self, parent_panel):
+        nbt.NotebookTab.__init__(self, parent_panel=parent_panel, id=wx.ID_ANY)
 
         #self.Bind(EVT_CONFIG_MODE_EVENT, self.onMainModeToggle)
 
@@ -61,9 +58,9 @@ class MiscellaneousTab(nbt.NotebookTab):
         self.log_panel.set_values(config_json, "logActive", "logPath", "exchange", "monitor", "reboot", "maxErrors", "rebootIf" )
 
     def on_control_changed(self, event):
-        frame_myr.notebookControlChanged(event)
+        self.parentNotebook.notebookControlChanged(event)
 
-    def checkFilesExist(self):
+    def check_files_exist(self):
         return self.log_panel.checkFileExists()
 
     def onMainModeToggle(self, event):
@@ -195,6 +192,8 @@ class LogsExchangePanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__( self, parent, -1)
 
+        self.parent = parent
+
         #self.logs_box = self.create_logs_sizer()
         self.logs_box = LogElement(self, wx.StaticBox(self, -1, "Log configuration"))
         self.exchange_box = ExchangeElement(self, wx.StaticBox(self, -1, "Exchange source"))
@@ -215,7 +214,7 @@ class LogsExchangePanel(wx.Panel):
         self.errors_box.enable_disable_controls(event, trigger_to_frame)
 
         if trigger_to_frame:
-            frame_myr.notebookControlChanged()
+            self.parent.parentNotebook.notebookControlChanged()
 
     def get_values(self):
         exchange_selection = self.exchange_box.combo_exchange.GetSelection()
@@ -357,13 +356,13 @@ class LogsExchangePanel(wx.Panel):
             return False
 
         else:
-            frame_myr.notebookControlChanged()
+            self.parent.parentNotebook.notebookControlChanged()
 
             return True
 
 
     def OnChanged(self, event):
-        frame_myr.notebookControlChanged()
+        self.parent.parentNotebook.notebookControlChanged()
 
 
 class TimingElement(wx.BoxSizer):
@@ -450,13 +449,15 @@ class LogElement(wx.StaticBoxSizer):
         self.txtDir.SetValue(self.fbb.GetPath())
         self.fbb.Destroy()
 
-        frame_myr.notebookControlChanged()
+        self.parent.parentNotebook.notebookControlChanged()
 
 class ErrorsElement(wx.StaticBoxSizer):
     ERROR_OPTS = ["crashes", "freezes", "crashes or freezes"]
 
     def __init__(self, parent, static_box):
         wx.StaticBoxSizer.__init__(self, static_box, wx.HORIZONTAL)
+
+        self.parent = parent
 
         self.SetOrientation( wx.VERTICAL)
 
@@ -492,14 +493,14 @@ class ErrorsElement(wx.StaticBoxSizer):
         self.maxErrors.Enable(active_errors and active_reboot)
         self.rebootIf.Enable(active_errors and active_reboot)
         if trigger_to_frame:
-            frame_myr.notebookControlChanged()
+            self.parent.parent.parentNotebook.notebookControlChanged()
 
     def enable_disable_sub_controls(self, event, trigger_to_frame=True):
         active_reboot = self.reboot.GetValue()
         self.maxErrors.Enable(active_reboot)
         self.rebootIf.Enable(active_reboot)
         if trigger_to_frame:
-            frame_myr.notebookControlChanged()
+            self.parent.parent.parentNotebook.notebookControlChanged()
 
     def loadErrorCombo(self, isAdvancedMode):
         if isAdvancedMode:

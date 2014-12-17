@@ -16,8 +16,8 @@ POOLS_SKEIN   = "poolsSkein.conf"
 POOLS_QUBIT   = "poolsQubit.conf"
 
 class SimpleConfigTab(BaseConfigTab):
-    def __init__(self, parent, configTab):
-        BaseConfigTab.__init__(self, parent, configTab)
+    def __init__(self, parent, parent_panel, configTab):
+        BaseConfigTab.__init__(self, parent, parent_panel, configTab)
 
     def getRightPanel(self, parent):
         return RightPanelSimple(parent)

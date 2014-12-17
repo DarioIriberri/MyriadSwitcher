@@ -1,19 +1,17 @@
+from notebook.tabs import NotebookTab as nbt
+
 __author__ = 'Dario'
 
 
 import wx
 import sys
-from notebook.tabs import NotebookTab as nbt
 
 SLIDER_MAX = 1000
 
 
 class SwitchingModesTab(nbt.NotebookTab):
-    def __init__(self, parent, frame_myr_p, tab=None):
-        nbt.NotebookTab.__init__(self, parent=parent, id=wx.ID_ANY)
-
-        global frame_myr
-        frame_myr = frame_myr_p
+    def __init__(self, parent_panel):
+        nbt.NotebookTab.__init__(self, parent_panel=parent_panel, id=wx.ID_ANY)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.modes_panel = ModesPanel(self)
@@ -123,13 +121,15 @@ class SwitchingModesTab(nbt.NotebookTab):
         return sum(vals) / float(len(vals))
 
     def on_control_changed(self, event):
-        frame_myr.notebookControlChanged()
+        self.parentNotebook.notebookControlChanged()
         self.calculateExpected()
 
 
 class ModesPanel(wx.Panel):
     def __init__( self, parent ):
         wx.Panel.__init__( self, parent, -1)
+
+        self.parent = parent
 
         vs = wx.BoxSizer( wx.VERTICAL )
 
@@ -266,7 +266,7 @@ class ModesPanel(wx.Panel):
             else:
                 text.Enable(False)
 
-        frame_myr.notebookControlChanged()
+        self.parent.parentNotebook.notebookControlChanged()
         parent = self.GetParent()
         parent.calculateExpected()
 

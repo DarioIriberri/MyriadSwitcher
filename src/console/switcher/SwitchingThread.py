@@ -195,6 +195,9 @@ class SwitchingThread (threading.Thread):
             except Exception:
                 switcherData.pl()
                 switcherData.pl("Unexpected error.", HTMLBuilder.COLOR_RED)
+                switcherData.pl()
+                for line in traceback.format_exc().split('\n'):
+                    switcherData.pl(line, HTMLBuilder.COLOR_RED)
 
                 self.printTraceback("Unexpected error")
 
@@ -379,7 +382,8 @@ class SwitchingThread (threading.Thread):
 
     def printTraceback(self, text):
         print time.strftime(SwitcherData.DATE_FORMAT_PATTERN, time.localtime()) + " - " + text
-        traceback.print_stack()
+        print traceback.format_exc()
+        #traceback.print_stack()
 
     # Returns MINER_CRASHED or MINER_FREEZED if the miner is not running, or the CPU usage/timestamp if it is
     def minerStoppedFinal(self, cpu1, miner, config_json):

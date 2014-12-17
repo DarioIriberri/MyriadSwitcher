@@ -1,27 +1,58 @@
 __author__ = 'Dario'
-
 import wx
+from notebook.ExpandableNotebookTab import ExpandableNotebookTab
 
-class NotebookTab(wx.Panel):
-    def __init__(self, parent, id=wx.ID_ANY):
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
-        self.parent = parent
-        self.id = id
 
-    def get_value(self, json, field_name):
-        value = None
-        try:
-            value = json[field_name]
+DEFAULTS = {
+                "scryptBatchFile"		: 	"",
+                "groestlBatchFile"		: 	"",
+                "skeinBatchFile"		: 	"",
+                "qubitBatchFile"		: 	"",
+                "scryptPool"            :   "stratum+tcp://birdspool.no-ip.org:5556",
+                "groestlPool"           :   "stratum+tcp://birdspool.no-ip.org:3333",
+                "skeinPool"             :   "stratum+tcp://birdspool.no-ip.org:5589",
+                "qubitPool"             :   "stratum+tcp://birdspool.no-ip.org:5567",
+                "logActive"				: 	0,
+                "logPath"				: 	"",
+                "mode"					: 	1,
+                "sleepSHORT"			: 	3,
+                "sleepLONG"				:	5,
+                "hysteresis"			:	0,
+                "minTimeNoHysteresis"	: 	9999,
+                "rampUptime"			: 	10,
+                "scryptHashRate"		: 	1,
+                "groestlHashRate"		: 	14,
+                "skeinHashRate"			: 	300,
+                "qubitHashRate"			: 	7,
+                "globalCorrectionFactor": 	95,
+                "mainMode"			    : 	"simple",
+                "scryptFactor"			: 	1,
+                "groestlFactor"			: 	1,
+                "skeinFactor"			: 	1,
+                "qubitFactor"			: 	1,
+                "scryptWatts"			: 	480,
+                "groestlWatts"			: 	270,
+                "skeinWatts"			: 	430,
+                "qubitWatts"			: 	280,
+                "idleWatts"				: 	100,
+                "minCoins"				: 	0,
+                "attenuation"		    : 	500,
+                "timeout"				: 	30,
+                "sleepSHORTDebug"		: 	20,
+                "sleepLONGDebug"		: 	20,
+                "exchange"				: 	"\"cryptsy\"",
+                "debug"					: 	0,
+                "monitor"				: 	1,
+                "reboot"				: 	0,
+                "maxErrors"				: 	5,
+                "rebootIf"				: 	"crashes or freezes"
+           }
 
-        except KeyError:
-            #print("Error: get_value(" + field_name + ") - Not Found in json")
-            pass
 
-        return value
+class NotebookTab(ExpandableNotebookTab):
+    def __init__(self, parent_panel, id=wx.ID_ANY):
+        ExpandableNotebookTab.__init__(self, parent_panel, id=wx.ID_ANY)
 
-    def set_value(self, json, field_name, value):
-        try:
-            json[field_name] = value
+    def loadDefaults(self):
+        self.set_json(DEFAULTS)
 
-        except:
-            print("Error:  set_value(" + field_name + ")")
