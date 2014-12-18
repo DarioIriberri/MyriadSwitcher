@@ -142,7 +142,7 @@ class SwitchingThread (threading.Thread):
                 prevScriptPath = scriptPath
 
                 if globalStopped:
-                    self.kill()
+                    self.kill(stopMiningSession = False)
 
                     if status != "SWITCH":
                         status = "OK"
@@ -156,9 +156,9 @@ class SwitchingThread (threading.Thread):
 
                     if not switcherData.config_json["debug"]:
                         if self.mainMode == "advanced":
-                            self.kill()
+                            self.kill(stopMiningSession = status != "SWITCH")
 
-                        retCode = self.startMiners(scriptPath, switcherData.maxAlgo, restart)
+                        retCode = self.startMiners(scriptPath, switcherData.maxAlgo, restart, status == "SWITCH")
 
                         #retCode = subprocess.Popen('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
                         #subprocess.call('cd /d "' + unicode(workingDirectory) + '" && start cmd /c "' + unicode(scriptPath) + '"', shell=True)
@@ -275,7 +275,7 @@ class SwitchingThread (threading.Thread):
         else:
             return None if self.console.frame_myr.checkMinerCrashed() else MINER_CRASHED
 
-    def startMiners(self, scriptPath, maxAlgo, restart):
+    def startMiners(self, scriptPath, maxAlgo, restart, switch):
         retCode = None
 
         if "advanced" == self.mainMode:
@@ -284,13 +284,12 @@ class SwitchingThread (threading.Thread):
 
             return not retCode
 
-
         else:
-            #Not restart because in the switching thread context "restart" means "restart crashed miners"
-            #while in the miner panels "restart" in execute means restart even if already running.
-            #What we want here is to only have the crashed miners restarted. We use restart = true when switching algos
-            #to restart all of the miners to run the new algo
-            retCode = self.console.frame_myr.executeAlgo(maxAlgo, not restart)
+            # Not restart because in the switching thread context "restart" means "restart crashed miners"
+            # while in the miner panels "restart" in execute means restart even if already running.
+            # What we want here is to only have the crashed miners restarted. We use restart = true when switching algos
+            # to restart all of the miners to run the new algo
+            retCode = self.console.frame_myr.executeAlgo(maxAlgo, switch)
 
         return retCode
 
@@ -461,11 +460,11 @@ class SwitchingThread (threading.Thread):
         if os.name == "posix":
             pass
 
-    def kill(self):
+    def kill(self, stopMiningSession = True):
         if self.mainMode == "advanced":
             self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
         else:
-            self.console.frame_myr.killMinersLazy()
+            self.console.frame_myr.killMinersLazy(stopMiningSession)
 
     def killMiners(self):
         for miner in SwitcherData.MINER_CHOICES:
@@ -489,7 +488,7 @@ class SwitchingThread (threading.Thread):
 
         if kill_miners:
             try:
-                self.kill()
+                self.kill(stopMiningSession = True)
             except:
                 print "Failed to kill miners"
 

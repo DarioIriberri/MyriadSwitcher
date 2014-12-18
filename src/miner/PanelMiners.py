@@ -3,6 +3,8 @@ __author__ = 'Dario'
 import wx
 import time
 import threading
+from multiprocessing.pool import ThreadPool
+from console.switcher import SwitcherData
 import PanelMinerInstance as PMI
 from wx.lib.splitter import MultiSplitterWindow
 
@@ -37,16 +39,39 @@ class PanelMiners(MultiSplitterWindow):
 
         self.Bind(wx.EVT_SIZE, self.rearrangeMiners)
 
-    def executeAlgo(self, maxAlgo, restart):
-        ret0 = self.miner0.executeAlgo(maxAlgo, restart)
-        ret1 = self.miner1.executeAlgo(maxAlgo, restart)
-        ret2 = self.miner2.executeAlgo(maxAlgo, restart)
-        ret3 = self.miner3.executeAlgo(maxAlgo, restart)
+    def executeAlgo(self, maxAlgo, switch):
+        if switch:
+            self.killMinersLazy()
+
+        ret0 = self.miner0.executeAlgo(maxAlgo, switch)
+        ret1 = self.miner1.executeAlgo(maxAlgo, switch)
+        ret2 = self.miner2.executeAlgo(maxAlgo, switch)
+        ret3 = self.miner3.executeAlgo(maxAlgo, switch)
 
         if (ret0 is None and ret1 is None and ret2 is None and ret3 is None):
             return None
 
         return ret0 or ret1 or ret2 or ret3
+
+    #def executeAlgo(self, maxAlgo, switch):
+    #    pool = ThreadPool(processes=self.num_miners)
+    #
+    #    ret0 = pool.apply_async(self.__executeAlgoThread, (self.miner0, maxAlgo, switch))
+    #    ret1 = pool.apply_async(self.__executeAlgoThread, (self.miner1, maxAlgo, switch))
+    #    ret2 = pool.apply_async(self.__executeAlgoThread, (self.miner2, maxAlgo, switch))
+    #    ret3 = pool.apply_async(self.__executeAlgoThread, (self.miner3, maxAlgo, switch))
+    #    #ret1 = self.miner1.executeAlgo(maxAlgo, switch)
+    #    #ret2 = self.miner2.executeAlgo(maxAlgo, switch)
+    #    #ret3 = self.miner3.executeAlgo(maxAlgo, switch)
+    #
+    #    if (ret0 is None and ret1 is None and ret2 is None and ret3 is None):
+    #        return None
+    #
+    #    return ret0 or ret1 or ret2 or ret3
+    #
+    #def __executeAlgoThread(self, miner, maxAlgo, switch):
+    #    ret = miner.executeAlgo(maxAlgo, switch)
+    #    return ret
 
     def checkMinerCrashed(self):
         if self.miner0.minerStatus() == PMI.STATUS_CRASHED or \
@@ -74,12 +99,23 @@ class PanelMiners(MultiSplitterWindow):
         self.miner2.stopMiners()
         self.miner3.stopMiners()
 
+    #def killMinersLazy(self, event=None):
+    #    pool = ThreadPool(processes=self.num_miners)
+    #
+    #    pool.apply_async(self.__killMinersLazyThread, (self.miner0))
+    #    pool.apply_async(self.__killMinersLazyThread, (self.miner1))
+    #    pool.apply_async(self.__killMinersLazyThread, (self.miner2))
+    #    pool.apply_async(self.__killMinersLazyThread, (self.miner3))
+    #
+    #def __killMinersLazyThread(self, miner):
+    #    miner.stopMiners()
+
     def rearrangeMiners(self, event=None, slide=False):
         try:
             width = self.GetSize()[0]
             best =  width / self.num_miners
 
-            num_ready = sum(1 for miner in [self.miner0, self.miner1, self.miner2, self.miner3] if miner.minerStatus() != PMI.STATUS_DISABLED)
+            num_ready = sum(1 for miner in [self.miner0, self.miner1, self.miner2, self.miner3] if miner.minerStatus() is not PMI.STATUS_DISABLED)
             #num_rinning = sum(1 for miner in [self.miner0, self.miner1, self.miner2, self.miner3] if miner.minerStatus() == PMI.STATUS_RUNNING)
 
             factor = 1.5
@@ -90,7 +126,6 @@ class PanelMiners(MultiSplitterWindow):
 
             if num_ready == 0 or num_not_ready == 0:
                 wide = narrow = best
-
             else:
                 factored_num_ready = num_ready * factor
 
@@ -104,10 +139,10 @@ class PanelMiners(MultiSplitterWindow):
 
             #no slide effect allowed for resize event triggered calls to the function for performance reasons.
             if not slide:
-                self.SetSashPosition(0, int(wide if self.miner0.minerStatus() == PMI.STATUS_READY else narrow))
-                self.SetSashPosition(1, int(wide if self.miner1.minerStatus() == PMI.STATUS_READY else narrow))
-                self.SetSashPosition(2, int(wide if self.miner2.minerStatus() == PMI.STATUS_READY else narrow))
-                self.SetSashPosition(3, int(wide if self.miner3.minerStatus() == PMI.STATUS_READY else narrow))
+                self.SetSashPosition(0, int(wide if self.miner0.minerStatus() != PMI.STATUS_DISABLED else narrow))
+                self.SetSashPosition(1, int(wide if self.miner1.minerStatus() == PMI.STATUS_DISABLED else narrow))
+                self.SetSashPosition(2, int(wide if self.miner2.minerStatus() == PMI.STATUS_DISABLED else narrow))
+                self.SetSashPosition(3, int(wide if self.miner3.minerStatus() == PMI.STATUS_DISABLED else narrow))
 
                 return
 
@@ -125,10 +160,10 @@ class PanelMiners(MultiSplitterWindow):
         if not self.resize_lock:
             self.resize_lock = True
 
-            target0 = int(wide if self.miner0.minerStatus() == PMI.STATUS_READY else narrow)
-            target1 = int(wide if self.miner1.minerStatus() == PMI.STATUS_READY else narrow)
-            target2 = int(wide if self.miner2.minerStatus() == PMI.STATUS_READY else narrow)
-            target3 = int(wide if self.miner3.minerStatus() == PMI.STATUS_READY else narrow)
+            target0 = int(wide if self.miner0.minerStatus() != PMI.STATUS_DISABLED else narrow)
+            target1 = int(wide if self.miner1.minerStatus() != PMI.STATUS_DISABLED else narrow)
+            target2 = int(wide if self.miner2.minerStatus() != PMI.STATUS_DISABLED else narrow)
+            target3 = int(wide if self.miner3.minerStatus() != PMI.STATUS_DISABLED else narrow)
 
             steps = 15
 
@@ -149,9 +184,5 @@ class PanelMiners(MultiSplitterWindow):
                 self.SetSashPosition(3, self.GetSashPosition(3) + pct * delta3)
 
                 time.sleep(0.01)
-
-            self.SetSashPosition(1, wide if self.miner1.minerStatus() == PMI.STATUS_READY else narrow )
-            self.SetSashPosition(2, wide if self.miner2.minerStatus() == PMI.STATUS_READY else narrow )
-            self.SetSashPosition(3, wide if self.miner3.minerStatus() == PMI.STATUS_READY else narrow )
 
             self.resize_lock = False

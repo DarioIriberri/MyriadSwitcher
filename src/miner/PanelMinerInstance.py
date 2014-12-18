@@ -83,14 +83,15 @@ class PanelMinerInstance(wx.Panel):
 
         self.SetSizer(sizer)
 
-    def executeAlgo(self, maxAlgo, restart):
+    def executeAlgo(self, maxAlgo, switch):
         if self.handler.status == STATUS_DISABLED:
             return None
 
-        if not restart and self.handler.status == STATUS_RUNNING:
+        # Except when switching, skip restart of running miners
+        if not switch and self.handler.status == STATUS_RUNNING:
             return None
 
-        if self.handler.status == STATUS_RUNNING:
+        if self.handler.status in (STATUS_RUNNING, STATUS_STOPPING):
             self.handler.statusStopping()
 
             i = 0
@@ -198,6 +199,7 @@ class PanelMinerInstance(wx.Panel):
 
         #Check Miners...
         while self.isMinerRunning():
+            print self
             time.sleep(10)
 
         #if the kill signal is set, the miner was stopped by the user

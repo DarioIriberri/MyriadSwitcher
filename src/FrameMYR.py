@@ -159,7 +159,7 @@ class FrameMYRClass(wx.Frame):
         self.Maximize()
         self.Layout()
         self.Show()
-        
+
         self.chechReboot()
 
         try:
@@ -311,7 +311,7 @@ class FrameMYRClass(wx.Frame):
     def onButtonStop(self, event):
         #self.buttonStop.SetLabelText("Stopping   ")
         self.panelConsole.stop(kill_miners=False, wait=False)
-        self.killMinersLazy()
+        self.killMinersLazy(stopMiningSession = True)
         #self.buttonRun.Enable(True)
         #self.buttonStop.Enable(False)
 
@@ -377,14 +377,15 @@ class FrameMYRClass(wx.Frame):
 
         self.Layout()
 
-    def executeAlgo(self, maxAlgo, restart):
-        return self.miners.executeAlgo(maxAlgo, restart)
+    def executeAlgo(self, maxAlgo, switch):
+        return self.miners.executeAlgo(maxAlgo, switch)
 
     def checkMinerCrashed(self):
         return self.miners.checkMinerCrashed()
 
-    def killMinersLazy(self):
-        StopLabelSingletonThread(self, self.miners).start()
+    def killMinersLazy(self, stopMiningSession):
+        if stopMiningSession:
+            StopLabelSingletonThread(self, self.miners).start()
         return self.miners.killMinersLazy()
 
 
@@ -392,7 +393,7 @@ class StopLabelSingletonThread (threading.Thread):
     _instance = None
     lock = threading.RLock()
 
-    MAX_WAIT_ITER = 15
+    MAX_WAIT_ITER = 40
 
     def __new__(self, *args, **kwargs):
         if not self._instance:

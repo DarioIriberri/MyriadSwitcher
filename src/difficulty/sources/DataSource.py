@@ -21,7 +21,8 @@ class DataSource():
         try:
             obj = json.loads(getResult)
             #print time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()) + " : " + str(self) + "   -   " + str(obj)
-            self.queue.put(self)
+            if obj:
+                self.queue.put(self)
 
         except:
             return None
