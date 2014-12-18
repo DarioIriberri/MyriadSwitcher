@@ -64,7 +64,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonCancel.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/cancel16.ico'), wx.LEFT)
         #self.buttonCancel.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/back16.ico'), wx.LEFT)
         self.buttonDefaults.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/defaults16.ico'), wx.LEFT)
-        self.buttonRun.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/rungreen24.ico'), wx.LEFT)
+        self.buttonRun.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/rungreen16.ico'), wx.LEFT)
         self.buttonResume.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/resume16.ico'), wx.LEFT)
         self.buttonStop.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/stop16.ico'), wx.LEFT)
 
@@ -461,7 +461,6 @@ class StopLabelSingletonThread (threading.Thread):
             buttonsWait = [self.frame.buttonWait1, self.frame.buttonWait2, self.frame.buttonWait3, self.frame.buttonWait4]
 
             while ( mining or not minersready ) and count < self.MAX_WAIT_ITER:
-                print count
                 mod = count % 4
 
                 if mod < 4:
