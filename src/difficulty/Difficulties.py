@@ -2,6 +2,7 @@ __author__ = 'Dario'
 
 from sources.Birdonwheels5 import Birdonwheels5
 from sources.Theblockexplorer import Theblockexplorer
+from sources.InsightSingleQuery import InsightSingleQuery
 from sources.TheblockexplorerSingleQuery import TheblockexplorerSingleQuery
 from sources.P2pool import P2pool
 from sources.Cryptap import Cryptap
@@ -15,21 +16,27 @@ TIMEOUT = 10
 
 class Difficulties:
     def loadDiffSources(self, queue):
-        self.DIFF_SOURCES = (
-                             Birdonwheels5(self.parent, queue, TIMEOUT),
-                             #Theblockexplorer(self.parent, queue, TIMEOUT),
-                             TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
-                             P2pool(self.parent, queue, TIMEOUT),
+        self.DIFF_SOURCES = \
+        (
+             #Birdonwheels5(self.parent, queue, TIMEOUT),
+             InsightSingleQuery(self.parent, 'http://birdonwheels5.no-ip.org/api/status?q=getInfo', queue, TIMEOUT),
+             #Theblockexplorer(self.parent, queue, TIMEOUT),
+             TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
+             InsightSingleQuery(self.parent, 'https://cryptap.us/myr/insight/api/status?q=getInfo', queue, TIMEOUT),
+             P2pool(self.parent, queue, TIMEOUT),
         )
 
         return self.DIFF_SOURCES
 
     def loadRewardSources(self, queue):
-        self.REWARD_SOURCES = (
-                             Birdonwheels5(self.parent, queue, TIMEOUT),
-                             #Theblockexplorer(self.parent, queue, TIMEOUT),
-                             TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
-                             Cryptap(self.parent, queue, TIMEOUT),
+        self.REWARD_SOURCES = \
+        (
+             #Birdonwheels5(self.parent, queue, TIMEOUT),
+             InsightSingleQuery(self.parent, 'http://birdonwheels5.no-ip.org/api/status?q=getInfo', queue, TIMEOUT),
+             #Theblockexplorer(self.parent, queue, TIMEOUT),
+             TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
+             InsightSingleQuery(self.parent, 'https://cryptap.us/myr/insight/api/status?q=getInfo', queue, TIMEOUT),
+             Cryptap(self.parent, queue, TIMEOUT),
         )
 
         return self.REWARD_SOURCES
@@ -39,9 +46,11 @@ class Difficulties:
         self.active_diff_source = None
         self.active_reward_source = None
 
+
     ####################################################################################################################
     ###############################################  FETCHERS  #########################################################
     ####################################################################################################################
+
 
     def fetchDifficulties(self):
         return self.fetchData(self.active_diff_source, "fetchDifficulties", self.fetchThreadedDifficulties)
@@ -82,9 +91,11 @@ class Difficulties:
 
         return q.get(block=True, timeout=TIMEOUT)
 
+
     ####################################################################################################################
     ################################################  GETTERS  #########################################################
     ####################################################################################################################
+
 
     def getScryptDifficulty(self):
         return self.active_diff_source.getScryptDifficulty()

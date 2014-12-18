@@ -265,12 +265,12 @@ class PoolDialog(wx.Dialog):
         #    btnsizer.Add(btn)
 
         buttonWidth = 75
-        self.btnAdd = wx.Button(self, wx.ID_ADD, size=(buttonWidth, -1))
-        self.btnRemove = wx.Button(self, wx.ID_REMOVE, size=(buttonWidth, -1))
-        self.btnMoveUp = wx.Button(self, wx.ID_UP, size=(buttonWidth, -1))
-        self.btnMoveDown = wx.Button(self, wx.ID_DOWN, size=(buttonWidth, -1))
-        self.btnSave = wx.Button(self, wx.ID_SAVE, size=(buttonWidth, -1))
-        self.btnCancel = wx.Button(self, wx.ID_CANCEL, size=(buttonWidth, -1))
+        self.btnAdd = wx.Button(self, wx.ID_ADD, size=FrameMYR.BUTTON_SIZE)
+        self.btnRemove = wx.Button(self, wx.ID_REMOVE, size=FrameMYR.BUTTON_SIZE)
+        self.btnMoveUp = wx.Button(self, wx.ID_UP, size=FrameMYR.BUTTON_SIZE)
+        self.btnMoveDown = wx.Button(self, wx.ID_DOWN, size=FrameMYR.BUTTON_SIZE)
+        self.btnSave = wx.Button(self, wx.ID_SAVE, size=FrameMYR.BUTTON_SIZE)
+        self.btnCancel = wx.Button(self, wx.ID_CANCEL, size=FrameMYR.BUTTON_SIZE)
 
         self.btnAdd.Enable(False)
         self.btnRemove.Enable(False)

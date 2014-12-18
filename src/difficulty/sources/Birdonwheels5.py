@@ -2,6 +2,7 @@ __author__ = 'Dario'
 
 from DataSource import DataSource
 
+#It's insight too, should use InsightSingleQuery or Insight
 URL_INFO = "http://birdonwheels5.no-ip.org/api/status?q=getInfo"
 
 class Birdonwheels5(DataSource):

@@ -371,6 +371,7 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.deviceNum = wx.ComboBox(self, size=(50, 26), choices=self.numDevices, style=wx.CB_READONLY)
 
         self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
+        #self.deviceCombo.SetValue("AMD Radeon HD7950")
         self.deviceNum.SetValue("All")
 
         devEditor = wx.Button(self, wx.ID_ANY, "Edit", size=(40, -1))
