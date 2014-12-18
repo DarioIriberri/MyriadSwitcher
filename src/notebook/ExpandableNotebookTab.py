@@ -17,8 +17,9 @@ class ExpandableNotebookTab(wx.Panel):
             value = json[field_name]
 
         except KeyError:
+            return self.get_default_value(field_name)
             #print(str(self) + " Error: get_value(" + field_name + ") - Not Found in json")
-            pass
+            #pass
 
         return value
 
@@ -39,6 +40,12 @@ class ExpandableNotebookTab(wx.Panel):
         pass
 
     def loadDefaults(self):
+        pass
+
+    def get_default_values(self):
+        pass
+
+    def get_default_value(self, field_name):
         pass
 
     def onBroadcastedEvent(self, event):

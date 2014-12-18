@@ -68,6 +68,7 @@ class MiscellaneousTab(nbt.NotebookTab):
 
 class TimingsPanel(wx.Panel):
     def __init__( self, parent ):
+        self.parent = parent
 
         wx.Panel.__init__( self, parent, -1)
 
@@ -158,7 +159,10 @@ class TimingsPanel(wx.Panel):
             print "Error: get_values - sleepLONG"
             pass
         try:
-            values["hysteresis"] = int(self.hysteresis.combo_hys.GetValue()[:-1])
+            try:
+                values["hysteresis"] = int(self.hysteresis.combo_hys.GetValue()[:-1])
+            except ValueError:
+                values["hysteresis"] = self.parent.get_default_value("hysteresis")
         except:
             print "Error: get_values - hysteresis"
             pass

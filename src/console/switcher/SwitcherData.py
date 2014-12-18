@@ -544,6 +544,15 @@ class SwitcherData():
         self.htmlBuilder.log(self.config_json, self.logFileName)
 
     def end(self):
+        MAX_WAIT_ITER = 15
+        count = 0
+
+        ready = self.console.frame_myr.miners.checkMinersReady()
+
+        while not self.console.frame_myr.miners.checkMinersReady() and count < MAX_WAIT_ITER:
+            time.sleep(1)
+            count += 1
+
         self.htmlBuilder.pl()
         self.htmlBuilder.pl("Process stopped at ... " + time.strftime(DATE_FORMAT_PATTERN, time.localtime()))
 

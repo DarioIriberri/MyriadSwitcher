@@ -95,16 +95,16 @@ class RightPanelSimple(wx.Panel):
 
     def algoChecked(self, check):
         if BaseConfigTab.SCRYPT == str(check.LabelText):
-            self.algo_panel_scrypt.poolsCombo.Enable(check.Value)
+            self.algo_panel_scrypt.poolsCombo.Enable(check.GetValue())
 
         if BaseConfigTab.GROESTL == str(check.LabelText):
-            self.algo_panel_groestl.poolsCombo.Enable(check.Value)
+            self.algo_panel_groestl.poolsCombo.Enable(check.GetValue())
 
         if BaseConfigTab.SKEIN == str(check.LabelText):
-            self.algo_panel_skein.poolsCombo.Enable(check.Value)
+            self.algo_panel_skein.poolsCombo.Enable(check.GetValue())
 
         if BaseConfigTab.QUBIT == str(check.LabelText):
-            self.algo_panel_qubit.poolsCombo.Enable(check.Value)
+            self.algo_panel_qubit.poolsCombo.Enable(check.GetValue())
 
     def on_control_changed(self, event):
         self.parent.on_control_changed(event)

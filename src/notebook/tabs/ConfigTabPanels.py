@@ -123,6 +123,8 @@ class LeftPanel(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
+        self.algo_panel_dict = {}
+
         self.algo_panel_scrypt = AlgoPanelData(self, BaseConfigTab.SCRYPT)
         self.algo_panel_groestl = AlgoPanelData(self, BaseConfigTab.GROESTL)
         self.algo_panel_skein = AlgoPanelData(self, BaseConfigTab.SKEIN)
@@ -131,6 +133,11 @@ class LeftPanel(wx.Panel):
         sizer.Add(self.algo_panel_groestl, 0, wx.EXPAND | wx.ALL, 0)
         sizer.Add(self.algo_panel_skein, 0, wx.EXPAND | wx.ALL, 0)
         sizer.Add(self.algo_panel_qubit, 0, wx.EXPAND | wx.ALL, 0)
+
+        self.algo_panel_dict[BaseConfigTab.SCRYPT] = self.algo_panel_scrypt
+        self.algo_panel_dict[BaseConfigTab.GROESTL] = self.algo_panel_groestl
+        self.algo_panel_dict[BaseConfigTab.SKEIN] = self.algo_panel_skein
+        self.algo_panel_dict[BaseConfigTab.QUBIT] = self.algo_panel_qubit
 
         self.SetSizer(sizer)
 
@@ -153,6 +160,10 @@ class LeftPanel(wx.Panel):
     def on_control_changed(self, event):
         self.baseConfigTab.on_control_changed(event)
 
+    def isActiveAlgo(self, algo):
+        return self.algo_panel_dict[algo].isActiveAlgo()
+        #return self.algo_panel_scrypt.isActiveAlgo()
+
 
 class AlgoPanelData(wx.Panel):
     def __init__(self, parent, algo):
@@ -172,7 +183,7 @@ class AlgoPanelData(wx.Panel):
         font = wx.Font(-1, wx.DEFAULT, wx.NORMAL, wx.BOLD)
         #font = wx.Font(-1, wx.DECORATIVE, wx.ITALIC, wx.BOLD)
         self.active_algo.SetFont(font)
-        self.active_algo.SetValue(True)
+        #self.active_algo.SetValue(True)
 
         self.hash_rate = wx.SpinCtrlDouble(self, value='0.00', size=(70,-1), min=0.0, max=9999.99, inc=0.01)
         self.hash_rate.SetDigits(2)
@@ -247,6 +258,9 @@ class AlgoPanelData(wx.Panel):
         except:
             print "Error: set_watts + " + str(watts)
 
+    def isActiveAlgo(self):
+        return self.active_algo.GetValue()
+
     def on_control_changed(self, event, trigger_to_frame=True):
         #self.fbb.Enable(self.active_algo.GetValue())
         self.hash_rate.Enable(self.active_algo.GetValue())
@@ -255,7 +269,8 @@ class AlgoPanelData(wx.Panel):
             self.parent.on_control_changed(event)
 
     def on_mouse_over_active_algo(self, event):
-        wx.PostEvent(self.parent.baseConfigTab.parentNotebook.getParentWindow(), StatusBarEvent(message="Enable / Disable " + self.algo))
+        wx.PostEvent(self.parent.baseConfigTab.parentNotebook.getParentWindow(),
+                     StatusBarEvent(message="Enable / Disable " + self.algo + " - " + str(self.active_algo.GetValue())))
 
     def on_mouse_leave_active_algo(self, event):
         wx.PostEvent(self.parent.baseConfigTab.parentNotebook.getParentWindow(), StatusBarEvent(message=""))

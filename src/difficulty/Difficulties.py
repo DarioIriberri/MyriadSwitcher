@@ -65,7 +65,7 @@ class Difficulties:
     def fetchData(self, active_reward_source, fetchDataFunc, fetchThreadedFunc):
         t1 = time.time()
 
-        if active_reward_source is None or not getattr(active_reward_source, fetchDataFunc)():
+        if not active_reward_source or not getattr(active_reward_source, fetchDataFunc)():
             fetchThreadedFunc()
 
         return str((time.time() - t1) * 1000) + " ms" + " - " + str(self.active_diff_source)

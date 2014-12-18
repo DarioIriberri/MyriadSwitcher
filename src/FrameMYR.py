@@ -30,6 +30,7 @@ class FrameMYRClass(wx.Frame):
         #FrameMYR.FrameMYR.RESOURCE_PATH = resouce_path
 
         self.gravity = None
+        self.mining  = False
 
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "Myriad Switcher Configurator... ",
@@ -50,7 +51,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonResume = wx.Button(self, -1, "Resume")
         self.buttonStop = wx.Button(self, -1, "Stop")
         buttonReset = wx.Button(self, -1, "Defaults")
-        self.buttonToggle = wx.ToggleButton(self, -1, "Simple Mode")
+        self.buttonMainMode = wx.ToggleButton(self, -1, "Simple Mode")
 
         # Setting up the menu.
         filemenu= wx.Menu()
@@ -101,7 +102,7 @@ class FrameMYRClass(wx.Frame):
         #self.panelConsole = webview.WebView.New(PanelConsole.PanelConsole)
         self.panelConsole.SetBackgroundColour("Black")
 
-        self.miners = PanelMiners(parent = self.resizable_panel)
+        self.miners = PanelMiners(parent = self.resizable_panel, frame=self)
 
         self.notebook = ExpandableNotebook(self.panelNotebook, self)
         self.notebook.addTab(ConfigTab, "Main Config", FrameMYRClass.RESOURCE_PATH + 'img/aquachecked.ico')
@@ -110,10 +111,10 @@ class FrameMYRClass(wx.Frame):
         #self.notebook.addTab(MiscellaneousTab, "Miscellaneous2", FrameMYRClass.RESOURCE_PATH + 'img/advanced.ico')
         self.notebook.buildNotebook()
 
-        self.setMainMode(self.notebook.loadConfig()['mainMode'])
+        self.setMainMode(self.notebook.getStoredConfigParam('mainMode'))
         self.setTitle(self.notebook.activeFile)
 
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.onMainModeToggle, self.buttonToggle)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.onMainModeToggle, self.buttonMainMode)
         #self.notebook.broadcastBind(self, wx.EVT_TOGGLEBUTTON, self.buttonToggle, event_id="main_config")
 
         #self.notebook.broadcast_bind(self, EVT_NOTEBOOK_BROADCAST_EVENT, event_id="lalala")
@@ -130,7 +131,7 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.AddF(self.buttonSave, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
         sizerButtons.AddF(self.buttonCancel, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
         sizerButtons.AddF(buttonReset, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
-        sizerButtons.AddF(self.buttonToggle, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
+        sizerButtons.AddF(self.buttonMainMode, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
 
         spacerFlags = wx.SizerFlags().Expand().Border(wx.ALL, 1).Proportion(1)
         sizerButtons.AddF((-1, -1), spacerFlags)
@@ -146,19 +147,19 @@ class FrameMYRClass(wx.Frame):
         self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 3)
 
         self.icon = wx.Icon(FrameMYRClass.RESOURCE_PATH + 'img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
+        self.SetIcon(self.icon)
+        #self.icon = wx.Icon('myriadS1.ico', wx.BITMAP_TYPE_ICO)
 
         self.SetSizer(self.sizerTotal)
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUBAR))
 
-        self.Layout()
-        self.Show()
-
         self.Bind(EVT_STATUS_BAR_EVENT, self.on_mouse_over)
         self.notebook.broadcastEventToAllTabs(event_id="main_config",
                                               event_value=("advanced" == self.getMainMode()))
-
         self.Maximize()
-
+        self.Layout()
+        self.Show()
+        
         self.chechReboot()
 
         try:
@@ -169,7 +170,7 @@ class FrameMYRClass(wx.Frame):
 
         self.enabled_buttons(False)
         self.buttonStop.Enable(False)
-        self.buttonResume.Enable(os.path.isfile(SwitcherData.DATA_FILE_NAME))
+        self.buttonResume.Enable(self.isThereAPreviousSession())
 
     def chechReboot(self):
         if os.path.isfile("reboot"):
@@ -280,7 +281,7 @@ class FrameMYRClass(wx.Frame):
     def onMainModeToggle(self, event):
         self.enabled_buttons(True)
 
-        if self.buttonToggle.GetValue():
+        if self.buttonMainMode.GetValue():
             self.showSimple()
         else:
             self.showAdvanced()
@@ -289,10 +290,13 @@ class FrameMYRClass(wx.Frame):
                                               event_value=("advanced" == self.getMainMode()))
 
     def onButtonRun(self, event):
-        question = "This will delete any previously stored session data. Are you sure you want to continue?"
-        dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.ICON_WARNING)
-        result = dlg.ShowModal() == wx.ID_YES
-        dlg.Destroy()
+        result = True
+
+        if self.isThereAPreviousSession():
+            question = "This will delete your previously stored session data. Are you sure you want to continue?"
+            dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.ICON_WARNING)
+            result = dlg.ShowModal() == wx.ID_YES
+            dlg.Destroy()
 
         if result:
             if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
@@ -306,31 +310,36 @@ class FrameMYRClass(wx.Frame):
 
     def onButtonStop(self, event):
         #self.buttonStop.SetLabelText("Stopping   ")
-        self.panelConsole.stop(kill_miners=True, wait=False)
-        StopLabelSingletonThread(self.buttonStop).start()
+        self.panelConsole.stop(kill_miners=False, wait=False)
+        self.killMinersLazy()
         #self.buttonRun.Enable(True)
         #self.buttonStop.Enable(False)
 
+    #def signalStop(self):
+    #    StopLabelSingletonThread(self, self.miners).start()
+
+    def isThereAPreviousSession(self):
+        return os.path.isfile(SwitcherData.DATA_FILE_NAME)
 
     def getMainMode(self):
-        return "simple" if self.buttonToggle.GetValue() else "advanced"
+        return "simple" if self.buttonMainMode.GetValue() else "advanced"
 
     def setMainMode(self, mainMode):
-        if mainMode == "simple":
-            self.buttonToggle.SetValue(True)
+        if not mainMode or mainMode == "simple":
+            self.buttonMainMode.SetValue(True)
             self.showSimple()
         else:
-            self.buttonToggle.SetValue(False)
+            self.buttonMainMode.SetValue(False)
             self.showAdvanced()
 
     def showSimple(self):
-        self.buttonToggle.SetLabel("Simple Mode")
+        self.buttonMainMode.SetLabel("Simple Mode")
         self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners, self.resizable_panel.GetSize()[1] * self.getGravity())
         #self.shell.rearrangeMiners(self.shell.GetSize()[0])
         #self.resizable_panel.Unsplit(self.advancedConfig)
 
     def showAdvanced(self):
-        self.buttonToggle.SetLabel("Adv. Mode")
+        self.buttonMainMode.SetLabel("Adv. Mode")
         self.getGravity()
         self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners)
         self.resizable_panel.Unsplit(self.miners)
@@ -340,40 +349,70 @@ class FrameMYRClass(wx.Frame):
             self.gravity = GRAVITY
         else:
             if self.getMainMode() == "advanced":
-                self.gravity = float(self.panelConsole.GetSize()[1]) / self.resizable_panel.GetSize()[1]
+                resizable_panel_width = self.resizable_panel.GetSize()[1]
+
+                if resizable_panel_width == 0:
+                    self.gravity = GRAVITY
+                else:
+                    self.gravity = float(self.panelConsole.GetSize()[1]) / resizable_panel_width
 
         return self.gravity
 
     def onMiningProcessStarted(self):
+        self.mining = True
         self.buttonRun.Enable(False)
         self.buttonResume.Enable(False)
+        self.buttonMainMode.Enable(False)
         self.buttonStop.Enable(True)
 
     def onMiningProcessStopped(self):
+        self.mining = False
+
+    def miningStoppedButtons(self):
         self.buttonRun.Enable(True)
         self.buttonResume.Enable(True)
+        self.buttonMainMode.Enable(True)
         self.buttonStop.Enable(False)
         self.buttonStop.SetLabelText("Stop")
+
+        self.Layout()
+
+    def executeAlgo(self, maxAlgo, restart):
+        return self.miners.executeAlgo(maxAlgo, restart)
+
+    def checkMinerCrashed(self):
+        return self.miners.checkMinerCrashed()
+
+    def killMinersLazy(self):
+        StopLabelSingletonThread(self, self.miners).start()
+        return self.miners.killMinersLazy()
 
 
 class StopLabelSingletonThread (threading.Thread):
     _instance = None
     lock = threading.RLock()
 
+    MAX_WAIT_ITER = 15
+
     def __new__(self, *args, **kwargs):
         if not self._instance:
             self._instance = super(StopLabelSingletonThread, self).__new__(self, *args, **kwargs)
         return self._instance
 
-    def __init__(self, buttonStop):
-        self.buttonStop = buttonStop
+    def __init__(self, frame, miners):
+        self.frame  = frame
+        self.miners = miners
+
         threading.Thread.__init__ (self)
 
     def run(self):
         with StopLabelSingletonThread.lock:
             count = 0
-            while self.buttonStop.Enabled and count < 120:
+
+            while ( self.frame.mining or not self.miners.checkMinersReady() ) and count < self.MAX_WAIT_ITER:
                 count += 1
                 mod = count % 4
-                self.buttonStop.SetLabelText("Wait" + (mod * ".") + ( ( 4 - mod ) * " ") )
+                self.frame.buttonStop.SetLabelText("Wait" + (mod * ".") + ( ( 4 - mod ) * " ") )
                 time.sleep(0.5)
+
+            self.frame.miningStoppedButtons()

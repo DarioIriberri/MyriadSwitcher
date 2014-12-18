@@ -73,6 +73,8 @@ class ExpandableNotebook(wx.Notebook):
 
             self.WIDTHS.append(width)
 
+        self.loadConfig()
+
     #def broadcast_bind(self, parent, event, instance=None, *args, **kwargs):
     #    parent.Bind(event, lambda event: self.broadcastEventToAllTabs(event, *args, **kwargs), instance)
     #
@@ -137,16 +139,7 @@ class ExpandableNotebook(wx.Notebook):
                         nbsub.loadConfig(activeFile)
 
         except:
-            dlg = wx.MessageDialog(self, 'The config file ' + activeFile + " is unreadable.",
-                                       'Configuration Error',
-                                       wx.OK | wx.ICON_ERROR
-                                       #wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
-            )
-
-            dlg.ShowModal()
-            dlg.Destroy()
-
-            return False
+            return self.__configError()
 
         return json.loads(config)
 
@@ -162,7 +155,9 @@ class ExpandableNotebook(wx.Notebook):
             return False
 
         config_json = self.__getConfigJson()
-        config_json.update(extraParams)
+
+        if extraParams:
+            config_json.update(extraParams)
 
         string_out = self.__getConfigText(config_json)
 
@@ -213,15 +208,26 @@ class ExpandableNotebook(wx.Notebook):
 
         return False
 
+    def getDefaultConfigJson(self):
+        return self.GetPage(0).get_default_values()
+
     def getTempConfigJson(self):
         return self.__getConfigJson()
 
     def getStoredConfigJson(self):
-        f = open(self.activeFile)
-        config = f.read()
-        f.close()
+        try:
+            f = open(self.activeFile)
+            config = f.read()
+            f.close()
 
-        config_json = json.loads(config)
+        except IOError:
+            return None
+
+        try:
+            config_json = json.loads(config)
+
+        except ValueError:
+            return self.__configError()
 
         return config_json
 
@@ -239,7 +245,7 @@ class ExpandableNotebook(wx.Notebook):
         try:
             return config_json[param]
 
-        except KeyError:
+        except (KeyError, TypeError):
             return None
 
     def getParentWindow(self):
@@ -392,6 +398,23 @@ class ExpandableNotebook(wx.Notebook):
         string_out += "}"
 
         return string_out
+
+    def __configError(self):
+        dlg = wx.MessageDialog(self, 'The config file ' + self.activeFile + " is unreadable. Using defaults",
+                                   'Configuration Error',
+                                   wx.OK | wx.ICON_ERROR
+                                   #wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION
+        )
+
+        dlg.ShowModal()
+        dlg.Destroy()
+
+        config_json = self.getDefaultConfigJson()
+        self.__loadNotebooksFromJson(config_json)
+
+        self.saveConfig()
+
+        return config_json
 
     def __get_expansion(self):
         return self.expansion

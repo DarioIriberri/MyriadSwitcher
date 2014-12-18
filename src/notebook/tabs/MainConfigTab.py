@@ -95,16 +95,16 @@ class RightPanelAdvanced(wx.Panel):
 
     def algoChecked(self, check):
         if BaseConfigTab.SCRYPT == str(check.LabelText):
-            self.algo_panel_scrypt.fbb.Enable(check.Value)
+            self.algo_panel_scrypt.fbb.Enable(check.GetValue())
 
         if BaseConfigTab.GROESTL == str(check.LabelText):
-            self.algo_panel_groestl.fbb.Enable(check.Value)
+            self.algo_panel_groestl.fbb.Enable(check.GetValue())
 
         if BaseConfigTab.SKEIN == str(check.LabelText):
-            self.algo_panel_skein.fbb.Enable(check.Value)
+            self.algo_panel_skein.fbb.Enable(check.GetValue())
 
         if BaseConfigTab.QUBIT == str(check.LabelText):
-            self.algo_panel_qubit.fbb.Enable(check.Value)
+            self.algo_panel_qubit.fbb.Enable(check.GetValue())
 
     def on_control_changed(self, event):
         self.parent.on_control_changed(event)
@@ -149,8 +149,8 @@ class AlgoPanelAdvanced(wx.Panel):
         #todo: active_algo
         #self.parent.parent.leftPanel.algo_panel_scrypt.active_algo.GetValue()
 
-        #active_algo = self.parent.parent.leftPanel.isActiveAlgo(self.algo)
-        active_algo = False
+        active_algo = self.parent.parent.leftPanel.isActiveAlgo(self.algo)
+        #active_algo = False
 
         file_name = self.fbb.value
 

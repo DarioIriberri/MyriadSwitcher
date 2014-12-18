@@ -8,20 +8,24 @@ import subprocess
 import threading
 from wx._core import PyDeadObjectError
 from console.switcher import HTMLBuilder as clr
+from console.switcher import SwitcherData
 
 DEVICE_NONE_SELECTED = "Pick a device..."
 ALL_DEVICES          = "All"
 
-STATUS_DISABLED             = "DISABLED"
-STATUS_ENABLED              = "ENABLED"
-STATUS_ENABLED_PENDING      = "ENABLED_PENDING"
-STATUS_RUNNING              = "RUNNING"
-STATUS_RUNNING_PENDING      = "STATUS_RUNNING_PENDING"
+STATUS_DISABLED             = "STATUS_DISABLED"
+STATUS_READY                = "STATUS_READY"
+STATUS_STOPPING             = "STATUS_STOPPING"
+STATUS_RUNNING              = "STATUS_RUNNING"
+STATUS_STARTING             = "STATUS_STARTING"
+STATUS_CRASHED              = "STATUS_CRASHED"
 
 MIN_TIME_THREAD_PROBED = 60
 
 WAIT_FOR_STREAMS = True
-#WAIT_FOR_STREAMS = False
+
+MIN_ITERATIONS = 8
+MAX_ITERATIONS = 20
 
 
 class PanelMinerInstance(wx.Panel):
@@ -79,6 +83,43 @@ class PanelMinerInstance(wx.Panel):
 
         self.SetSizer(sizer)
 
+    def executeAlgo(self, maxAlgo, restart):
+        if self.handler.status == STATUS_DISABLED:
+            return None
+
+        if not restart and self.handler.status == STATUS_RUNNING:
+            return None
+
+        if self.handler.status == STATUS_RUNNING:
+            self.handler.statusStopping()
+
+            i = 0
+            MAX_ITERATIONS = 30
+
+            while not self.handler.status == STATUS_READY and i < MAX_ITERATIONS:
+                time.sleep(0.5)
+
+            if i >= MAX_ITERATIONS:
+                return False
+
+        if self.handler.status == STATUS_READY or self.handler.status == STATUS_CRASHED:
+            if SwitcherData.scryptS == maxAlgo:
+                return True
+
+            if SwitcherData.groestlS == maxAlgo:
+                return True
+
+            if SwitcherData.skeinS == maxAlgo:
+                self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                return True
+
+            if SwitcherData.qubitS == maxAlgo:
+                self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                #self.handler.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                return True
+
+        return False
+
     def execute(self, command, waitForStreams = False):
         #print "execute"
         self.__kill()
@@ -96,9 +137,22 @@ class PanelMinerInstance(wx.Panel):
 
         #self.killed = False
 
-    def killProcess(self, forcibly = False):
+    #None if disabled, False is crashed, True otherwise
+    def minerStatus(self):
+        #if self.handler.status == STATUS_DISABLED:
+        #    return None
+
+        return self.handler.status
+
+    def stopMiners(self):
+        self.handler.statusStopping()
+
+    def killMiner(self, forcibly = False):
         if self.__isProcessRunning():
             self.killed = True
+
+        else:
+            return
 
         if not self.waitForStreams or forcibly:
             self.__obliterate()
@@ -148,7 +202,7 @@ class PanelMinerInstance(wx.Panel):
 
         #if the kill signal is set, the miner was stopped by the user
         if not self.killed:
-            self.handler.minerFailed()
+            self.handler.minerCrashed()
 
     def __outputThread(self, shell, stream, waitForStreams):
         for line in iter(stream.readline, b''):
@@ -322,10 +376,10 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         sizer.Add(self.deviceLabel, 0, wx.EXPAND | wx.TOP, -1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(34, -1)), 0, wx.EXPAND, 0)
-        sizer.Add(self.deviceCombo, 2, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(6, -1)), 0, wx.EXPAND, 0)
+        sizer.Add(self.deviceCombo, 10, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(6, -1)), 1, wx.EXPAND, 0)
         sizer.Add(self.deviceNum, 0, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(34, -1)), 0, wx.EXPAND, 0)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(34, -1)), 1, wx.EXPAND, 0)
         sizer.Add(devEditor, 0, wx.EXPAND | wx.TOP, -1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(80, -1)), 1, wx.EXPAND, 0)
 
@@ -336,6 +390,8 @@ class PanelMinerInstanceHandler(wx.Panel):
     def onDeviceSelected(self, event):
         selection = self.deviceCombo.GetValue()
 
+        self.parent.clearAll()
+
         if (selection == DEVICE_NONE_SELECTED):
             self.enableDevice(False)
         else:
@@ -345,7 +401,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
     def onDeviceToggle(self, event):
         if self.status == STATUS_RUNNING:
-            self.statusEnabledPending(self.parent.deviceLabel)
+            self.statusStopping(self.parent.deviceLabel)
         else:
             self.statusDisabled(self.parent.deviceLabel)
 
@@ -355,14 +411,14 @@ class PanelMinerInstanceHandler(wx.Panel):
         label = self.parent.deviceLabel
 
         if enable:
-            self.statusEnabled(label)
+            self.statusReady(label)
         else:
             #if self.parent.process.returncode
             self.statusDisabled(label)
 
     def onDeviceEdit(self, event):
         #if not self.status == STATUS_RUNNING:
-        self.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+        #self.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
 
         event.Skip()
 
@@ -374,7 +430,7 @@ class PanelMinerInstanceHandler(wx.Panel):
             #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
             #self.parent.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
 
-            self.statusRunningPending()
+            self.statusStarting()
 
     #def setRunningDevice(self, running):
     #    label = self.parent.deviceLabel
@@ -387,73 +443,99 @@ class PanelMinerInstanceHandler(wx.Panel):
     #        self.statusEnabled(label)
 
     def statusRunning(self, label = None):
-        self.status = STATUS_RUNNING
+        if self.status != STATUS_STOPPING:
+            self.status = STATUS_RUNNING
 
-        self.deviceLabel.SetBackgroundColour(clr.COLOR_GREEN)
-        self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
+            self.__deviceRunningColors()
 
-        self.deviceLabel.Enable(True)
-        self.parent.clearAll()
+            self.deviceLabel.Enable(True)
+            self.parent.clearAll()
 
-        self.deviceCombo.Enable(False)
-        self.deviceNum.Enable(False)
+            self.deviceCombo.Enable(False)
+            self.deviceNum.Enable(False)
 
-        self.Layout()
+            self.Layout()
 
     def statusDisabled(self, label):
+        self.parent.clearAll()
+        self.parent.printMessage(label + " is disabled." + os.linesep + "Pick a device to enable it.")
+
         self.status = STATUS_DISABLED
+
+        self.parent.parent.rearrangeMiners(slide=True)
 
         self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
         self.deviceNum.SetValue(ALL_DEVICES)
 
-        self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
-        self.deviceLabel.SetForegroundColour((0, 0, 0))
+        self.__deviceDisabledColors()
+
         self.deviceLabel.Enable(False)
-        self.parent.printMessage(label + " is disabled. Pick a device to enable it.")
 
         self.deviceCombo.Enable(True)
         self.deviceNum.Enable(True)
 
-
         self.Layout()
 
-    def statusEnabled(self, label = None):
-        self.status = STATUS_ENABLED
+    def statusReady(self, label = None):
+        self.parent.printMessage(os.linesep + self.deviceCombo.GetValue() + " is now ready to mine!")
 
-        self.deviceLabel.SetBackgroundColour(clr.COLOR_RED)
-        self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+        if self.status == STATUS_READY:
+            return
+
+        self.status = STATUS_READY
+
+        self.parent.parent.rearrangeMiners(slide=True)
+
+        self.__deviceReadyColors()
 
         self.deviceLabel.Enable(True)
 
-        self.parent.printMessage(self.deviceCombo.GetValue() + " is now ready to mine!")
-
         self.deviceCombo.Enable(True)
         self.deviceNum.Enable(True)
 
         self.Layout()
 
-    def statusEnabledPending(self, label = None):
-        self.status = STATUS_ENABLED_PENDING
+    def statusCrashed(self, label = None):
+        self.status = STATUS_CRASHED
 
-        self.parent.killProcess()
-
-        thread = threading.Thread(target=self.statusEnabledPendingThread)
+        thread = threading.Thread(target=self.statusCrashedThread)
         thread.start()
 
-        self.Layout()
-
-    def statusEnabledPendingThread(self):
+    def statusCrashedThread(self):
         i = 0
 
-        MAX_ITERATIONS = 60
-
-        while not self.killedAlreadyFlag and i < MAX_ITERATIONS:
+        while self.status == STATUS_CRASHED:
             if i % 2:
-                self.deviceLabel.SetBackgroundColour(clr.COLOR_RED)
-                self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+                self.__deviceCrashedColors()
             else:
-                self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
-                self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
+                self.__deviceDisabledColors()
+
+            self.Layout()
+
+            i += 1
+
+            time.sleep(0.5)
+
+    def statusStopping(self, label = None):
+        #if self.status == STATUS_RUNNING or self.status == STATUS_STARTING or self.status == STATUS_CRASHED:
+        if self.status in ( STATUS_RUNNING, STATUS_STARTING ):
+            self.status = STATUS_STOPPING
+
+            self.parent.killMiner()
+
+            thread = threading.Thread(target=self.statusStoppingThread)
+            thread.start()
+
+            self.Layout()
+
+    def statusStoppingThread(self):
+        i = 0
+
+        while self.status == STATUS_STOPPING and ( ( not self.killedAlreadyFlag and i < MAX_ITERATIONS ) or i < MIN_ITERATIONS ):
+            if i % 2:
+                self.__deviceReadyColors()
+            else:
+                self.__deviceDisabledColors()
 
             self.Layout()
 
@@ -463,65 +545,118 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         if i >= MAX_ITERATIONS:
             #print "Fuck, kill timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
-            self.parent.killProcess(forcibly = True)
+            self.parent.killMiner(forcibly = True)
 
         self.killedAlreadyFlag = False
 
-        self.statusEnabled(self.parent.deviceLabel)
+        self.statusReady(self.parent.deviceLabel)
 
-    def statusRunningPending(self, label = None):
-        self.status = STATUS_RUNNING_PENDING
-        self.deviceLabel.Enable(True)
+    def statusStarting(self, label = None):
+        if self.status in (STATUS_READY, STATUS_CRASHED):
+            self.status = STATUS_STARTING
+            self.deviceLabel.Enable(True)
 
-        thread = threading.Thread(target=self.statusRunningPendingThread)
-        thread.start()
-
-        self.Layout()
-
-    def statusRunningPendingThread(self):
-        i = 0
-
-        MIN_ITERATIONS = 6
-        MAX_ITERATIONS = 60
-
-        while ( not self.parent.isMinerRunning() and i < MAX_ITERATIONS ) or i < MIN_ITERATIONS:
-            if i % 2:
-                self.deviceLabel.SetBackgroundColour(clr.COLOR_GREEN)
-                self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
-            else:
-                self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
-                self.deviceLabel.SetForegroundColour(clr.COLOR_BLACK)
+            thread = threading.Thread(target=self.statusStartingThread)
+            thread.start()
 
             self.Layout()
-            self.parent.Layout()
-            self.parent.parent.Layout()
-            self.parent.parent.parent.Layout()
+
+    def statusStartingThread(self):
+        i = 0
+
+        while self.status == STATUS_STARTING and ( ( not self.parent.isMinerRunning() and i < MAX_ITERATIONS ) or i < MIN_ITERATIONS ):
+            if i % 2:
+                self.__deviceRunningColors()
+            else:
+                self.__deviceDisabledColors()
+
+            self.Layout()
 
             i += 1
 
             time.sleep(0.5)
 
         if i >= MAX_ITERATIONS:
-            #print "Fuck, start timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
-            self.parent.killProcess(forcibly = True)
+            print "Fuck, start timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
+            self.parent.killMiner(forcibly = True)
 
-            self.statusEnabled(self.parent.deviceLabel)
+            self.statusReady(self.parent.deviceLabel)
 
         else:
             self.statusRunning(self.parent.deviceLabel)
 
     def moveOn(self, flag = True):
         if self.status == STATUS_RUNNING:
-            self.statusEnabled()
+            self.statusReady()
         else:
-            if self.status == STATUS_ENABLED_PENDING:
+            if self.status == STATUS_STOPPING:
                 self.killedAlreadyFlag = flag
 
-    def minerFailed(self):
-        #todo: if restart:
-        self.statusEnabled()
+    def minerCrashed(self):
+        self.statusCrashed()
 
         time.sleep(2)
 
-        if self.command:
-            self.execute(self.command, WAIT_FOR_STREAMS)
+        #if self.command:
+        #    self.execute(self.command, WAIT_FOR_STREAMS)
+
+
+    ####################################################################################################################
+    ################################################  PRIVATE MEMBERS  #################################################
+    ####################################################################################################################
+
+    # white foreground
+
+    def __deviceDisabledColors(self):
+        self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
+        self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+
+    def __deviceRunningColors(self):
+        self.deviceLabel.SetBackgroundColour(clr.COLOR_DARK_GREEN)
+        self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+
+    def __deviceReadyColors(self):
+        self.deviceLabel.SetBackgroundColour(clr.COLOR_ORANGE)
+        self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+
+    def __deviceCrashedColors(self):
+        self.deviceLabel.SetBackgroundColour(clr.COLOR_SEMI_DARK_RED)
+        self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+
+
+    # dark foreground
+
+    #def __deviceDisabledColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_GRAY)
+    #
+    #def __deviceRunningColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_SEMI_DARK_GREEN)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+    #
+    #def __deviceReadyColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_DARK_YELLOW)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+    #
+    #def __deviceCrashedColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_SEMI_DARK_RED)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_LIGHT_GRAY)
+
+
+    # fosforescent
+
+    #def __deviceDisabledColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_GRAY)
+    #
+    #def __deviceRunningColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_GREEN)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+    #
+    #def __deviceReadyColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_SEMI_DARK_YELLOW)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+    #
+    #def __deviceCrashedColors(self):
+    #    self.deviceLabel.SetBackgroundColour(clr.COLOR_RED)
+    #    self.deviceLabel.SetForegroundColour(clr.COLOR_LIGHT_GRAY)

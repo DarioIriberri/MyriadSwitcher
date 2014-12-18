@@ -10,20 +10,26 @@ import cPickle
 
 SECONDS_PER_DAY = 86400
 
-COLOR_DARK_BLUE     = (0, 0, 139)
-COLOR_BLUE          = (0, 0, 255)
-COLOR_DARK_GREEN    = (0, 139, 0)
-COLOR_DARK_RED      = (139, 0, 0)
-COLOR_DARK_MAGENTA  = (139, 0, 139)
-COLOR_LIGHT_GRAY    = (240, 240, 240)
-COLOR_DARK_GRAY     = (155, 155, 155)
-COLOR_WHITE         = (255, 255, 255)
-COLOR_BLACK         = (0, 0, 0)
-COLOR_RED           = (255, 0, 0)
-COLOR_GREEN         = (0, 255, 0)
-COLOR_YELLOW        = (255, 255, 0)
-COLOR_CYAN          = (0, 255, 255)
-COLOR_DARK_CYAN     = (0, 139, 139)
+COLOR_DARK_BLUE         = (0, 0, 139)
+COLOR_BLUE              = (0, 0, 255)
+COLOR_RED               = (255, 0, 0)
+COLOR_DARK_RED          = (139, 0, 0)
+COLOR_SEMI_DARK_RED     = (215, 0, 0)
+COLOR_DARK_MAGENTA      = (139, 0, 139)
+COLOR_LIGHT_GRAY        = (220, 220, 220)
+COLOR_GRAY              = (155, 155, 155)
+COLOR_DARK_GRAY         = (30, 30, 30)
+COLOR_WHITE             = (255, 255, 255)
+COLOR_BLACK             = (0, 0, 0)
+COLOR_GREEN             = (0, 255, 0)
+COLOR_SEMI_DARK_GREEN   = (0, 215, 0)
+COLOR_DARK_GREEN        = (0, 139, 0)
+COLOR_YELLOW            = (255, 255, 0)
+COLOR_DARK_YELLOW       = (255, 203, 0)
+COLOR_SEMI_DARK_YELLOW  = (255, 233, 0)
+COLOR_ORANGE            = (255, 130, 0)
+COLOR_CYAN              = (0, 255, 255)
+COLOR_DARK_CYAN         = (0, 139, 139)
 
 hashColorF1  = { "SWITCH" : COLOR_WHITE, 		"OK" : COLOR_WHITE, 		"FAIL" : COLOR_WHITE}
 hashColorF2  = { "SWITCH" : COLOR_WHITE, 		"OK" : COLOR_WHITE, 		"FAIL" : COLOR_WHITE}
@@ -35,7 +41,7 @@ hashColorB3  = { "SWITCH" : COLOR_DARK_CYAN, 	"OK" : COLOR_DARK_BLUE, 	"FAIL" : 
 hashColorB4  = { "SWITCH" : COLOR_DARK_GREEN, 	"OK" : COLOR_BLACK, 		"FAIL" : COLOR_DARK_MAGENTA}
 
 foregroundActive  = COLOR_GREEN
-foregroundDisabled = COLOR_DARK_GRAY
+foregroundDisabled = COLOR_GRAY
 spacerColor = COLOR_BLACK
 
 ANCHOR = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
@@ -319,7 +325,7 @@ class HTMLBuilder():
         totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int((profitabilityTotal / config_json["scryptHashRate"]))) + " $" + '{0: >10}'.format(int(profitabilityTotal)) + " $  "
 
         currentPriceFormated = '{0:>6} $'.format(int(currentPrice))
-        coinsPerWatt = "{:0.2f}".format(dailyCoinsTot / wattsAvg)
+        coinsPerWatt = "{:0.2f}".format(0) if wattsAvg == 0 else "{:0.2f}".format(dailyCoinsTot / wattsAvg)
 
         nowP = time.strftime("%H:%M:%S", time.localtime(now))
         nowG = self.getFormatedTime(globalTime)

@@ -1,4 +1,5 @@
 __author__ = 'Dario'
+
 import wx
 from notebook.ExpandableNotebookTab import ExpandableNotebookTab
 
@@ -19,7 +20,7 @@ DEFAULTS = {
                 "sleepLONG"				:	5,
                 "hysteresis"			:	0,
                 "minTimeNoHysteresis"	: 	9999,
-                "rampUptime"			: 	10,
+                "rampUptime"			: 	5,
                 "scryptHashRate"		: 	1,
                 "groestlHashRate"		: 	14,
                 "skeinHashRate"			: 	300,
@@ -51,8 +52,14 @@ DEFAULTS = {
 
 class NotebookTab(ExpandableNotebookTab):
     def __init__(self, parent_panel, id=wx.ID_ANY):
-        ExpandableNotebookTab.__init__(self, parent_panel, id=wx.ID_ANY)
+        ExpandableNotebookTab.__init__(self, parent_panel, id)
 
     def loadDefaults(self):
         self.set_json(DEFAULTS)
+
+    def get_default_values(self):
+        return DEFAULTS
+
+    def get_default_value(self, field_name):
+        return DEFAULTS[field_name]
 

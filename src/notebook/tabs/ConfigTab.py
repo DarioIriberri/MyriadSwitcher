@@ -26,6 +26,7 @@ class ConfigTab(nbt.NotebookTab):
 
         self.sizer.Add(self.resizable_panel, 0, wx.EXPAND | wx.ALL, 0)
 
+        self.mainMode = "simple"
         self.showSimple()
 
         self.SetSizer(self.sizer)
@@ -47,8 +48,8 @@ class ConfigTab(nbt.NotebookTab):
         self.parentNotebook.notebookControlChanged(event)
 
         try:
-            self.simpleConfig.rightPanel.algoChecked(event.EventObject)
-            self.advancedConfig.rightPanel.algoChecked(event.EventObject)
+            self.simpleConfig.rightPanel.algoChecked(event.GetEventObject())
+            self.advancedConfig.rightPanel.algoChecked(event.GetEventObject())
 
         except AttributeError:
             pass
@@ -58,13 +59,17 @@ class ConfigTab(nbt.NotebookTab):
         self.resizable_panel.SplitHorizontally(self.simpleConfig, self.advancedConfig)
         self.resizable_panel.Unsplit(self.advancedConfig)
 
+        self.mainMode = "simple"
+
     def showAdvanced(self):
         self.advancedConfig.set_json(self.simpleConfig.get_json())
         self.resizable_panel.SplitHorizontally(self.simpleConfig, self.advancedConfig)
         self.resizable_panel.Unsplit(self.simpleConfig)
 
+        self.mainMode = "advanced"
+
     def check_files_exist(self):
-        return self.advancedConfig.check_files_exist()
+        return self.mainMode == "simple" or self.advancedConfig.check_files_exist()
 
     def set_json(self, config_json):
         self.advancedConfig.set_json(config_json)
@@ -75,8 +80,15 @@ class ConfigTab(nbt.NotebookTab):
         json = {}
 
         try:
-            json.update(self.advancedConfig.get_json())
-            json.update(self.simpleConfig.get_json())
+            #The last panel to update the config dict must be the active one
+            #in order to not overwrite common fields with invalid data
+            if (self.mainMode == "simple"):
+                json.update(self.advancedConfig.get_json())
+                json.update(self.simpleConfig.get_json())
+
+            else:
+                json.update(self.simpleConfig.get_json())
+                json.update(self.advancedConfig.get_json())
 
         except:
             pass
