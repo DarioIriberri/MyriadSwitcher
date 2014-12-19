@@ -5,6 +5,7 @@ import os.path
 import wx
 import wx.lib.filebrowsebutton as Filebrowser
 
+import FrameMYR
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
 
@@ -117,11 +118,11 @@ class AlgoPanelAdvanced(wx.Panel):
         self.parent = parent
 
         self.fbb = FileBrowserMYR(
-            self, size=(-1, 30), dialogTitle = 'Pick a script for ' + algo + " ...", fileMask='*.bat;*.sh', algoBrowser=self.algo
+            self, size=(-1, 30), dialogTitle = 'Pick a script for ' + algo + " ...", fileMask='*.bat;*.sh', algoBrowser=self.algo, buttonSize=(36, 30)
         )
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self.fbb, 3, wx.ALL, 0)
+        sizer.Add(self.fbb, 1, wx.ALL, 0)
         self.SetSizer(sizer)
 
     #------------------------------------------------------------------------------------------
@@ -173,11 +174,12 @@ class AlgoPanelAdvanced(wx.Panel):
 
 class FileBrowserMYR(Filebrowser.FileBrowseButton):
 
-    def __init__(self, parent, size, dialogTitle, fileMask, algoBrowser=None):
+    def __init__(self, parent, size, dialogTitle, fileMask, algoBrowser=None, buttonSize=(-1, -1)):
         self.algoBrowser = algoBrowser
         self.parent = parent
 
-        Filebrowser.FileBrowseButton.__init__(self, parent=parent, id=wx.ID_ANY, size=size, labelText="", dialogTitle=dialogTitle, fileMask=fileMask)
+        iconPath = FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/browse16.ico'
+        Filebrowser.FileBrowseButton.__init__(self, parent=parent, id=wx.ID_ANY, size=size, labelText="", buttonText="", dialogTitle=dialogTitle, fileMask=fileMask, iconPath=iconPath, buttonSize=buttonSize)
         #self.value = self.GetValue().replace("\\", "\\\\")
         self.value = self.GetValue()
 

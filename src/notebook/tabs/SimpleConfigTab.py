@@ -118,10 +118,13 @@ class AlgoPanelSimple(wx.Panel):
         self.poolsFile = poolsFile
 
         self.poolList = self.readPoolsFile(poolsFile)
+        boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
 
         #text_browser = wx.StaticText(self, wx.ID_ANY, "Dev " + str(self.dev) + ":", style=wx.BOLD)
         self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=self.poolList, style=wx.CB_READONLY)
-        pool_editor = wx.Button(self, wx.ID_ANY, "Edit", size=(40, -1))
+        pool_editor = wx.Button(self, wx.ID_ANY, size=(36, -1))
+        pool_editor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
+        boxWrapper.Add( pool_editor, 0, wx.BOTTOM, -1)
         self.Bind(wx.EVT_BUTTON, self.onButton, pool_editor)
         #self.pool_editor = wx.ComboBox(self, size=(-1, 28), choices=pools, style=wx.CB_READONLY)
 
@@ -130,7 +133,7 @@ class AlgoPanelSimple(wx.Panel):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(8, -1)), 0, wx.EXPAND | wx.TOP, 5)
         sizer.Add(self.poolsCombo, 1, wx.EXPAND | wx.TOP, 5)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(4, -1)), 0, wx.EXPAND | wx.TOP, 5)
-        sizer.Add(pool_editor, 0, wx.EXPAND | wx.TOP, 4)
+        sizer.Add(boxWrapper, 0, wx.EXPAND | wx.TOP, 4)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(4, -1)), 0, wx.EXPAND | wx.TOP, 5)
         self.SetSizer(sizer)
 
