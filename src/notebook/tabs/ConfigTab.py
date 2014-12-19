@@ -100,6 +100,3 @@ class ConfigTab(nbt.NotebookTab):
             pass
 
         return json
-
-        #def on_control_changed(self, event):
-        #    frame_myr.notebookControlChanged()

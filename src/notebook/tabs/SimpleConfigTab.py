@@ -15,6 +15,7 @@ POOLS_GROESTL = "poolsGroestl.conf"
 POOLS_SKEIN   = "poolsSkein.conf"
 POOLS_QUBIT   = "poolsQubit.conf"
 
+
 class SimpleConfigTab(BaseConfigTab):
     def __init__(self, configTab):
         BaseConfigTab.__init__(self, configTab)
@@ -47,12 +48,11 @@ class RightPanelSimple(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        #box = wx.StaticBoxSizer( wx.StaticBox( self, -1), wx.VERTICAL )
-
         self.algo_panel_scrypt = AlgoPanelSimple(self, BaseConfigTab.SCRYPT, POOLS_SCRYPT, size=(-1, 28))
         self.algo_panel_groestl = AlgoPanelSimple(self, BaseConfigTab.GROESTL, POOLS_GROESTL, size=(-1, 28))
         self.algo_panel_skein = AlgoPanelSimple(self, BaseConfigTab.SKEIN, POOLS_SKEIN, size=(-1, 28))
         self.algo_panel_qubit = AlgoPanelSimple(self, BaseConfigTab.QUBIT, POOLS_QUBIT, size=(-1, 28))
+
         sizer.Add(self.algo_panel_scrypt, 0, wx.EXPAND | wx.TOP, -3)
         sizer.Add(self.algo_panel_groestl, 0, wx.EXPAND | wx.TOP, 3)
         sizer.Add(self.algo_panel_skein, 0, wx.EXPAND | wx.TOP, 3)
