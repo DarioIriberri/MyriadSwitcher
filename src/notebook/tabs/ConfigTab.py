@@ -13,10 +13,12 @@ class ConfigTab(nbt.NotebookTab):
     def __init__(self, parentNotebook):
         nbt.NotebookTab.__init__(self, parentNotebook=parentNotebook, id=wx.ID_ANY)
 
+        self.parentNotebook = parentNotebook
+
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.simpleConfig = SimpleConfigTab(self)
-        self.advancedConfig = MainConfigTab(self)
+        self.simpleConfig = SimpleConfigTab(self, parentNotebook)
+        self.advancedConfig = MainConfigTab(self, parentNotebook)
 
         self.advancedConfig.Bind(EVT_CONFIG_TAB_EVENT, self.on_control_changed)
         self.simpleConfig.Bind(EVT_CONFIG_TAB_EVENT, self.on_control_changed)

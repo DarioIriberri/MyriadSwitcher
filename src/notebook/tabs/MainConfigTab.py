@@ -10,8 +10,8 @@ from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
 
 class MainConfigTab(BaseConfigTab):
-    def __init__(self, configTab):
-        BaseConfigTab.__init__(self, configTab)
+    def __init__(self, configTab, parentNotebook):
+        BaseConfigTab.__init__(self, configTab, parentNotebook)
 
     def getRightPanel(self, parent):
         self.rightPanel = RightPanelAdvanced(self, parent)

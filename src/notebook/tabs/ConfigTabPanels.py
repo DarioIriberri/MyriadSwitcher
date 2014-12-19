@@ -12,10 +12,10 @@ class BaseConfigTab(nbt.NotebookTab):
     SKEIN   = "Skein "
     QUBIT   = "Qubit "
 
-    def __init__(self, parent):
+    def __init__(self, parent, parentNotebook):
         nbt.NotebookTab.__init__(self, parent, id=wx.ID_ANY)
 
-        #self.parentNotebook = parentNotebook
+        self.parentNotebook = parentNotebook
 
         self.configTab = parent
         self.sizer = wx.BoxSizer(wx.VERTICAL)
