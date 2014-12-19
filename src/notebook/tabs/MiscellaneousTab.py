@@ -1,3 +1,4 @@
+import FrameMYR
 from notebook.tabs import NotebookTab as nbt
 
 __author__ = 'Dario'
@@ -12,8 +13,8 @@ except ImportError:
 
 class MiscellaneousTab(nbt.NotebookTab):
     #----------------------------------------------------------------------
-    def __init__(self, parent_panel):
-        nbt.NotebookTab.__init__(self, parent_panel=parent_panel, id=wx.ID_ANY)
+    def __init__(self, parentNotebook):
+        nbt.NotebookTab.__init__(self, parentNotebook=parentNotebook, id=wx.ID_ANY)
 
         #self.Bind(EVT_CONFIG_MODE_EVENT, self.onMainModeToggle)
 
@@ -428,14 +429,18 @@ class LogElement(wx.StaticBoxSizer):
         #    #parent, id=wx.ID_ANY, labelText=""
         #)
 
+        boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
+
         sizerLog = wx.BoxSizer(wx.HORIZONTAL)
-        self.txtDir = wx.TextCtrl(parent, -1, size=(-1, 25))
-        self.buttonDir = wx.Button(parent, -1, "Browse", size=(-1, 25))
+        self.txtDir = wx.TextCtrl(parent, -1, size=(-1, 23))
+        self.buttonDir = wx.Button(parent, -1, size=(34, 25))
+        self.buttonDir.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/browse16.ico'))
+        boxWrapper.Add( self.buttonDir, 0, wx.TOP, -1)
         parent.Bind(wx.EVT_BUTTON, self.onShowDialog, self.buttonDir)
         parent.Bind(wx.EVT_TEXT, parent.GetParent().on_control_changed, self.txtDir)
 
         sizerLog.Add(self.txtDir, 1, wx.LEFT, 5)
-        sizerLog.Add(self.buttonDir, 0, wx.LEFT | wx.RIGHT, 5)
+        sizerLog.Add(boxWrapper, 0, wx.LEFT | wx.RIGHT, 5)
 
         self.Add(sizerLog, 0, wx.TOP | wx.EXPAND, 9)
 

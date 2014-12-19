@@ -13,8 +13,8 @@ MAX_STOP_TIME = 45
 
 
 class PanelConsole(wx.Panel):
-    def __init__(self, parent, frame_myr, size=None):
-        wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY)
+    def __init__(self, parent, frame_myr, size=None, style=wx.BORDER_DEFAULT):
+        wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY, style=style)
 
         self.parent = parent
         self.frame_myr = frame_myr
@@ -27,7 +27,7 @@ class PanelConsole(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.wv.SetBackgroundColour("Black")
-        sizer.Add(self.wv, 1, wx.EXPAND)
+        sizer.Add(self.wv, 1, wx.EXPAND | wx.ALL, -1)
         self.SetSizer(sizer)
 
         self.Bind(EVT_CONSOLE_EVENT, self.onConsole)

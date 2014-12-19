@@ -79,12 +79,12 @@ class FrameMYRClass(wx.Frame):
         helpmenu= wx.Menu()
         menuOpen = filemenu.Append(wx.ID_OPEN, "&Open"," Open a file to edit")
         menuSave = filemenu.Append(wx.ID_SAVE, "&Save"," Save configuration")
-        menuSaveAs = filemenu.Append(wx.ID_SAVEAS, "&Save as..."," Save configuration as...")
+        menuSaveAs = filemenu.Append(wx.ID_SAVEAS, "Save &as..."," Save configuration as...")
         menuExit = filemenu.Append(wx.ID_EXIT,"E&xit"," Terminate the program")
         menuRTFM = helpmenu.Append(wx.ID_ANY, "&Open the User Guide"," Open the user guide")
         menuAbout = helpmenu.Append(wx.ID_ABOUT, "&About"," Information about this program")
-        menuDonateMYR = donationsmenu.Append(wx.ID_ANY, "&Donate Myriadcoins (MYR)"," Copies MYR address to clipboard to donate Myriadcoins")
-        menuDonateBTC = donationsmenu.Append(wx.ID_ANY, "&Donate Bitcoins (BTC)"," Copies MYR address to clipboard to donate Bitcoins")
+        menuDonateMYR = donationsmenu.Append(wx.ID_ANY, "Donate &Myriadcoins (MYR)"," Copies MYR address to clipboard to donate Myriadcoins")
+        menuDonateBTC = donationsmenu.Append(wx.ID_ANY, "Donate &Bitcoins (BTC)"," Copies MYR address to clipboard to donate Bitcoins")
 
         # Events.
         self.Bind(wx.EVT_MENU, self.onOpen, menuOpen)
@@ -157,7 +157,7 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(5, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.AddF(self.buttonDefaults, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
-        sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.TOP, 0)
+        sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.AddF(self.buttonMainMode, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
 
@@ -173,12 +173,12 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.AddF(self.buttonWait3, flagsButtonRun)
         sizerButtons.AddF(self.buttonWait4, flagsButtonRun)
 
-        self.sizerTotal.Add(self.panelNotebook, 1, wx.EXPAND | wx.ALL, 1)
-        self.sizerTotal.Add(sizerButtons, 0, wx.EXPAND)
+        self.sizerTotal.Add(self.panelNotebook, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 3)
+        self.sizerTotal.Add(sizerButtons, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.TOP, 1)
 
         self.resizable_panel.SetSashGravity(GRAVITY)
         #self.resizable_panel.SplitHorizontally(self.panelConsole, self.shell)
-        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 3)
+        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 4)
 
         self.icon = wx.Icon(FrameMYRClass.RESOURCE_PATH + 'img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
         self.SetIcon(self.icon)

@@ -10,8 +10,8 @@ SLIDER_MAX = 1000
 
 
 class SwitchingModesTab(nbt.NotebookTab):
-    def __init__(self, parent_panel):
-        nbt.NotebookTab.__init__(self, parent_panel=parent_panel, id=wx.ID_ANY)
+    def __init__(self, parentNotebook):
+        nbt.NotebookTab.__init__(self, parentNotebook=parentNotebook, id=wx.ID_ANY)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.modes_panel = ModesPanel(self)

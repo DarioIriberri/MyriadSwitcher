@@ -4,9 +4,9 @@ import wx
 from notebook.ExpandableNotebook import EVT_NOTEBOOK_BROADCAST_EVENT
 
 class ExpandableNotebookTab(wx.Panel):
-    def __init__(self, parent_panel, id=wx.ID_ANY):
-        wx.Panel.__init__(self, parent=parent_panel, id=wx.ID_ANY)
-        self.parentNotebook = parent_panel
+    def __init__(self, parentNotebook, id=wx.ID_ANY):
+        wx.Panel.__init__(self, parent=parentNotebook, id=wx.ID_ANY)
+        self.parentNotebook = parentNotebook
         self.id = id
 
         self.Bind(EVT_NOTEBOOK_BROADCAST_EVENT, self.onBroadcastedEvent)

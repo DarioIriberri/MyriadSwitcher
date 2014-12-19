@@ -10,21 +10,19 @@ from event.EventLib import EVT_CONFIG_TAB_EVENT
 
 
 class ConfigTab(nbt.NotebookTab):
-    def __init__(self, parent_panel):
-        nbt.NotebookTab.__init__(self, parent_panel=parent_panel, id=wx.ID_ANY)
+    def __init__(self, parentNotebook):
+        nbt.NotebookTab.__init__(self, parentNotebook=parentNotebook, id=wx.ID_ANY)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.resizable_panel = wx.SplitterWindow(self, wx.ID_ANY)
-        self.resizable_panel.SetMinimumPaneSize(1)
-
-        self.simpleConfig = SimpleConfigTab(self.resizable_panel, parent_panel, self)
-        self.advancedConfig = MainConfigTab(self.resizable_panel, parent_panel, self)
+        self.simpleConfig = SimpleConfigTab(self)
+        self.advancedConfig = MainConfigTab(self)
 
         self.advancedConfig.Bind(EVT_CONFIG_TAB_EVENT, self.on_control_changed)
         self.simpleConfig.Bind(EVT_CONFIG_TAB_EVENT, self.on_control_changed)
 
-        self.sizer.Add(self.resizable_panel, 0, wx.EXPAND | wx.ALL, 0)
+        self.sizer.Add(self.simpleConfig, 0, wx.EXPAND | wx.ALL, 0)
+        self.sizer.Add(self.advancedConfig, 0, wx.EXPAND | wx.ALL, 0)
 
         self.mainMode = "simple"
         self.showSimple()
@@ -56,15 +54,23 @@ class ConfigTab(nbt.NotebookTab):
 
     def showSimple(self):
         self.simpleConfig.set_json(self.advancedConfig.get_json())
-        self.resizable_panel.SplitHorizontally(self.simpleConfig, self.advancedConfig)
-        self.resizable_panel.Unsplit(self.advancedConfig)
+
+        self.advancedConfig.Show(False)
+        self.simpleConfig.Show(True)
+
+        self.Layout()
+        self.parentNotebook.Layout()
 
         self.mainMode = "simple"
 
     def showAdvanced(self):
         self.advancedConfig.set_json(self.simpleConfig.get_json())
-        self.resizable_panel.SplitHorizontally(self.simpleConfig, self.advancedConfig)
-        self.resizable_panel.Unsplit(self.simpleConfig)
+
+        self.simpleConfig.Show(False)
+        self.advancedConfig.Show(True)
+
+        self.Layout()
+        self.parentNotebook.Layout()
 
         self.mainMode = "advanced"
 

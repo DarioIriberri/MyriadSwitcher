@@ -51,8 +51,8 @@ DEFAULTS = {
 
 
 class NotebookTab(ExpandableNotebookTab):
-    def __init__(self, parent_panel, id=wx.ID_ANY):
-        ExpandableNotebookTab.__init__(self, parent_panel, id)
+    def __init__(self, parentNotebook, id=wx.ID_ANY):
+        ExpandableNotebookTab.__init__(self, parentNotebook, id)
 
     def loadDefaults(self):
         self.set_json(DEFAULTS)
