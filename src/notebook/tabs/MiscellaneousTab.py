@@ -458,7 +458,7 @@ class LogElement(wx.StaticBoxSizer):
         self.txtDir.SetValue(self.fbb.GetPath())
         self.fbb.Destroy()
 
-        self.parent.parentNotebook.notebookControlChanged()
+        self.parent.parent.parentNotebook.notebookControlChanged()
 
 class ErrorsElement(wx.StaticBoxSizer):
     ERROR_OPTS = ["crashes", "freezes", "crashes or freezes"]

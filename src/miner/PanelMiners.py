@@ -6,6 +6,7 @@ import threading
 from multiprocessing.pool import ThreadPool
 from console.switcher import SwitcherData
 import PanelMinerInstance as PMI
+from wx._core import PyDeadObjectError
 from wx.lib.splitter import MultiSplitterWindow
 
 
@@ -41,7 +42,7 @@ class PanelMiners(MultiSplitterWindow):
 
     def executeAlgo(self, maxAlgo, switch):
         if switch:
-            self.killMinersLazy()
+            self.stopMiners()
 
         ret0 = self.miner0.executeAlgo(maxAlgo, switch)
         ret1 = self.miner1.executeAlgo(maxAlgo, switch)
@@ -93,11 +94,39 @@ class PanelMiners(MultiSplitterWindow):
 
         return False
 
-    def killMinersLazy(self, event=None):
-        self.miner0.stopMiners()
-        self.miner1.stopMiners()
-        self.miner2.stopMiners()
-        self.miner3.stopMiners()
+    def stopMiners(self, forcibly=False, wait=False):
+        self.miner0.stopMiner(forcibly)
+        self.miner1.stopMiner(forcibly)
+        self.miner2.stopMiner(forcibly)
+        self.miner3.stopMiner(forcibly)
+
+        if wait:
+            MAX_STOP_TIME = 145
+
+            t = time.time()
+            success = False
+            i = 0
+            str_out = "Waiting for miners to die " + str(i)
+            while time.time() < t + MAX_STOP_TIME:
+                if not self.checkMinersReady():
+                    time.sleep(1)
+                    i += 1
+                    str_out +=  ", " + str(i)
+                    print str_out
+
+                else:
+                    str_out = "done, Bye!"
+                    print str_out
+                    #time.sleep(2)
+                    success = True
+                    break
+
+            print "Exited with success = " + str(success)
+
+            if not success:
+                str_out = "Damn it"
+                print str_out
+                time.sleep(5)
 
     #def killMinersLazy(self, event=None):
     #    pool = ThreadPool(processes=self.num_miners)
@@ -149,40 +178,44 @@ class PanelMiners(MultiSplitterWindow):
             thread = threading.Thread(target=self.rearrangeMinersThread, args=(wide, narrow))
             thread.start()
 
-        except AttributeError:
+        except (PyDeadObjectError, AttributeError):
             pass
 
     def rearrangeMinersThread(self, wide, narrow):
-        #with PanelMiners.lock:
-        if self.resize_lock:
-            time.sleep(0.5)
+        try:
+            #with PanelMiners.lock:
+            if self.resize_lock:
+                time.sleep(0.5)
 
-        if not self.resize_lock:
-            self.resize_lock = True
+            if not self.resize_lock:
+                self.resize_lock = True
 
-            target0 = int(wide if self.miner0.minerStatus() != PMI.STATUS_DISABLED else narrow)
-            target1 = int(wide if self.miner1.minerStatus() != PMI.STATUS_DISABLED else narrow)
-            target2 = int(wide if self.miner2.minerStatus() != PMI.STATUS_DISABLED else narrow)
-            target3 = int(wide if self.miner3.minerStatus() != PMI.STATUS_DISABLED else narrow)
+                target0 = int(wide if self.miner0.minerStatus() != PMI.STATUS_DISABLED else narrow)
+                target1 = int(wide if self.miner1.minerStatus() != PMI.STATUS_DISABLED else narrow)
+                target2 = int(wide if self.miner2.minerStatus() != PMI.STATUS_DISABLED else narrow)
+                target3 = int(wide if self.miner3.minerStatus() != PMI.STATUS_DISABLED else narrow)
 
-            steps = 15
+                steps = 15
 
-            for w in range (1, steps):
-                #if self.resize_lock == False:
-                #    break
+                for w in range (1, steps):
+                    #if self.resize_lock == False:
+                    #    break
 
-                delta0 = target0 - self.GetSashPosition(0)
-                delta1 = target1 - self.GetSashPosition(1)
-                delta2 = target2 - self.GetSashPosition(2)
-                delta3 = target3 - self.GetSashPosition(3)
+                    delta0 = target0 - self.GetSashPosition(0)
+                    delta1 = target1 - self.GetSashPosition(1)
+                    delta2 = target2 - self.GetSashPosition(2)
+                    delta3 = target3 - self.GetSashPosition(3)
 
-                pct = float(w) / steps
+                    pct = float(w) / steps
 
-                self.SetSashPosition(0, self.GetSashPosition(0) + pct * delta0)
-                self.SetSashPosition(1, self.GetSashPosition(1) + pct * delta1)
-                self.SetSashPosition(2, self.GetSashPosition(2) + pct * delta2)
-                self.SetSashPosition(3, self.GetSashPosition(3) + pct * delta3)
+                    self.SetSashPosition(0, self.GetSashPosition(0) + pct * delta0)
+                    self.SetSashPosition(1, self.GetSashPosition(1) + pct * delta1)
+                    self.SetSashPosition(2, self.GetSashPosition(2) + pct * delta2)
+                    self.SetSashPosition(3, self.GetSashPosition(3) + pct * delta3)
 
-                time.sleep(0.01)
+                    time.sleep(0.01)
 
-            self.resize_lock = False
+                self.resize_lock = False
+
+        except PyDeadObjectError:
+            pass

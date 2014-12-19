@@ -124,6 +124,7 @@ class AlgoPanelSimple(wx.Panel):
         self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=self.poolList, style=wx.CB_READONLY)
         pool_editor = wx.Button(self, wx.ID_ANY, size=(36, -1))
         pool_editor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
+        pool_editor.SetToolTip(wx.ToolTip("Edit " + algo + " pools"))
         boxWrapper.Add( pool_editor, 0, wx.BOTTOM, -1)
         self.Bind(wx.EVT_BUTTON, self.onButton, pool_editor)
         #self.pool_editor = wx.ComboBox(self, size=(-1, 28), choices=pools, style=wx.CB_READONLY)

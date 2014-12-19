@@ -26,7 +26,7 @@ MIN_TIME_THREAD_PROBED = 60
 WAIT_FOR_STREAMS = True
 
 MIN_ITERATIONS = 8
-MAX_ITERATIONS = 20
+MAX_ITERATIONS = 60
 
 
 class PanelMinerInstance(wx.Panel):
@@ -123,7 +123,6 @@ class PanelMinerInstance(wx.Panel):
         return False
 
     def execute(self, command, waitForStreams = False):
-        #print "execute"
         self.__kill()
 
         self.waitForStreams = waitForStreams
@@ -146,15 +145,23 @@ class PanelMinerInstance(wx.Panel):
 
         return self.handler.status
 
-    def stopMiners(self):
+    def stopMiner(self, forcibly=False):
+        if forcibly:
+            self._killMiner(forcibly)
+            self.handler.statusReady()
+
         self.handler.statusStopping()
 
-    def killMiner(self, forcibly = False):
-        if self.__isProcessRunning():
-            self.killed = True
+    def _killMiner(self, forcibly = False):
+        try:
+            if self.__isProcessRunning():
+                #print "kill signal!!!!!!!!!!!!!!"
+                self.killed = True
 
-        else:
-            return
+            else:
+                return
+
+        except: pass
 
         if not self.waitForStreams or forcibly:
             self.__obliterate()
@@ -182,8 +189,11 @@ class PanelMinerInstance(wx.Panel):
     def printMessage(self, text):
         #if clear:
         #    self.shell.Clear()
+        try:
+            self.__appendText(self.shellStdout, text + os.linesep + os.linesep)
 
-        self.__appendText(self.shellStdout, text + os.linesep + os.linesep)
+        except PyDeadObjectError:
+            pass
 
     def __runStreamThreads(self, waitForStreams):
         self.threadOut = threading.Thread(target=self.__outputThread, args=[self.shellStdout, self.process.stdout, waitForStreams])
@@ -200,24 +210,29 @@ class PanelMinerInstance(wx.Panel):
 
         #Check Miners...
         while self.isMinerRunning():
-            print self
             time.sleep(10)
 
         #if the kill signal is set, the miner was stopped by the user
         if not self.killed:
             self.handler.minerCrashed()
 
+
     def __outputThread(self, shell, stream, waitForStreams):
         for line in iter(stream.readline, b''):
-            if self.killed:
-                break
-
             try:
+                #print "so????"
+                if self.killed:
+                    #print "killed!!!!!!!!!!!!"
+                    break
+
                 self.__appendText(shell, line.rstrip())
                 self.__appendText(shell, os.linesep)
 
-            except PyDeadObjectError:
+            except Exception:
+                #print "oooooooooooooooooooooooops!!!!!!!!!!!!"
                 break
+
+        #print "outta here!!!!!!!!!!!!!!!!!"
 
         #if not waitForStreams:
         #    print("__outputThread")
@@ -228,7 +243,6 @@ class PanelMinerInstance(wx.Panel):
             return self.process.is_running()
 
         except (psutil.NoSuchProcess, AttributeError) as ex:
-            #print ex
             return False
 
         #return self.process and not self.process.returncode
@@ -239,7 +253,7 @@ class PanelMinerInstance(wx.Panel):
             #self.p.terminate()
             ret = self.__obliterate()
             #time.sleep(4)
-            self.printMessage(os.linesep + "Killed... " + ("" if not stream else str(stream)))
+            #self.printMessage(os.linesep + "Killed... " + ("" if not stream else str(stream)))
 
         #self.killed = False
         self.handler.moveOn()
@@ -250,6 +264,7 @@ class PanelMinerInstance(wx.Panel):
                 ret = childProcess.kill()
                 ret = ret
 
+            #ret = self.process.terminate()
             ret = self.process.kill()
 
             return ret
@@ -290,8 +305,8 @@ class PanelMinerInstance(wx.Panel):
         try:
             shell.AppendText(text)
 
-        except Exception as ex:
-            print "PanelMinerInstance.__appendText()" + str(ex)
+        except PyDeadObjectError as ex:
+            pass
 
         #self.shell.BeginTextColour(textColor)
         #try:
@@ -377,6 +392,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         devEditor = wx.Button(self, wx.ID_ANY, size=(36, -1))
         devEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
+        devEditor.SetToolTip(wx.ToolTip("Edit " + parent.deviceLabel + " parameters"))
         devEditor.Bind(wx.EVT_BUTTON, self.onDeviceEdit)
 
         sizer.Add(self.deviceLabel, 0, wx.EXPAND | wx.TOP, -1)
@@ -459,8 +475,6 @@ class PanelMinerInstanceHandler(wx.Panel):
             self.deviceCombo.Enable(False)
             self.deviceNum.Enable(False)
 
-            self.Layout()
-
     def statusDisabled(self, label):
         self.parent.clearAll()
         self.parent.printMessage(label + " is disabled." + os.linesep + "Pick a device to enable it.")
@@ -479,26 +493,25 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.deviceCombo.Enable(True)
         self.deviceNum.Enable(True)
 
-        self.Layout()
-
     def statusReady(self, label = None):
-        self.parent.printMessage(os.linesep + self.deviceCombo.GetValue() + " is now ready to mine!")
-
         if self.status == STATUS_READY:
             return
 
         self.status = STATUS_READY
 
-        self.parent.parent.rearrangeMiners(slide=True)
+        try:
+            self.parent.printMessage(os.linesep + self.deviceCombo.GetValue() + " is now ready to mine!")
+            self.parent.parent.rearrangeMiners(slide=True)
 
-        self.__deviceReadyColors()
+            self.__deviceReadyColors()
 
-        self.deviceLabel.Enable(True)
+            self.deviceLabel.Enable(True)
 
-        self.deviceCombo.Enable(True)
-        self.deviceNum.Enable(True)
+            self.deviceCombo.Enable(True)
+            self.deviceNum.Enable(True)
 
-        self.Layout()
+        except PyDeadObjectError:
+            pass
 
     def statusCrashed(self, label = None):
         self.status = STATUS_CRASHED
@@ -515,8 +528,6 @@ class PanelMinerInstanceHandler(wx.Panel):
             else:
                 self.__deviceDisabledColors()
 
-            self.Layout()
-
             i += 1
 
             time.sleep(0.5)
@@ -526,12 +537,10 @@ class PanelMinerInstanceHandler(wx.Panel):
         if self.status in ( STATUS_RUNNING, STATUS_STARTING ):
             self.status = STATUS_STOPPING
 
-            self.parent.killMiner()
+            self.parent._killMiner()
 
             thread = threading.Thread(target=self.statusStoppingThread)
             thread.start()
-
-            self.Layout()
 
     def statusStoppingThread(self):
         i = 0
@@ -542,15 +551,12 @@ class PanelMinerInstanceHandler(wx.Panel):
             else:
                 self.__deviceDisabledColors()
 
-            self.Layout()
-
             i += 1
 
             time.sleep(0.5)
 
         if i >= MAX_ITERATIONS:
-            #print "Fuck, kill timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
-            self.parent.killMiner(forcibly = True)
+            self.parent._killMiner(forcibly = True)
 
         self.killedAlreadyFlag = False
 
@@ -564,8 +570,6 @@ class PanelMinerInstanceHandler(wx.Panel):
             thread = threading.Thread(target=self.statusStartingThread)
             thread.start()
 
-            self.Layout()
-
     def statusStartingThread(self):
         i = 0
 
@@ -575,16 +579,11 @@ class PanelMinerInstanceHandler(wx.Panel):
             else:
                 self.__deviceDisabledColors()
 
-            self.Layout()
-
             i += 1
 
             time.sleep(0.5)
 
         if i >= MAX_ITERATIONS:
-            print "Fuck, start timeouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut!!!!!!"
-            self.parent.killMiner(forcibly = True)
-
             self.statusReady(self.parent.deviceLabel)
 
         else:
@@ -613,21 +612,36 @@ class PanelMinerInstanceHandler(wx.Panel):
     # white foreground
 
     def __deviceDisabledColors(self):
-        self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
-        self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+        try:
+            self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
+            self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+
+        except PyDeadObjectError:
+            pass
 
     def __deviceRunningColors(self):
-        self.deviceLabel.SetBackgroundColour(clr.COLOR_DARK_GREEN)
-        self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+        try:
+            self.deviceLabel.SetBackgroundColour(clr.COLOR_DARK_GREEN)
+            self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+
+        except PyDeadObjectError:
+            pass
 
     def __deviceReadyColors(self):
-        self.deviceLabel.SetBackgroundColour(clr.COLOR_ORANGE)
-        self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+        try:
+            self.deviceLabel.SetBackgroundColour(clr.COLOR_ORANGE)
+            self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+
+        except PyDeadObjectError:
+            pass
 
     def __deviceCrashedColors(self):
-        self.deviceLabel.SetBackgroundColour(clr.COLOR_SEMI_DARK_RED)
-        self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
+        try:
+            self.deviceLabel.SetBackgroundColour(clr.COLOR_SEMI_DARK_RED)
+            self.deviceLabel.SetForegroundColour(clr.COLOR_WHITE)
 
+        except PyDeadObjectError:
+            pass
 
     # dark foreground
 

@@ -142,7 +142,7 @@ class SwitchingThread (threading.Thread):
                 prevScriptPath = scriptPath
 
                 if globalStopped:
-                    self.kill(stopMiningSession = False)
+                    self.kill()
 
                     if status != "SWITCH":
                         status = "OK"
@@ -156,7 +156,7 @@ class SwitchingThread (threading.Thread):
 
                     if not switcherData.config_json["debug"]:
                         if self.mainMode == "advanced":
-                            self.kill(stopMiningSession = status != "SWITCH")
+                            self.kill()
 
                         retCode = self.startMiners(scriptPath, switcherData.maxAlgo, restart, status == "SWITCH")
 
@@ -209,7 +209,7 @@ class SwitchingThread (threading.Thread):
 
                 switcherData.loadConfig(thread.activeConfigFile)
 
-            except Exception:
+            except Exception as ex:
                 switcherData.pl()
                 switcherData.pl("Unexpected error.", HTMLBuilder.COLOR_RED)
                 switcherData.pl()
@@ -460,11 +460,11 @@ class SwitchingThread (threading.Thread):
         if os.name == "posix":
             pass
 
-    def kill(self, stopMiningSession = True):
+    def kill(self):
         if self.mainMode == "advanced":
             self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
-        else:
-            self.console.frame_myr.killMinersLazy(stopMiningSession)
+        #else:
+        #    self.console.frame_myr.stopMiners(stopMiningSession, forcibly)
 
     def killMiners(self):
         for miner in SwitcherData.MINER_CHOICES:
@@ -480,7 +480,7 @@ class SwitchingThread (threading.Thread):
             if miner in proc.name():
                 proc.kill()
 
-    def stop(self, kill_miners):
+    def stop(self, kill_miners=False):
         #self.htmlBuilder.pl()
         #self.htmlBuilder.pl("Stopping... ")
 
@@ -488,7 +488,7 @@ class SwitchingThread (threading.Thread):
 
         if kill_miners:
             try:
-                self.kill(stopMiningSession = True)
+                self.kill()
             except:
                 print "Failed to kill miners"
 

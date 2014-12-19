@@ -195,10 +195,10 @@ class FrameMYRClass(wx.Frame):
         self.Layout()
         self.Show()
 
-        self.buttonWait1.Show(False)
-        self.buttonWait2.Show(False)
-        self.buttonWait3.Show(False)
-        self.buttonWait4.Show(False)
+        self.buttonWait1.Hide()
+        self.buttonWait2.Hide()
+        self.buttonWait3.Hide()
+        self.buttonWait4.Hide()
 
         self.chechReboot()
 
@@ -280,17 +280,11 @@ class FrameMYRClass(wx.Frame):
         self.Close(True)
         event.Skip()
 
-    def onClose(self, event):
-        self.Iconize(True)
-        self.panelConsole.stop(kill_miners=False)
-        event.Skip()
-
     def onOpen(self, event):
         activeFile = self.notebook.openConfig()
         if activeFile:
             self.setTitle(activeFile)
             self.enabled_buttons(False)
-
 
     def onSave(self, event):
         #if self.notebook.saveConfig(self.activeFile, {"mainMode" : self.getMainMode()}):
@@ -351,7 +345,7 @@ class FrameMYRClass(wx.Frame):
     def onButtonStop(self, event):
         #self.buttonStop.SetLabelText("Stopping   ")
         self.panelConsole.stop(kill_miners=False, wait=False)
-        self.killMinersLazy(stopMiningSession = True)
+        self.stopMiners(runStopButtonEffect=True)
         #self.buttonRun.Enable(True)
         #self.buttonStop.Enable(False)
 
@@ -425,10 +419,54 @@ class FrameMYRClass(wx.Frame):
     def checkMinerCrashed(self):
         return self.miners.checkMinerCrashed()
 
-    def killMinersLazy(self, stopMiningSession):
-        if stopMiningSession and self.mining:
+    def stopMiners(self, runStopButtonEffect, forcibly=False, wait=False):
+        if runStopButtonEffect:
             StopLabelSingletonThread(self, self.miners).start()
-        return self.miners.killMinersLazy()
+
+        return self.miners.stopMiners(forcibly, wait)
+
+    def onClose(self, event):
+        self.Iconize(True)
+        self.mining = False
+
+        threadMiners = threading.Thread(target=self.stopMiners, kwargs={'runStopButtonEffect' : False, 'forcibly' : False, 'wait' : True })
+        threadConsole = threading.Thread(target=self.panelConsole.stop, kwargs={'kill_miners' : False, 'wait' : True })
+        threadProgressBar = threading.Thread(target=self.progressBar)
+
+        self.finished = False
+        self.pulse_dlg = wx.ProgressDialog(parent = self,
+                                           title="Myriad Switcher is shutting down...",
+                                           message="Please wait while all threads finish...",
+                                           maximum=100
+                                          )
+        threadProgressBar.start()
+
+        threadMiners.start()
+        threadConsole.start()
+
+        #threadProgressBar.join()
+        threadMiners.join()
+        threadConsole.join()
+
+        self.finished = True
+
+        event.Skip()
+
+    def progressBar(self):
+        #from wx._core import PyDeadObjectError
+        #import traceback
+
+        try:
+            for i in range(0, 6000, 1):
+                if self.finished:
+                    break
+
+                wx.MilliSleep(50)
+                self.pulse_dlg.Update(i % 100)
+
+        except Exception as ex:
+            pass
+            #print traceback.format_exc()
 
 
 class StopLabelSingletonThread (threading.Thread):
@@ -466,8 +504,8 @@ class StopLabelSingletonThread (threading.Thread):
                 if mod < 4:
                     currentBtn = buttonsWait[mod]
 
-                    currentBtn.Show(True)
-                    previousBtn.Show(False)
+                    currentBtn.Show()
+                    previousBtn.Hide()
                     self.frame.Layout()
 
                     previousBtn = currentBtn
@@ -480,9 +518,10 @@ class StopLabelSingletonThread (threading.Thread):
                 count += 1
 
             if currentBtn:
-                currentBtn.Show(False)
+                currentBtn.Hide()
 
-            self.frame.buttonStop.Show(True)
+            self.frame.buttonStop.Show()
 
             self.frame.Layout()
             self.frame.miningStoppedButtons()
+

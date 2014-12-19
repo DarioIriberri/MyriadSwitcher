@@ -127,7 +127,7 @@ class SwitcherData():
             diffSkein 	 = self.difficulties.getSkeinDifficulty()
             diffQubit 	 = self.difficulties.getQubitDifficulty()
 
-        except:
+        except Exception as ex:
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
 
         try:
