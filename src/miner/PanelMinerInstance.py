@@ -554,7 +554,7 @@ class PanelMinerInstanceHandler(wx.Panel):
             self.statusRunning()
 
     def statusExiting(self):
-        if self.status == STATUS_DISABLED:
+        if self.status in ( STATUS_DISABLED, STATUS_READY, STATUS_CRASHED ):
             self.status = STATUS_EXITED
         else:
             self.status = STATUS_EXITING
