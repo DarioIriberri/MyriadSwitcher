@@ -20,7 +20,7 @@ import FrameMYR
 setup(
     name = "Myriad Switcher",
     version = FrameMYR.FrameMYRClass.getVersion(),
-    description = "A Myriadcoin Auto-switching mining software",
+    description = "Myriad Switcher",
     #author="Dario Iriberri",
     executables = [Executable("MyriadSwitcherGUI.pyw", base = "Win32GUI",icon="../img/myriadS1.ico")]
     )

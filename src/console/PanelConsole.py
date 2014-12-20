@@ -9,9 +9,6 @@ from console.switcher.SwitchingThread import SwitchingThread
 from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
 
 
-MAX_STOP_TIME = 45
-
-
 class PanelConsole(wx.Panel):
     def __init__(self, parent, frame_myr, size=None, style=wx.BORDER_DEFAULT):
         wx.Panel.__init__(self, parent=parent, size=size, id=wx.ID_ANY, style=style)
@@ -97,30 +94,32 @@ class PanelConsole(wx.Panel):
             return
 
         if wait:
-            t = time.time()
             success = False
             i = 0
-            str_out = "Waiting for threads to die " + str(i)
-            self.printToConsole(str_out)
-            while time.time() < t + MAX_STOP_TIME:
+            str_ini = "Waiting for threads to die "
+            print str_ini
+
+            from miner import PanelMinerInstance
+
+            while i < PanelMinerInstance.MAX_ITERATIONS:
                 if self.thread.isAlive():
-                    time.sleep(1)
+                    time.sleep(0.5)
                     i += 1
-                    str_out +=  ", " + str(i)
-                    self.printToConsole(str_out)
+                    str_out = str_ini + str(i)
+                    print str_out
 
                 else:
                     str_out = "done, Bye!"
-                    self.printToConsole(str_out)
+                    print str_out
                     #time.sleep(2)
                     success = True
                     break
 
-            print "Exited with success = " + str(success)
+            print "Threads: Exited with success = " + str(success)
 
             if not success:
                 str_out = "Damn it"
-                self.printToConsole(str_out)
+                print str_out
                 time.sleep(5)
 
 

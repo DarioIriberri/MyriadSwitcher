@@ -112,10 +112,10 @@ class SwitchingThread (threading.Thread):
 
                     self.cpu2 = self.getCPUUsages(switcherData.getMiner())
 
-                    if not globalStopped:
-                        stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(self.cpu1, self.cpu2, switcherData.getMiner(), switcherData.config_json)
+                    #if not globalStopped or self.mainMode == "simple":
+                    stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(self.cpu1, self.cpu2, switcherData.getMiner(), switcherData.config_json)
 
-                    restart = not globalStopped and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
+                    restart = ( not globalStopped or self.mainMode == "simple" ) and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
 
                     self.cpu1 = self.cpu2
 
@@ -165,8 +165,21 @@ class SwitchingThread (threading.Thread):
                         #subprocess.call('cd /d "' + workingDirectory + '" && start cmd /c "' + scriptPath + '"', shell=True)
 
                         if retCode is None:
-                            switcherData.pl()
-                            switcherData.pl("Please, select a mining device first!: " + scriptPath, HTMLBuilder.COLOR_RED)
+                            #switcherData.pl()
+                            #switcherData.pl("Please, select a mining device first!: " + scriptPath, HTMLBuilder.COLOR_RED)
+
+                            import wx
+                            #question = "Please, select a mining device in the lower panel to start mining."
+                            #dlg = wx.MessageDialog(self.console, question, "Unable to start your mining session...", wx.OK)
+                            #dlg.ShowModal()
+                            #dlg.Destroy()
+
+                            dlg = wx.MessageDialog(self.console.frame_myr,
+                                                   "Pick at least one mining device in the lower panel to start your mining session.\n\n ",
+                                                   "Unable to start the mining session..." , wx.OK | wx.ICON_ERROR)
+                            dlg.ShowModal()
+                            dlg.Destroy()
+
                             breakAt = "No mining device set"
                             self.stop(True)
                             break
@@ -463,8 +476,8 @@ class SwitchingThread (threading.Thread):
     def kill(self):
         if self.mainMode == "advanced":
             self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
-        #else:
-        #    self.console.frame_myr.stopMiners(stopMiningSession, forcibly)
+        else:
+            self.console.frame_myr.stopMiners()
 
     def killMiners(self):
         for miner in SwitcherData.MINER_CHOICES:
@@ -488,6 +501,7 @@ class SwitchingThread (threading.Thread):
 
         if kill_miners:
             try:
+                #if self.mainMode == "advanced":
                 self.kill()
             except:
                 print "Failed to kill miners"

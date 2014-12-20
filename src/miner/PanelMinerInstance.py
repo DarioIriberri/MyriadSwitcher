@@ -7,6 +7,8 @@ import psutil
 import subprocess
 import threading
 import FrameMYR
+import socket
+import json
 from wx._core import PyDeadObjectError
 from console.switcher import HTMLBuilder as clr
 from console.switcher import SwitcherData
@@ -20,13 +22,15 @@ STATUS_STOPPING             = "STATUS_STOPPING"
 STATUS_RUNNING              = "STATUS_RUNNING"
 STATUS_STARTING             = "STATUS_STARTING"
 STATUS_CRASHED              = "STATUS_CRASHED"
+STATUS_EXITING              = "STATUS_EXITING"
+STATUS_EXITED               = "STATUS_EXITED"
 
 MIN_TIME_THREAD_PROBED = 60
 
-WAIT_FOR_STREAMS = True
+WAIT_FOR_STREAMS = False
 
 MIN_ITERATIONS = 8
-MAX_ITERATIONS = 60
+MAX_ITERATIONS = 30
 
 
 class PanelMinerInstance(wx.Panel):
@@ -55,21 +59,8 @@ class PanelMinerInstance(wx.Panel):
         self.shellStdout.SetEditable(False)
         self.shellStderr.SetEditable(False)
 
-        #self.shell = rt.RichTextCtrl(self, style=wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER)
-        #self.textAttr = rt.RichTextAttr()
-        #self.textAttr.SetTextColour(wx.BLACK)
-        #self.textAttr.SetBackgroundColour(wx.NullColour)
-        #self.textAttr.SetFontFaceName("Courier")
-        #self.textAttr.SetFontSize(6)
-        #self.textAttr.SetFontWeight(wx.FONTWEIGHT_NORMAL)
-        #self.textAttr.SetFontStyle(wx.FONTSTYLE_NORMAL)
-        #self.textAttr.SetFontUnderlined(False)
-        #self.shell.SetDefaultStyle(self.textAttr)
-
-        #self.shell = wx.PyOnDemandOutputWindow(self)
-        #self.SetDefaultStyle(wx.TextAttr("BLACK", wx.NullColour, wx.Font(10, wx.SCRIPT, wx.ITALIC, wx.BOLD, True)))
-
-        self.killed = False
+        self.waitForStreams = WAIT_FOR_STREAMS
+        self.killSignal = False
 
         self.handler = PanelMinerInstanceHandler(self, size=(-1, 24))
 
@@ -96,7 +87,6 @@ class PanelMinerInstance(wx.Panel):
             self.handler.statusStopping()
 
             i = 0
-            MAX_ITERATIONS = 30
 
             while not self.handler.status == STATUS_READY and i < MAX_ITERATIONS:
                 time.sleep(0.5)
@@ -109,6 +99,7 @@ class PanelMinerInstance(wx.Panel):
                 return True
 
             if SwitcherData.groestlS == maxAlgo:
+                self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
                 return True
 
             if SwitcherData.skeinS == maxAlgo:
@@ -123,15 +114,17 @@ class PanelMinerInstance(wx.Panel):
         return False
 
     def execute(self, command, waitForStreams = False):
-        self.__kill()
+        self._killMiner()
 
         self.waitForStreams = waitForStreams
+
+        self.clearAll()
 
         self.process = psutil.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         #self.process = psutil.Popen(command, stdout=subprocess.PIPE, shell=True)
         #self.process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 
-        self.killed = False
+        self.killSignal = False
 
         self.threadStreams = threading.Thread(target=self.__runStreamThreads, args = [waitForStreams])
         self.threadStreams.start()
@@ -145,27 +138,37 @@ class PanelMinerInstance(wx.Panel):
 
         return self.handler.status
 
-    def stopMiner(self, forcibly=False):
-        if forcibly:
-            self._killMiner(forcibly)
-            self.handler.statusReady()
+    def stopMiner(self, exit=False):
+        self.killSignal = True
 
-        self.handler.statusStopping()
+        if not self.waitForStreams:
+            self._killMiner()
+            #self.handler.statusReady()
 
-    def _killMiner(self, forcibly = False):
+        if exit:
+            self.handler.statusExiting()
+        else:
+            self.handler.statusStopping()
+
+    def _killMiner(self):
         try:
-            if self.__isProcessRunning():
-                #print "kill signal!!!!!!!!!!!!!!"
-                self.killed = True
+            ret = 0
 
-            else:
-                return
+            if self.process and self.isMinerRunning():
+                for childProcess in self.process.children():
+                    ret = childProcess.kill()
+                    ret = ret
 
-        except: pass
+                print "terrrrrminatorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+                #ret = self.process.terminate()
+                ret = self.process.kill()
 
-        if not self.waitForStreams or forcibly:
-            self.__obliterate()
-            self.handler.moveOn()
+            return ret
+            #return 0
+
+        except (psutil.NoSuchProcess, PyDeadObjectError):
+            return 0
+
 
     def isMinerRunning(self):
         if not self.__isProcessRunning():
@@ -206,22 +209,33 @@ class PanelMinerInstance(wx.Panel):
             self.threadOut.join()
             self.threadErr.join()
 
-            self.__kill()
+            self._killMiner()
 
         #Check Miners...
-        while self.isMinerRunning():
-            time.sleep(10)
+        try:
+            while self.isMinerRunning() and not self.killSignal:
+                time.sleep(10)
 
-        #if the kill signal is set, the miner was stopped by the user
-        if not self.killed:
-            self.handler.minerCrashed()
+            #if the kill signal is set, the miner was stopped by the user
+            if not self.killSignal:
+                self.handler.minerCrashed()
 
+            elif self.minerStatus() == STATUS_EXITING:
+                self.handler.status = STATUS_EXITED
+
+            else:
+                self.handler.moveOn()
+
+        except PyDeadObjectError:
+            pass
+
+        print "both streams finished.............................................."
 
     def __outputThread(self, shell, stream, waitForStreams):
         for line in iter(stream.readline, b''):
             try:
                 #print "so????"
-                if self.killed:
+                if self.killSignal:
                     #print "killed!!!!!!!!!!!!"
                     break
 
@@ -232,11 +246,7 @@ class PanelMinerInstance(wx.Panel):
                 #print "oooooooooooooooooooooooops!!!!!!!!!!!!"
                 break
 
-        #print "outta here!!!!!!!!!!!!!!!!!"
-
-        #if not waitForStreams:
-        #    print("__outputThread")
-        #    self.__kill(stream)
+        print "outta here!!!!!!!!!!!!!!!!!"
 
     def __isProcessRunning(self):
         try:
@@ -246,31 +256,6 @@ class PanelMinerInstance(wx.Panel):
             return False
 
         #return self.process and not self.process.returncode
-
-    def __kill(self, stream = None):
-        if self.__isProcessRunning():
-            #self.WriteText(os.linesep + "Killing... " + str(self.p))
-            #self.p.terminate()
-            ret = self.__obliterate()
-            #time.sleep(4)
-            #self.printMessage(os.linesep + "Killed... " + ("" if not stream else str(stream)))
-
-        #self.killed = False
-        self.handler.moveOn()
-
-    def __obliterate(self):
-        try:
-            for childProcess in self.process.children():
-                ret = childProcess.kill()
-                ret = ret
-
-            #ret = self.process.terminate()
-            ret = self.process.kill()
-
-            return ret
-
-        except psutil.NoSuchProcess:
-            return 0
 
     def __getCPUUsage(self):
         try:
@@ -307,17 +292,6 @@ class PanelMinerInstance(wx.Panel):
 
         except PyDeadObjectError as ex:
             pass
-
-        #self.shell.BeginTextColour(textColor)
-        #try:
-        #    self.shell.SetFocus()
-        #    self.shell.WriteText(text)
-        #except Exception as ex:
-        #    print "oops!"
-        ##self.shell.AppendText(text)
-        #self.shell.EndTextColour()
-
-        #wx.PyOnDemandOutputWindow.write(self.shell, text)
 
 
 class CPUUsage():
@@ -422,9 +396,9 @@ class PanelMinerInstanceHandler(wx.Panel):
 
     def onDeviceToggle(self, event):
         if self.status == STATUS_RUNNING:
-            self.statusStopping(self.parent.deviceLabel)
+            self.statusStopping()
         else:
-            self.statusDisabled(self.parent.deviceLabel)
+            self.statusDisabled()
 
         event.Skip()
 
@@ -432,10 +406,10 @@ class PanelMinerInstanceHandler(wx.Panel):
         label = self.parent.deviceLabel
 
         if enable:
-            self.statusReady(label)
+            self.statusReady()
         else:
             #if self.parent.process.returncode
-            self.statusDisabled(label)
+            self.statusDisabled()
 
     def onDeviceEdit(self, event):
         #if not self.status == STATUS_RUNNING:
@@ -453,31 +427,21 @@ class PanelMinerInstanceHandler(wx.Panel):
 
             self.statusStarting()
 
-    #def setRunningDevice(self, running):
-    #    label = self.parent.deviceLabel
-    #
-    #    if running:
-    #        self.statusRunning(label)
-    #
-    #
-    #    else:
-    #        self.statusEnabled(label)
-
-    def statusRunning(self, label = None):
+    def statusRunning(self):
         if self.status != STATUS_STOPPING:
             self.status = STATUS_RUNNING
 
             self.__deviceRunningColors()
 
             self.deviceLabel.Enable(True)
-            self.parent.clearAll()
+            #self.parent.clearAll()
 
             self.deviceCombo.Enable(False)
             self.deviceNum.Enable(False)
 
-    def statusDisabled(self, label):
+    def statusDisabled(self):
         self.parent.clearAll()
-        self.parent.printMessage(label + " is disabled." + os.linesep + "Pick a device to enable it.")
+        self.parent.printMessage(self.parent.deviceLabel + " is disabled." + os.linesep + "Pick a device to enable it.")
 
         self.status = STATUS_DISABLED
 
@@ -493,7 +457,7 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.deviceCombo.Enable(True)
         self.deviceNum.Enable(True)
 
-    def statusReady(self, label = None):
+    def statusReady(self):
         if self.status == STATUS_READY:
             return
 
@@ -513,7 +477,7 @@ class PanelMinerInstanceHandler(wx.Panel):
         except PyDeadObjectError:
             pass
 
-    def statusCrashed(self, label = None):
+    def statusCrashed(self):
         self.status = STATUS_CRASHED
 
         thread = threading.Thread(target=self.statusCrashedThread)
@@ -532,12 +496,12 @@ class PanelMinerInstanceHandler(wx.Panel):
 
             time.sleep(0.5)
 
-    def statusStopping(self, label = None):
+    def statusStopping(self):
         #if self.status == STATUS_RUNNING or self.status == STATUS_STARTING or self.status == STATUS_CRASHED:
         if self.status in ( STATUS_RUNNING, STATUS_STARTING ):
             self.status = STATUS_STOPPING
 
-            self.parent._killMiner()
+            #self.parent._killMiner()
 
             thread = threading.Thread(target=self.statusStoppingThread)
             thread.start()
@@ -556,13 +520,13 @@ class PanelMinerInstanceHandler(wx.Panel):
             time.sleep(0.5)
 
         if i >= MAX_ITERATIONS:
-            self.parent._killMiner(forcibly = True)
+            self.parent._killMiner()
 
         self.killedAlreadyFlag = False
 
-        self.statusReady(self.parent.deviceLabel)
+        self.statusReady()
 
-    def statusStarting(self, label = None):
+    def statusStarting(self):
         if self.status in (STATUS_READY, STATUS_CRASHED):
             self.status = STATUS_STARTING
             self.deviceLabel.Enable(True)
@@ -584,10 +548,16 @@ class PanelMinerInstanceHandler(wx.Panel):
             time.sleep(0.5)
 
         if i >= MAX_ITERATIONS:
-            self.statusReady(self.parent.deviceLabel)
+            self.statusReady()
 
         else:
-            self.statusRunning(self.parent.deviceLabel)
+            self.statusRunning()
+
+    def statusExiting(self):
+        if self.status == STATUS_DISABLED:
+            self.status = STATUS_EXITED
+        else:
+            self.status = STATUS_EXITING
 
     def moveOn(self, flag = True):
         if self.status == STATUS_RUNNING:

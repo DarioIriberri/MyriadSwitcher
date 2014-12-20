@@ -9,6 +9,7 @@ from Tkinter import Tk
 from console.PanelConsole import PanelConsole
 from console.switcher import SwitcherData
 from miner.PanelMiners import PanelMiners
+from wx._core import PyDeadObjectError
 from notebook.ExpandableNotebook import ExpandableNotebook
 from notebook.tabs.ConfigTab import ConfigTab
 from notebook.tabs.SwitchingModesTab import SwitchingModesTab
@@ -27,9 +28,7 @@ class FrameMYRClass(wx.Frame):
     RESOURCE_PATH = None
 
     def __init__(self, resouce_path=""):
-        #self.resouce_path = resouce_path
         FrameMYRClass.RESOURCE_PATH = resouce_path
-        #FrameMYR.FrameMYR.RESOURCE_PATH = resouce_path
 
         self.gravity = None
         self.mining  = False
@@ -41,6 +40,7 @@ class FrameMYRClass(wx.Frame):
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
+        self.terminating = False
 
         #self.setTitle(self.activeFile)
         #self.Bind(wx.EVT_SIZE, self.OnResize)
@@ -52,6 +52,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonRun = wx.Button(self, -1, "Start  ", size=BUTTON_SIZE)
         self.buttonResume = wx.Button(self, -1, "Resume", size=BUTTON_SIZE)
         self.buttonStop = wx.Button(self, wx.ID_STOP, "Stop  ", size=BUTTON_SIZE)
+        self.buttonExit = wx.Button(self, wx.ID_EXIT, "Quit  ", size=BUTTON_SIZE)
         self.buttonDefaults = wx.Button(self, wx.ID_RESET, "Defaults", size=BUTTON_SIZE)
         self.buttonMainMode = wx.ToggleButton(self, -1, "Simple", size=BUTTON_SIZE)
 
@@ -67,6 +68,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonRun.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/rungreen16.ico'), wx.LEFT)
         self.buttonResume.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/resume16.ico'), wx.LEFT)
         self.buttonStop.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/stop16.ico'), wx.LEFT)
+        self.buttonExit.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/exit-16.ico'), wx.LEFT)
 
         self.buttonWait1.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-1.ico'), wx.LEFT)
         self.buttonWait2.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-2.ico'), wx.LEFT)
@@ -102,6 +104,7 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onButtonCancel, self.buttonCancel)
         self.Bind(wx.EVT_BUTTON, self.onButtonDefaults, self.buttonDefaults)
         self.Bind(wx.EVT_BUTTON, self.onSave, self.buttonSave)
+        self.Bind(wx.EVT_BUTTON, self.onExit, self.buttonExit)
 
         #self.buttonSave.SetBitmapMargins(14, 0)
         #self.buttonCancel.SetBitmapMargins((14, 0))
@@ -160,6 +163,8 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.AddF(self.buttonMainMode, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
+        sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
+        #sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
 
         spacerFlags = wx.SizerFlags().Expand().Border(wx.ALL, 1).Proportion(1)
         sizerButtons.AddF((-1, -1), spacerFlags)
@@ -172,6 +177,10 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.AddF(self.buttonWait2, flagsButtonRun)
         sizerButtons.AddF(self.buttonWait3, flagsButtonRun)
         sizerButtons.AddF(self.buttonWait4, flagsButtonRun)
+        sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
+        sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
+        sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
+        sizerButtons.AddF(self.buttonExit, flagsButtonRun)
 
         self.sizerTotal.Add(self.panelNotebook, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 3)
         self.sizerTotal.Add(sizerButtons, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.TOP, 1)
@@ -273,12 +282,6 @@ class FrameMYRClass(wx.Frame):
         r.clipboard_clear()
         r.clipboard_append(address)
         r.destroy()
-
-    def onExit(self, event):
-        self.Iconize(True)
-        self.panelConsole.stop(kill_miners=True, wait=True)
-        self.Close(True)
-        event.Skip()
 
     def onOpen(self, event):
         activeFile = self.notebook.openConfig()
@@ -400,18 +403,21 @@ class FrameMYRClass(wx.Frame):
         self.buttonStop.Enable(True)
 
     def onMiningProcessStopped(self):
-        self.mining = False
+        if not self.terminating:
+            self.mining = False
+            self.miningStoppedButtons()
 
     def miningStoppedButtons(self):
-        self.buttonRun.Enable(True)
-        self.buttonResume.Enable(True)
-        self.buttonMainMode.Enable(True)
-        self.buttonStop.Enable(False)
-        #self.buttonStop.Show(True)
-        #self.buttonStop.SetLabelText("Stop")
-        #self.buttonStop.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/stop16.ico'), wx.LEFT)
+        try:
+            self.buttonRun.Enable(True)
+            self.buttonResume.Enable(True)
+            self.buttonMainMode.Enable(True)
+            self.buttonStop.Enable(False)
 
-        self.Layout()
+            self.Layout()
+
+        except PyDeadObjectError:
+            pass
 
     def executeAlgo(self, maxAlgo, switch):
         return self.miners.executeAlgo(maxAlgo, switch)
@@ -419,28 +425,38 @@ class FrameMYRClass(wx.Frame):
     def checkMinerCrashed(self):
         return self.miners.checkMinerCrashed()
 
-    def stopMiners(self, runStopButtonEffect, forcibly=False, wait=False):
+    def stopMiners(self, runStopButtonEffect=False, forcibly=False, wait=False, exit=False):
         if runStopButtonEffect:
             StopLabelSingletonThread(self, self.miners).start()
 
-        return self.miners.stopMiners(forcibly, wait)
+        return self.miners.stopMiners(wait, exit)
+
+    def onExit(self, event):
+        self.Close(True)
+        #self.terminate()
+        event.Skip()
 
     def onClose(self, event):
-        self.Iconize(True)
-        self.mining = False
+        self.terminate()
+        event.Skip()
 
-        threadMiners = threading.Thread(target=self.stopMiners, kwargs={'runStopButtonEffect' : False, 'forcibly' : False, 'wait' : True })
+    def terminate(self):
+        #self.Iconize(True)
+        self.mining = False
+        self.terminating = True
+
+        threadMiners = threading.Thread(target=self.stopMiners, kwargs={'runStopButtonEffect' : False, 'forcibly' : False, 'wait' : True, 'exit' : True })
         threadConsole = threading.Thread(target=self.panelConsole.stop, kwargs={'kill_miners' : False, 'wait' : True })
-        threadProgressBar = threading.Thread(target=self.progressBar)
+        threadProgressBar = threading.Thread(target=self.progressBarThread)
 
         self.finished = False
-        self.pulse_dlg = wx.ProgressDialog(parent = self,
+        self.progressBar = wx.ProgressDialog(parent = self,
                                            title="Myriad Switcher is shutting down...",
                                            message="Please wait while all threads finish...",
                                            maximum=100
                                           )
-        threadProgressBar.start()
 
+        threadProgressBar.start()
         threadMiners.start()
         threadConsole.start()
 
@@ -450,30 +466,27 @@ class FrameMYRClass(wx.Frame):
 
         self.finished = True
 
-        event.Skip()
-
-    def progressBar(self):
-        #from wx._core import PyDeadObjectError
-        #import traceback
+    def progressBarThread(self):
 
         try:
             for i in range(0, 6000, 1):
                 if self.finished:
+                    print "progress done FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
                     break
 
                 wx.MilliSleep(50)
-                self.pulse_dlg.Update(i % 100)
+                self.progressBar.Update(i % 100)
 
         except Exception as ex:
             pass
-            #print traceback.format_exc()
+
 
 
 class StopLabelSingletonThread (threading.Thread):
     _instance = None
     lock = threading.RLock()
 
-    MAX_WAIT_ITER = 40
+    MAX_WAIT_ITER = 120
 
     def __new__(self, *args, **kwargs):
         if not self._instance:

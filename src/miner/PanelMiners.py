@@ -85,48 +85,64 @@ class PanelMiners(MultiSplitterWindow):
         return True
 
     def checkMinersReady(self):
-        if ( self.miner0.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED) ) and \
-           ( self.miner1.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED) ) and \
-           ( self.miner2.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED) ) and \
-           ( self.miner3.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED) ):
+        if ( self.miner0.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED, PMI.STATUS_EXITED, PMI.STATUS_EXITING ) ) and \
+           ( self.miner1.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED, PMI.STATUS_EXITED, PMI.STATUS_EXITING ) ) and \
+           ( self.miner2.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED, PMI.STATUS_EXITED, PMI.STATUS_EXITING ) ) and \
+           ( self.miner3.minerStatus() in (PMI.STATUS_READY, PMI.STATUS_DISABLED, PMI.STATUS_CRASHED, PMI.STATUS_EXITED, PMI.STATUS_EXITING ) ):
 
             return True
 
         return False
 
-    def stopMiners(self, forcibly=False, wait=False):
-        self.miner0.stopMiner(forcibly)
-        self.miner1.stopMiner(forcibly)
-        self.miner2.stopMiner(forcibly)
-        self.miner3.stopMiner(forcibly)
+    def checkMinersExited(self):
+        if ( self.miner0.minerStatus() == PMI.STATUS_EXITED ) and \
+           ( self.miner1.minerStatus() == PMI.STATUS_EXITED ) and \
+           ( self.miner2.minerStatus() == PMI.STATUS_EXITED ) and \
+           ( self.miner3.minerStatus() == PMI.STATUS_EXITED ):
 
-        if wait:
-            MAX_STOP_TIME = 145
+            return True
 
-            t = time.time()
-            success = False
-            i = 0
-            str_out = "Waiting for miners to die " + str(i)
-            while time.time() < t + MAX_STOP_TIME:
-                if not self.checkMinersReady():
-                    time.sleep(1)
-                    i += 1
-                    str_out +=  ", " + str(i)
-                    print str_out
+        return False
 
-                else:
-                    str_out = "done, Bye!"
-                    print str_out
-                    #time.sleep(2)
-                    success = True
-                    break
+    def stopMiners(self, wait=False, exit=False):
+        self.miner0.stopMiner(exit)
+        self.miner1.stopMiner(exit)
+        self.miner2.stopMiner(exit)
+        self.miner3.stopMiner(exit)
 
-            print "Exited with success = " + str(success)
+        if exit:
+            self.stopLoop(self.checkMinersExited)
 
-            if not success:
-                str_out = "Damn it"
+        elif wait:
+            self.stopLoop(self.checkMinersReady)
+
+    def stopLoop(self, endFunction):
+        success = False
+        i = 0
+        str_ini = "Waiting for miners to die "
+
+        from miner import PanelMinerInstance
+
+        while i < PanelMinerInstance.MAX_ITERATIONS:
+            if not endFunction():
+                time.sleep(0.5)
+                i += 1
+                str_out = str_ini + str(i)
                 print str_out
-                time.sleep(5)
+
+            else:
+                str_out = "done, Bye!"
+                print str_out
+                #time.sleep(2)
+                success = True
+                break
+
+        print "Miners: Exited with success = " + str(success)
+
+        if not success:
+            str_out = "Damn it"
+            print str_out
+            time.sleep(5)
 
     #def killMinersLazy(self, event=None):
     #    pool = ThreadPool(processes=self.num_miners)

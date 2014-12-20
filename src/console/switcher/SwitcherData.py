@@ -544,13 +544,12 @@ class SwitcherData():
         self.htmlBuilder.log(self.config_json, self.logFileName)
 
     def end(self):
-        MAX_WAIT_ITER = 15
         count = 0
 
-        ready = self.console.frame_myr.miners.checkMinersReady()
+        import miner.PanelMinerInstance as mi
 
-        while not self.console.frame_myr.miners.checkMinersReady() and count < MAX_WAIT_ITER:
-            time.sleep(1)
+        while not self.console.frame_myr.miners.checkMinersReady() and count < mi.MAX_ITERATIONS:
+            time.sleep(0.5)
             count += 1
 
         self.htmlBuilder.pl()
