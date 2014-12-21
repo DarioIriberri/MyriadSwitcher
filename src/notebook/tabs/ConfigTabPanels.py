@@ -108,7 +108,7 @@ class HeaderPanel(wx.Panel):
         flags_browser.Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
         flags_browser.Expand().Border(wx.ALL, 1)
 
-        sizer.AddF(wx.StaticText(self, wx.ID_ANY, size=(50, -1)), wx.SizerFlags().Border(wx.LEFT, 6))
+        sizer.AddF(wx.StaticText(self, wx.ID_ANY, size=(55, -1)), wx.SizerFlags().Border(wx.LEFT, 6))
         sizer.AddF(text_hashrate, wx.SizerFlags().Expand().Border(wx.LEFT, 40))
         sizer.AddF(text_watts, wx.SizerFlags().Expand().Border(wx.LEFT, 24))
         sizer.AddF(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), wx.SizerFlags().Border(wx.LEFT, 6))

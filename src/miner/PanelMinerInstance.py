@@ -97,20 +97,17 @@ class PanelMinerInstance(wx.Panel):
 
         if self.handler.status == STATUS_READY:
             if SwitcherData.scryptS == maxAlgo:
-                return True
+                return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - Single.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
 
             if SwitcherData.groestlS == maxAlgo:
-                self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
-                return True
+                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
 
             if SwitcherData.skeinS == maxAlgo:
-                self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
-                return True
+                return self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
 
             if SwitcherData.qubitS == maxAlgo:
-                self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
                 #self.handler.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
-                return True
 
         return False
 
@@ -130,7 +127,9 @@ class PanelMinerInstance(wx.Panel):
         self.threadStreams = threading.Thread(target=self.__runStreamThreads, args = [waitForStreams])
         self.threadStreams.start()
 
-        #self.killed = False
+        time.sleep(1)
+
+        return self.__isProcessRunning()
 
     #None if disabled, False is crashed, True otherwise
     def minerStatus(self):
@@ -359,9 +358,6 @@ class PanelMinerInstanceHandler(wx.Panel):
         #self.deviceLabel.SetDefaultStyle(wx.TextAttr("BLACK", wx.NullColour, wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False)))
 
         self.deviceLabel.Bind(wx.EVT_TOGGLEBUTTON, self.onDeviceToggle)
-        #self.deviceLabel.Bind(wx.EVT_SET_CURSOR, self.buttonColors)
-        #self.deviceLabel.Bind(wx.EVT_PAINT, self.buttonColors)
-        #self.deviceLabel.Bind(wx.EVT_ERASE_BACKGROUND, self.buttonColors)
 
         self.deviceCombo = wx.ComboBox(self, size=(200, 26), choices=self.devices, style=wx.CB_READONLY)
         self.deviceCombo.Bind(wx.EVT_COMBOBOX, self.onDeviceSelected)
@@ -388,19 +384,6 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.SetSizer(sizer)
 
         self.enableDevice(False)
-
-    #def buttonColors(self, event):
-    #    if self.status == STATUS_DISABLED:
-    #        self.__deviceDisabledColors()
-    #        return
-    #
-    #    if self.status == STATUS_READY:
-    #        self.__deviceReadyColors()
-    #        return
-    #
-    #    if self.status == STATUS_RUNNING:
-    #        self.__deviceRunningColors()
-    #        return
 
     def onDeviceSelected(self, event):
         selection = self.deviceCombo.GetValue()
@@ -446,11 +429,15 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.command = command
 
         if not self.parent.isMinerRunning():
-            self.parent.execute(command, waitForStreams)
+            ret = self.parent.execute(command, waitForStreams)
             #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
             #self.parent.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
 
             self.statusStarting()
+
+            return ret
+
+        return False
 
     def statusRunning(self):
         if self.status not in ( STATUS_STOPPING, STATUS_EXITING ):
