@@ -3,8 +3,6 @@ __author__ = 'Dario'
 import wx
 import time
 import threading
-from multiprocessing.pool import ThreadPool
-from console.switcher import SwitcherData
 import PanelMinerInstance as PMI
 from wx._core import PyDeadObjectError
 from wx.lib.splitter import MultiSplitterWindow
@@ -16,7 +14,7 @@ class PanelMiners(MultiSplitterWindow):
     def __init__(self, parent, frame, num_miners = 4):
         MultiSplitterWindow.__init__(self, parent=parent, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
 
-        self.parent = parent
+        #self.parent = parent
         self.frame = frame
         self.resize_lock = False
 
@@ -25,7 +23,7 @@ class PanelMiners(MultiSplitterWindow):
         self.miner0 = PMI.PanelMinerInstance(self, "Miner #0")
         self.miner1 = PMI.PanelMinerInstance(self, "Miner #1")
         self.miner2 = PMI.PanelMinerInstance(self, "Miner #2")
-        self.miner3 = PMI.PanelMinerInstance(self, "Miner #3")
+        self.miner3 = PMI.PanelMinerInstance(self, "Miner #3", isCollapse=True)
         self.SetOrientation(wx.HORIZONTAL)
 
         self.AppendWindow(self.miner0)
@@ -226,3 +224,6 @@ class PanelMiners(MultiSplitterWindow):
 
         except PyDeadObjectError:
             pass
+
+    def setButtonExpanded(self, expanded):
+        self.miner3.handler.setButtonExpanded(expanded)

@@ -20,7 +20,7 @@ from event.EventLib import EVT_STATUS_BAR_EVENT, EVT_DUMMY_EVENT, DummyEvent
 VERSION  = "0.3"
 REVISION = 0
 
-GRAVITY = 0.6
+GRAVITY = 0.7
 
 BUTTON_SIZE  = (76, 26)
 
@@ -31,6 +31,7 @@ class FrameMYRClass(wx.Frame):
         FrameMYRClass.RESOURCE_PATH = resouce_path
 
         self.gravity = None
+        self.resizable_panel_sash = None
         self.mining  = False
 
         wx.Frame.__init__(self, None, wx.ID_ANY,
@@ -119,6 +120,8 @@ class FrameMYRClass(wx.Frame):
 
         self.resizable_panel = wx.SplitterWindow(self, wx.ID_ANY)
         self.resizable_panel.SetMinimumPaneSize(1)
+        self.resizable_panel.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.onSplitterResized)
+        self.resizable_panel.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.collapseSplitter)
 
         # Create the Notebook
         self.panelNotebook = wx.Panel(self)
@@ -151,7 +154,7 @@ class FrameMYRClass(wx.Frame):
         self.sizerTotal = wx.BoxSizer(wx.VERTICAL)
 
         # Buttons section
-        button_bottom_gap = 4
+        button_bottom_gap = 2
         flagsButtonRun = wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap).Proportion(0)
         sizerButtons = wx.BoxSizer(wx.HORIZONTAL)
         sizerButtons.AddF(self.buttonSave, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
@@ -187,7 +190,7 @@ class FrameMYRClass(wx.Frame):
 
         self.resizable_panel.SetSashGravity(GRAVITY)
         #self.resizable_panel.SplitHorizontally(self.panelConsole, self.shell)
-        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 4)
+        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT, 4)
 
         self.icon = wx.Icon(FrameMYRClass.RESOURCE_PATH + 'img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
         self.SetIcon(self.icon)
@@ -259,6 +262,10 @@ class FrameMYRClass(wx.Frame):
     def onRTFM(self, event):
         try:
             os.system("start README/README.html")
+
+            self.panelConsole.setBrowser('https://dl.dropboxusercontent.com/u/19353176/Myriad%20Switcher/README/README.html')
+            #self.panelConsole.setBrowser('http://wxpython.org/')
+
         except:
             print "Failed to open readme file"
 
@@ -399,17 +406,45 @@ class FrameMYRClass(wx.Frame):
         self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners)
         self.resizable_panel.Unsplit(self.miners)
 
+    def collapseSplitter(self, event):
+        #self.getGravity()
+        top = self.miners.miner0.handler.GetSize()[1] + 10
+        self.resizable_panel.SetSashPosition(self.resizable_panel.GetSize()[1] - top)
+
+    def expandSplitter(self):
+        self.resizable_panel.SetSashPosition(self.resizable_panel_sash)
+        self.Layout()
+
+    def onSplitterResized(self, event):
+        try:
+            top = self.miners.miner0.handler.GetSize()[1] + 10
+            current = self.resizable_panel.GetSize()[1] - self.resizable_panel.GetSashPosition()
+            #current = self.resizable_panel.GetSashPosition()
+
+            if current > top:
+                self.resizable_panel_sash = self.resizable_panel.GetSashPosition()
+                self.miners.setButtonExpanded(True)
+            else:
+                self.miners.setButtonExpanded(False)
+                lim = self.resizable_panel.GetSize()[1] - top
+                self.resizable_panel.SetSashPosition(lim)
+
+        except AttributeError:
+            pass
+
+        event.Skip()
+
     def getGravity(self):
         if not self.gravity:
             self.gravity = GRAVITY
         else:
             if self.getMainMode() == "advanced":
-                resizable_panel_width = self.resizable_panel.GetSize()[1]
+                resizable_panel_height = self.resizable_panel.GetSize()[1]
 
-                if resizable_panel_width == 0:
+                if resizable_panel_height == 0:
                     self.gravity = GRAVITY
                 else:
-                    self.gravity = float(self.panelConsole.GetSize()[1]) / resizable_panel_width
+                    self.gravity = float(self.panelConsole.GetSize()[1]) / resizable_panel_height
 
         return self.gravity
 

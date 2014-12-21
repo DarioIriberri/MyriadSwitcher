@@ -66,7 +66,7 @@ class HTMLBuilder():
         html += "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"
         html += "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
         html += "<head>"
-        html += "<style>BODY{background-color:#000000;color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:1880px;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
+        html += "<style>BODY{background-color:#000000;color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:110em;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
         #html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {location.reload();}," + self.refresh_t + ")}</script>"
         html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {window.scrollTo(0, document.body.scrollHeight);location.reload();}," + self.refresh_milisecs + ")}</script>"
         html += '<link id="page_favicon" href="data:image/x-icon;base64,AAABAAEAGBgAAAEAIACICQAAFgAAACgAAAAYAAAAMAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMiM/QS7dPwbvHT8KqqI/AN2cfwVgH38BQ' \

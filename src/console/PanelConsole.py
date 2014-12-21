@@ -4,9 +4,13 @@ import time
 
 import wx
 import wx.html2 as webview
+import FrameMYR
 from event.Event import Event
 from console.switcher.SwitchingThread import SwitchingThread
 from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
+
+INDEX_CONSOLE = 0
+INDEX_BROWSER = 1
 
 
 class PanelConsole(wx.Panel):
@@ -20,17 +24,34 @@ class PanelConsole(wx.Panel):
         self.threadCount = 0
         self.messageEvent = None
 
-        self.wv = webview.WebView.New(self)
+
+        self.notebook = wx.Notebook(self, id=wx.ID_ANY, style=wx.BK_RIGHT | wx.TE_NO_VSCROLL)
+
+        self.il = wx.ImageList(16, 16)
+        self.notebook.AssignImageList(self.il)
+
+        self.wvConsole = webview.WebView.New(self.notebook)
+        self.wvBrowser = webview.WebView.New(self.notebook)
+
+        self.notebook.AddPage(self.wvConsole, "Output   ")
+        self.notebook.AddPage(self.wvBrowser, "Browser  ")
+        self.notebook.SetPageImage(INDEX_CONSOLE, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/console16.ico', wx.BITMAP_TYPE_ICO)))
+        self.notebook.SetPageImage(INDEX_BROWSER, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/browser2.ico', wx.BITMAP_TYPE_ICO)))
+
+        self.notebook.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.wv.SetBackgroundColour("Black")
-        sizer.Add(self.wv, 1, wx.EXPAND | wx.ALL, -1)
+        #self.SetBackgroundColour("Black")
+
+        self.wvConsole.SetPage('<html><body style="background-color: #000000;"></body></html>', "")
+        self.wvBrowser.SetPage('<html><body style="background-color: #AAAAAA;"></body></html>', "")
+
+        #sizer.Add(self.wvConsole, 1, wx.EXPAND | wx.ALL, -1)
+        sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizer(sizer)
 
         self.Bind(EVT_CONSOLE_EVENT, self.onConsole)
         #EVT_CONSOLE_EVENT(self, self.onConsole)
-
-        self.wv.Show(False)
 
     def addMessageEventListener(self, eventListener):
         messageEvent = Event(eventListener)
@@ -58,8 +79,8 @@ class PanelConsole(wx.Panel):
     def onConsole(self, event):
         #print "console     " + str(time.time()) + "   -   " + event.html
         #self.wv.SetPage(str(time.time()), "")
-        self.wv.SetPage(event.html, "")
-        self.wv.Reload()
+        self.wvConsole.SetPage(event.html, "")
+        self.wvConsole.Reload()
         #self.wv.Find(HTMLBuilder.ANCHOR)
         #self.Scroll(0, self.GetScrollRange(wx.VERTICAL))
         #self.parent.Scroll(0, self.parent.GetScrollRange(wx.VERTICAL))
@@ -67,6 +88,13 @@ class PanelConsole(wx.Panel):
         #print "Console says = " + event.html
         #self.wv.SetPage("<html><header><title>This is title</title></header><body>Hello world</body></html>", "")
         #self.wv.LoadURL("https://dl.dropboxusercontent.com/u/19353176/Myriad_log/2014-05-04-040554.html")
+
+    def setBrowser(self, url):
+        self.notebook.SetSelection(INDEX_BROWSER)
+        #self.notebook.GetPage(1).Show()
+        #self.wvBrowser.SetPage(html, "")
+        self.wvBrowser.LoadURL(url)
+        self.wvBrowser.Reload()
 
     def onMiningProcessStarted(self):
         self.frame_myr.onMiningProcessStarted()
@@ -79,8 +107,10 @@ class PanelConsole(wx.Panel):
         return SwitchingThread("SwitchThread", self.threadCount, self, rebooting, resume)
 
     def mine(self, activeConfigFile, rebooting=False, resume=False):
-        self.wv.Show(True)
+        self.wvConsole.Show(True)
         self.Layout()
+
+        self.notebook.SetSelection(INDEX_CONSOLE)
 
         if self.thread:
             self.thread.stop(True)

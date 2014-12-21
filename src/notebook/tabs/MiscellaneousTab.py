@@ -446,7 +446,7 @@ class LogElement(wx.StaticBoxSizer):
 
     def onShowDialog(self, event):
         currentLogDir = self.txtDir.GetValue()
-        directory = os.getcwd() if not currentLogDir or currentLogDir == "" else currentLogDir
+        directory = os.getcwd() if not currentLogDir or not os.path.isdir(currentLogDir) else currentLogDir
         #self.fbb = MDD.MultiDirDialog(self.parent, title="Pick a directory for your logs...", defaultPath="", agwStyle=wx.DD_NEW_DIR_BUTTON)
         self.fbb = wx.DirDialog(self.parent, "Pick a directory for your logs...", defaultPath=directory, style=wx.DD_DEFAULT_STYLE)
         #self.fbb = wx.DirDialog(self.parent, "Pick a directory for your logs...", style=wx.DD_NEW_DIR_BUTTON)
