@@ -35,7 +35,7 @@ class FrameMYRClass(wx.Frame):
 
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "Myriad Switcher Configurator... ",
-                          size=(710, 383)
+                          size=(800, 383)
         )
 
         self.prev_size = self.GetSize()
@@ -329,6 +329,9 @@ class FrameMYRClass(wx.Frame):
     def onButtonRun(self, event):
         result = True
 
+        if not self.checkMinersSelected():
+            return
+
         if self.isThereAPreviousSession():
             question = "This will delete your previously stored session data. Are you sure you want to continue?"
             dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.ICON_WARNING)
@@ -341,9 +344,24 @@ class FrameMYRClass(wx.Frame):
                 self.panelConsole.mine(self.notebook.activeFile)
 
     def onButtonResume(self, event):
+        if not self.checkMinersSelected():
+            return
+
         if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
             self.enabled_buttons(False)
             self.panelConsole.mine(self.notebook.activeFile, resume=True)
+
+    def checkMinersSelected(self):
+        if not self.miners.checkMinersSelected():
+            dlg = wx.MessageDialog(self,
+                                   "Pick at least one mining device in the lower panel to start your mining session.\n\n ",
+                                   "Unable to start the mining session..." , wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+            dlg.Destroy()
+
+            return False
+
+        return True
 
     def onButtonStop(self, event):
         #self.buttonStop.SetLabelText("Stopping   ")
@@ -407,6 +425,8 @@ class FrameMYRClass(wx.Frame):
             self.mining = False
             self.miningStoppedButtons()
 
+        self.notebook.broadcastEventToAllTabs(event_id="stop_mining")
+
     def miningStoppedButtons(self):
         try:
             self.buttonRun.Enable(True)
@@ -420,16 +440,24 @@ class FrameMYRClass(wx.Frame):
             pass
 
     def executeAlgo(self, maxAlgo, switch):
-        return self.miners.executeAlgo(maxAlgo, switch)
+        ret = self.miners.executeAlgo(maxAlgo, switch)
+
+        if ret :
+            self.notebook.broadcastEventToAllTabs(event_id="start_mining", event_value=maxAlgo)
+
+        return ret
 
     def checkMinerCrashed(self):
         return self.miners.checkMinerCrashed()
 
-    def stopMiners(self, runStopButtonEffect=False, forcibly=False, wait=False, exit=False):
+    def stopMiners(self, runStopButtonEffect=False, wait=False, exit=False):
         if runStopButtonEffect:
             StopLabelSingletonThread(self, self.miners).start()
 
         return self.miners.stopMiners(wait, exit)
+
+    def getMiningAlgo(self):
+        return self.panelConsole.getMiningAlgo()
 
     def onExit(self, event):
         self.Close(True)
@@ -442,23 +470,26 @@ class FrameMYRClass(wx.Frame):
 
     def terminate(self):
         #self.Iconize(True)
-        self.mining = False
+        #self.mining = False
         self.terminating = True
 
-        threadMiners = threading.Thread(target=self.stopMiners, kwargs={'runStopButtonEffect' : False, 'forcibly' : False, 'wait' : True, 'exit' : True })
+        threadMiners = threading.Thread(target=self.stopMiners, kwargs={'runStopButtonEffect' : False, 'wait' : True, 'exit' : True })
         threadConsole = threading.Thread(target=self.panelConsole.stop, kwargs={'kill_miners' : False, 'wait' : True })
-        threadProgressBar = threading.Thread(target=self.progressBarThread)
 
         self.finished = False
-        self.progressBar = wx.ProgressDialog(parent = self,
-                                           title="Myriad Switcher is shutting down...",
-                                           message="Please wait while all threads finish...",
-                                           maximum=100
-                                          )
 
-        threadProgressBar.start()
         threadMiners.start()
         threadConsole.start()
+
+        if self.mining:
+            self.progressBar = wx.ProgressDialog(parent = self,
+                                                 title="Myriad Switcher is shutting down...",
+                                                 message="Please wait while all threads finish...",
+                                                 maximum=100
+                                                )
+            threadProgressBar = threading.Thread(target=self.progressBarThread)
+            threadProgressBar.start()
+
 
         #threadProgressBar.join()
         threadMiners.join()
@@ -467,11 +498,9 @@ class FrameMYRClass(wx.Frame):
         self.finished = True
 
     def progressBarThread(self):
-
         try:
             for i in range(0, 6000, 1):
                 if self.finished:
-                    print "progress done FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
                     break
 
                 wx.MilliSleep(50)
@@ -479,7 +508,6 @@ class FrameMYRClass(wx.Frame):
 
         except Exception as ex:
             pass
-
 
 
 class StopLabelSingletonThread (threading.Thread):
@@ -510,10 +538,8 @@ class StopLabelSingletonThread (threading.Thread):
             minersready = self.miners.checkMinersReady()
 
             buttonsWait = [self.frame.buttonWait1, self.frame.buttonWait2, self.frame.buttonWait3, self.frame.buttonWait4]
-
             while ( mining or not minersready ) and count < self.MAX_WAIT_ITER:
                 mod = count % 4
-
                 if mod < 4:
                     currentBtn = buttonsWait[mod]
 
@@ -525,7 +551,6 @@ class StopLabelSingletonThread (threading.Thread):
 
                 mining = self.frame.mining
                 minersready = self.miners.checkMinersReady()
-
                 time.sleep(0.5)
 
                 count += 1
@@ -537,4 +562,3 @@ class StopLabelSingletonThread (threading.Thread):
 
             self.frame.Layout()
             self.frame.miningStoppedButtons()
-

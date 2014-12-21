@@ -83,18 +83,19 @@ class PanelMinerInstance(wx.Panel):
         if not switch and self.handler.status == STATUS_RUNNING:
             return None
 
-        if self.handler.status in (STATUS_RUNNING, STATUS_STOPPING):
-            self.handler.statusStopping()
+        if self.handler.status in (STATUS_RUNNING, STATUS_STOPPING, STATUS_CRASHED):
+            self.handler.statusStopping(stopCrashed=True)
 
             i = 0
 
             while not self.handler.status == STATUS_READY and i < MAX_ITERATIONS:
                 time.sleep(0.5)
+                i += 1
 
             if i >= MAX_ITERATIONS:
                 return False
 
-        if self.handler.status == STATUS_READY or self.handler.status == STATUS_CRASHED:
+        if self.handler.status == STATUS_READY:
             if SwitcherData.scryptS == maxAlgo:
                 return True
 
@@ -159,7 +160,7 @@ class PanelMinerInstance(wx.Panel):
                     ret = childProcess.kill()
                     ret = ret
 
-                print "terrrrrminatorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+                #print "terrrrrminatorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
                 #ret = self.process.terminate()
                 ret = self.process.kill()
 
@@ -214,14 +215,17 @@ class PanelMinerInstance(wx.Panel):
         #Check Miners...
         try:
             while self.isMinerRunning() and not self.killSignal:
+                #print "checking miners .............................................. " + self.minerStatus()
                 time.sleep(10)
 
-            #if the kill signal is set, the miner was stopped by the user
+                #if the kill signal is set, the miner was stopped by the user
             if not self.killSignal:
                 self.handler.minerCrashed()
+                #print "checking miners2222 .............................................. " + self.minerStatus()
 
             elif self.minerStatus() == STATUS_EXITING:
                 self.handler.status = STATUS_EXITED
+                #print "checking miners3333 .............................................. " + self.minerStatus()
 
             else:
                 self.handler.moveOn()
@@ -229,7 +233,7 @@ class PanelMinerInstance(wx.Panel):
         except PyDeadObjectError:
             pass
 
-        print "both streams finished.............................................."
+        #print "both streams finished.............................................. " + self.minerStatus()
 
     def __outputThread(self, shell, stream, waitForStreams):
         for line in iter(stream.readline, b''):
@@ -246,7 +250,7 @@ class PanelMinerInstance(wx.Panel):
                 #print "oooooooooooooooooooooooops!!!!!!!!!!!!"
                 break
 
-        print "outta here!!!!!!!!!!!!!!!!!"
+        #print "outta here!!!!!!!!!!!!!!!!!"
 
     def __isProcessRunning(self):
         try:
@@ -355,6 +359,9 @@ class PanelMinerInstanceHandler(wx.Panel):
         #self.deviceLabel.SetDefaultStyle(wx.TextAttr("BLACK", wx.NullColour, wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False)))
 
         self.deviceLabel.Bind(wx.EVT_TOGGLEBUTTON, self.onDeviceToggle)
+        #self.deviceLabel.Bind(wx.EVT_SET_CURSOR, self.buttonColors)
+        #self.deviceLabel.Bind(wx.EVT_PAINT, self.buttonColors)
+        #self.deviceLabel.Bind(wx.EVT_ERASE_BACKGROUND, self.buttonColors)
 
         self.deviceCombo = wx.ComboBox(self, size=(200, 26), choices=self.devices, style=wx.CB_READONLY)
         self.deviceCombo.Bind(wx.EVT_COMBOBOX, self.onDeviceSelected)
@@ -382,6 +389,19 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.enableDevice(False)
 
+    #def buttonColors(self, event):
+    #    if self.status == STATUS_DISABLED:
+    #        self.__deviceDisabledColors()
+    #        return
+    #
+    #    if self.status == STATUS_READY:
+    #        self.__deviceReadyColors()
+    #        return
+    #
+    #    if self.status == STATUS_RUNNING:
+    #        self.__deviceRunningColors()
+    #        return
+
     def onDeviceSelected(self, event):
         selection = self.deviceCombo.GetValue()
 
@@ -392,15 +412,19 @@ class PanelMinerInstanceHandler(wx.Panel):
         else:
             self.enableDevice(True)
 
-        event.Skip()
+        #self.deviceLabel.SetFocus()
+        self.deviceLabel.SetValue(True)
+
+        #event.Skip()
 
     def onDeviceToggle(self, event):
         if self.status == STATUS_RUNNING:
-            self.statusStopping()
+            self.parent.stopMiner()
+            #self.statusStopping()
         else:
             self.statusDisabled()
 
-        event.Skip()
+        #event.Skip()
 
     def enableDevice(self, enable):
         label = self.parent.deviceLabel
@@ -415,7 +439,8 @@ class PanelMinerInstanceHandler(wx.Panel):
         #if not self.status == STATUS_RUNNING:
         #self.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
 
-        event.Skip()
+        #event.Skip()
+        pass
 
     def execute(self, command, waitForStreams):
         self.command = command
@@ -428,7 +453,7 @@ class PanelMinerInstanceHandler(wx.Panel):
             self.statusStarting()
 
     def statusRunning(self):
-        if self.status != STATUS_STOPPING:
+        if self.status not in ( STATUS_STOPPING, STATUS_EXITING ):
             self.status = STATUS_RUNNING
 
             self.__deviceRunningColors()
@@ -445,7 +470,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.status = STATUS_DISABLED
 
-        self.parent.parent.rearrangeMiners(slide=True)
+        self.parent.parent.resizeMinerPanels(slide=True)
 
         self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
         self.deviceNum.SetValue(ALL_DEVICES)
@@ -458,14 +483,15 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.deviceNum.Enable(True)
 
     def statusReady(self):
-        if self.status == STATUS_READY:
-            return
-
-        self.status = STATUS_READY
-
         try:
             self.parent.printMessage(os.linesep + self.deviceCombo.GetValue() + " is now ready to mine!")
-            self.parent.parent.rearrangeMiners(slide=True)
+
+            if self.status == STATUS_READY:
+                return
+
+            self.status = STATUS_READY
+
+            self.parent.parent.resizeMinerPanels(slide=True)
 
             self.__deviceReadyColors()
 
@@ -496,9 +522,12 @@ class PanelMinerInstanceHandler(wx.Panel):
 
             time.sleep(0.5)
 
-    def statusStopping(self):
-        #if self.status == STATUS_RUNNING or self.status == STATUS_STARTING or self.status == STATUS_CRASHED:
-        if self.status in ( STATUS_RUNNING, STATUS_STARTING ):
+    def statusStopping(self, stopCrashed=False):
+        if stopCrashed and self.status == STATUS_CRASHED:
+            self.statusReady()
+            return
+
+        if self.status in ( STATUS_RUNNING, STATUS_STARTING ) :
             self.status = STATUS_STOPPING
 
             #self.parent._killMiner()
@@ -583,8 +612,10 @@ class PanelMinerInstanceHandler(wx.Panel):
 
     def __deviceDisabledColors(self):
         try:
-            self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
-            self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+            #self.deviceLabel.SetBackgroundColour(clr.COLOR_LIGHT_GRAY)
+            #self.deviceLabel.SetForegroundColour(clr.COLOR_DARK_GRAY)
+            self.deviceLabel.SetBackgroundColour(None)
+            self.deviceLabel.SetForegroundColour(None)
 
         except PyDeadObjectError:
             pass

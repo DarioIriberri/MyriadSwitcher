@@ -44,6 +44,13 @@ class PanelConsole(wx.Panel):
         if self.messageEvent:
             self.messageEvent(output_text)
 
+    def getMiningAlgo(self):
+        try:
+            return self.thread.switcherData.getMiningAlgo()
+
+        except Exception:
+            return None
+
     #def onConsoleEvent(self, html):
     #    self.wv.SetPage(html, "")
     #    self.wv.Reload()

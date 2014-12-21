@@ -33,16 +33,13 @@ class PanelMiners(MultiSplitterWindow):
         self.AppendWindow(self.miner2)
         self.AppendWindow(self.miner3)
 
-        #self.miner0.AppendText("Device 0 Output..." + os.linesep + os.linesep)
-        #self.miner1.AppendText("Device 1 Output..." + os.linesep + os.linesep)
-        #self.miner2.AppendText("Device 2 Output..." + os.linesep + os.linesep)
-        #self.miner3.AppendText("Device 3 Output..." + os.linesep + os.linesep)
-
-        self.Bind(wx.EVT_SIZE, self.rearrangeMiners)
+        self.Bind(wx.EVT_SIZE, self.resizeMinerPanels)
 
     def executeAlgo(self, maxAlgo, switch):
         if switch:
             self.stopMiners()
+        else:
+            self.stopCrashedMiners()
 
         ret0 = self.miner0.executeAlgo(maxAlgo, switch)
         ret1 = self.miner1.executeAlgo(maxAlgo, switch)
@@ -54,25 +51,60 @@ class PanelMiners(MultiSplitterWindow):
 
         return ret0 or ret1 or ret2 or ret3
 
-    #def executeAlgo(self, maxAlgo, switch):
-    #    pool = ThreadPool(processes=self.num_miners)
-    #
-    #    ret0 = pool.apply_async(self.__executeAlgoThread, (self.miner0, maxAlgo, switch))
-    #    ret1 = pool.apply_async(self.__executeAlgoThread, (self.miner1, maxAlgo, switch))
-    #    ret2 = pool.apply_async(self.__executeAlgoThread, (self.miner2, maxAlgo, switch))
-    #    ret3 = pool.apply_async(self.__executeAlgoThread, (self.miner3, maxAlgo, switch))
-    #    #ret1 = self.miner1.executeAlgo(maxAlgo, switch)
-    #    #ret2 = self.miner2.executeAlgo(maxAlgo, switch)
-    #    #ret3 = self.miner3.executeAlgo(maxAlgo, switch)
-    #
-    #    if (ret0 is None and ret1 is None and ret2 is None and ret3 is None):
-    #        return None
-    #
-    #    return ret0 or ret1 or ret2 or ret3
-    #
-    #def __executeAlgoThread(self, miner, maxAlgo, switch):
-    #    ret = miner.executeAlgo(maxAlgo, switch)
-    #    return ret
+    def stopMiners(self, wait=False, exit=False):
+        self.miner0.stopMiner(exit)
+        self.miner1.stopMiner(exit)
+        self.miner2.stopMiner(exit)
+        self.miner3.stopMiner(exit)
+
+        if exit:
+            self.stopLoop(self.checkMinersExited)
+
+        elif wait:
+            self.stopLoop(self.checkMinersReady)
+
+        self.frame.notebook.broadcastEventToAllTabs(event_id="stop_mining")
+
+    def stopCrashedMiners(self):
+        if self.miner0.minerStatus() == PMI.STATUS_CRASHED:
+            self.miner0.stopMiner()
+
+        if self.miner1.minerStatus() == PMI.STATUS_CRASHED:
+            self.miner1.stopMiner()
+
+        if self.miner2.minerStatus() == PMI.STATUS_CRASHED:
+            self.miner2.stopMiner()
+
+        if self.miner3.minerStatus() == PMI.STATUS_CRASHED:
+            self.miner3.stopMiner()
+
+    def stopLoop(self, endFunction):
+        success = False
+        i = 0
+        str_ini = "Waiting for miners to die "
+
+        from miner import PanelMinerInstance
+
+        while i < PanelMinerInstance.MAX_ITERATIONS:
+            if not endFunction():
+                time.sleep(0.5)
+                i += 1
+                str_out = str_ini + str(i)
+                print str_out
+
+            else:
+                str_out = "done, Bye!"
+                print str_out
+                #time.sleep(2)
+                success = True
+                break
+
+        print "Miners: Exited with success = " + str(success)
+
+        if not success:
+            str_out = "Damn it"
+            print str_out
+            time.sleep(5)
 
     def checkMinerCrashed(self):
         if self.miner0.minerStatus() == PMI.STATUS_CRASHED or \
@@ -104,58 +136,17 @@ class PanelMiners(MultiSplitterWindow):
 
         return False
 
-    def stopMiners(self, wait=False, exit=False):
-        self.miner0.stopMiner(exit)
-        self.miner1.stopMiner(exit)
-        self.miner2.stopMiner(exit)
-        self.miner3.stopMiner(exit)
+    def checkMinersSelected(self):
+        if ( self.miner0.minerStatus() == PMI.STATUS_DISABLED ) and \
+           ( self.miner1.minerStatus() == PMI.STATUS_DISABLED ) and \
+           ( self.miner2.minerStatus() == PMI.STATUS_DISABLED ) and \
+           ( self.miner3.minerStatus() == PMI.STATUS_DISABLED ):
 
-        if exit:
-            self.stopLoop(self.checkMinersExited)
+            return False
 
-        elif wait:
-            self.stopLoop(self.checkMinersReady)
+        return True
 
-    def stopLoop(self, endFunction):
-        success = False
-        i = 0
-        str_ini = "Waiting for miners to die "
-
-        from miner import PanelMinerInstance
-
-        while i < PanelMinerInstance.MAX_ITERATIONS:
-            if not endFunction():
-                time.sleep(0.5)
-                i += 1
-                str_out = str_ini + str(i)
-                print str_out
-
-            else:
-                str_out = "done, Bye!"
-                print str_out
-                #time.sleep(2)
-                success = True
-                break
-
-        print "Miners: Exited with success = " + str(success)
-
-        if not success:
-            str_out = "Damn it"
-            print str_out
-            time.sleep(5)
-
-    #def killMinersLazy(self, event=None):
-    #    pool = ThreadPool(processes=self.num_miners)
-    #
-    #    pool.apply_async(self.__killMinersLazyThread, (self.miner0))
-    #    pool.apply_async(self.__killMinersLazyThread, (self.miner1))
-    #    pool.apply_async(self.__killMinersLazyThread, (self.miner2))
-    #    pool.apply_async(self.__killMinersLazyThread, (self.miner3))
-    #
-    #def __killMinersLazyThread(self, miner):
-    #    miner.stopMiners()
-
-    def rearrangeMiners(self, event=None, slide=False):
+    def resizeMinerPanels(self, event=None, slide=False):
         try:
             width = self.GetSize()[0]
             best =  width / self.num_miners
@@ -185,19 +176,19 @@ class PanelMiners(MultiSplitterWindow):
             #no slide effect allowed for resize event triggered calls to the function for performance reasons.
             if not slide:
                 self.SetSashPosition(0, int(wide if self.miner0.minerStatus() != PMI.STATUS_DISABLED else narrow))
-                self.SetSashPosition(1, int(wide if self.miner1.minerStatus() == PMI.STATUS_DISABLED else narrow))
-                self.SetSashPosition(2, int(wide if self.miner2.minerStatus() == PMI.STATUS_DISABLED else narrow))
-                self.SetSashPosition(3, int(wide if self.miner3.minerStatus() == PMI.STATUS_DISABLED else narrow))
+                self.SetSashPosition(1, int(wide if self.miner1.minerStatus() != PMI.STATUS_DISABLED else narrow))
+                self.SetSashPosition(2, int(wide if self.miner2.minerStatus() != PMI.STATUS_DISABLED else narrow))
+                self.SetSashPosition(3, int(wide if self.miner3.minerStatus() != PMI.STATUS_DISABLED else narrow))
 
                 return
 
-            thread = threading.Thread(target=self.rearrangeMinersThread, args=(wide, narrow))
+            thread = threading.Thread(target=self.resizeMinerPanelsThread, args=(wide, narrow))
             thread.start()
 
         except (PyDeadObjectError, AttributeError):
             pass
 
-    def rearrangeMinersThread(self, wide, narrow):
+    def resizeMinerPanelsThread(self, wide, narrow):
         try:
             #with PanelMiners.lock:
             if self.resize_lock:

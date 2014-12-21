@@ -96,15 +96,19 @@ class RightPanelSimple(wx.Panel):
     def algoChecked(self, check):
         if BaseConfigTab.SCRYPT == str(check.LabelText):
             self.algo_panel_scrypt.poolsCombo.Enable(check.GetValue())
+            self.algo_panel_scrypt.poolEditor.Enable(check.GetValue())
 
         if BaseConfigTab.GROESTL == str(check.LabelText):
             self.algo_panel_groestl.poolsCombo.Enable(check.GetValue())
+            self.algo_panel_groestl.poolEditor.Enable(check.GetValue())
 
         if BaseConfigTab.SKEIN == str(check.LabelText):
             self.algo_panel_skein.poolsCombo.Enable(check.GetValue())
+            self.algo_panel_skein.poolEditor.Enable(check.GetValue())
 
         if BaseConfigTab.QUBIT == str(check.LabelText):
             self.algo_panel_qubit.poolsCombo.Enable(check.GetValue())
+            self.algo_panel_qubit.poolEditor.Enable(check.GetValue())
 
     def on_control_changed(self, event):
         self.parent.on_control_changed(event)
@@ -122,11 +126,11 @@ class AlgoPanelSimple(wx.Panel):
 
         #text_browser = wx.StaticText(self, wx.ID_ANY, "Dev " + str(self.dev) + ":", style=wx.BOLD)
         self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=self.poolList, style=wx.CB_READONLY)
-        pool_editor = wx.Button(self, wx.ID_ANY, size=(36, -1))
-        pool_editor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
-        pool_editor.SetToolTip(wx.ToolTip("Edit " + algo + " pools"))
-        boxWrapper.Add( pool_editor, 0, wx.BOTTOM, -1)
-        self.Bind(wx.EVT_BUTTON, self.onButton, pool_editor)
+        self.poolEditor = wx.Button(self, wx.ID_ANY, size=(36, -1))
+        self.poolEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
+        self.poolEditor.SetToolTip(wx.ToolTip("Edit " + algo + " pools"))
+        boxWrapper.Add( self.poolEditor, 0, wx.BOTTOM, -1)
+        self.Bind(wx.EVT_BUTTON, self.onButton, self.poolEditor)
         #self.pool_editor = wx.ComboBox(self, size=(-1, 28), choices=pools, style=wx.CB_READONLY)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -175,6 +179,7 @@ class AlgoPanelSimple(wx.Panel):
             print "Error: set_pools + " + str(script)
 
         self.poolsCombo.Enable(factor)
+        self.poolEditor.Enable(factor)
 
 
 class MyListCtrl(wx.ListCtrl, TextEditMixin):

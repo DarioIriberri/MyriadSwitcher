@@ -44,6 +44,14 @@ class ConfigTab(nbt.NotebookTab):
             else:
                 self.showSimple()
 
+        if "start_mining" == event.event_id:
+            self.simpleConfig.leftPanel.algoButtonColorsMining(algo=event.event_value)
+            self.advancedConfig.leftPanel.algoButtonColorsMining(algo=event.event_value)
+
+        if "stop_mining" == event.event_id:
+            self.simpleConfig.leftPanel.algoButtonColorsStopped()
+            self.advancedConfig.leftPanel.algoButtonColorsStopped()
+
     def on_control_changed(self, event):
         self.parentNotebook.notebookControlChanged(event)
 

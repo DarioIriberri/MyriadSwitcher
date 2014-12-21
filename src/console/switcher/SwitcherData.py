@@ -15,7 +15,7 @@ SECONDS_PER_DAY = 86400
 
 scryptS  = " Scrypt "
 groestlS = " Groestl"
-skeinS   = " SKein  "
+skeinS   = " Skein  "
 qubitS   = " Qubit  "
 
 MINER_CHOICES = ["sgminer",
@@ -557,6 +557,8 @@ class SwitcherData():
 
         self.dumpData(self.htmlBuilder)
 
+        self.globalStopped = True
+
         print time.strftime(DATE_FORMAT_PATTERN, time.localtime()), "Exiting thread loop..... "
 
     def pl(self, line_p=" ", colorForeground=(255, 255, 255), colorBackground=(0, 0, 0)):
@@ -564,3 +566,13 @@ class SwitcherData():
 
     def p(self, text, colorForeground=(255, 255, 255), colorBackground=(0, 0, 0)):
         self.htmlBuilder.pl(text, colorForeground, colorBackground)
+
+    def getMiningAlgo(self):
+        try:
+            if self.globalStopped:
+                return None
+
+            return self.maxAlgo
+
+        except Exception:
+            return None

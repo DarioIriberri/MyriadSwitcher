@@ -3,6 +3,10 @@ from notebook.tabs import NotebookTab as nbt
 __author__ = 'Dario'
 
 import wx
+import time
+import threading
+import  FrameMYR
+from console.switcher import HTMLBuilder as clr
 from event.EventLib import StatusBarEvent
 
 
@@ -40,8 +44,6 @@ class BaseConfigTab(nbt.NotebookTab):
         self.idle_panel = LowerConfigPanel(self)
         self.sizer.Add(self.idle_panel, 0, wx.EXPAND | wx.ALL, 0)
 
-        #self.SetTransparent(0)
-        #self.SetBackgroundColour("White")
         #self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
 
         self.SetSizer(self.sizer)
@@ -106,7 +108,7 @@ class HeaderPanel(wx.Panel):
         flags_browser.Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
         flags_browser.Expand().Border(wx.ALL, 1)
 
-        sizer.AddF(wx.StaticText(self, wx.ID_ANY, size=(55, -1)), wx.SizerFlags().Border(wx.LEFT, 6))
+        sizer.AddF(wx.StaticText(self, wx.ID_ANY, size=(50, -1)), wx.SizerFlags().Border(wx.LEFT, 6))
         sizer.AddF(text_hashrate, wx.SizerFlags().Expand().Border(wx.LEFT, 40))
         sizer.AddF(text_watts, wx.SizerFlags().Expand().Border(wx.LEFT, 24))
         sizer.AddF(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), wx.SizerFlags().Border(wx.LEFT, 6))
@@ -166,6 +168,18 @@ class LeftPanel(wx.Panel):
         return self.algo_panel_dict[algo].isActiveAlgo()
         #return self.algo_panel_scrypt.isActiveAlgo()
 
+    def algoButtonColorsMining(self, algo):
+        self.algo_panel_scrypt.activeAlgoColorsRunningBlink(algo)
+        self.algo_panel_groestl.activeAlgoColorsRunningBlink(algo)
+        self.algo_panel_skein.activeAlgoColorsRunningBlink(algo)
+        self.algo_panel_qubit.activeAlgoColorsRunningBlink(algo)
+
+    def algoButtonColorsStopped(self):
+        self.algo_panel_scrypt.algoButtonColors(stopped=True)
+        self.algo_panel_groestl.algoButtonColors(stopped=True)
+        self.algo_panel_skein.algoButtonColors(stopped=True)
+        self.algo_panel_qubit.algoButtonColors(stopped=True)
+
 
 class AlgoPanelData(wx.Panel):
     def __init__(self, parent, algo):
@@ -173,21 +187,25 @@ class AlgoPanelData(wx.Panel):
 
         self.algo = algo
         self.parent = parent
+        self.blinking = False
 
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizerW = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.active_algo = wx.CheckBox(self, -1, label=algo, size=(80, -1))
-        #self.active_algo.Bind(wx.EVT_ENTER_WINDOW, frame_myr.on_mouse_over_active_algo)
-        wx.EVT_ENTER_WINDOW(self.active_algo, self.on_mouse_over_active_algo)
-        wx.EVT_LEAVE_WINDOW(self.active_algo, self.on_mouse_leave_active_algo)
+        #self.active_algo = wx.CheckBox(self, -1, label=algo, size=(80, -1))
+        #self.active_algo = wx.ToggleButton(self, wx.ID_ANY, algo, size=(57, 25))
+        self.active_algo = wx.ToggleButton(self, wx.ID_ANY, algo, size=(75, 25))
+        self.active_algo.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_over_active_algo)
+        self.active_algo.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave_active_algo)
+        self.active_algo.Bind(wx.EVT_SET_CURSOR, self.algoButtonColors)
+        self.active_algo.Bind(wx.EVT_PAINT, self.algoButtonColors)
+        self.active_algo.Bind(wx.EVT_ERASE_BACKGROUND, self.algoButtonColors)
+        self.active_algo.Bind(wx.EVT_TOGGLEBUTTON, self.on_control_changed)
+        self.active_algo.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        #self.active_algo.Bind(wx.EVT_SET_FOCUS, self.onFocus)
         #wx.EVT_CHECKBOX(self.active_algo, self.on_control_changed)
 
-        font = wx.Font(-1, wx.DEFAULT, wx.NORMAL, wx.BOLD)
-        #font = wx.Font(-1, wx.DECORATIVE, wx.ITALIC, wx.BOLD)
-        self.active_algo.SetFont(font)
-        #self.active_algo.SetValue(True)
-
-        self.hash_rate = wx.SpinCtrlDouble(self, value='0.00', size=(70,-1), min=0.0, max=9999.99, inc=0.01)
+        self.hash_rate = wx.SpinCtrlDouble(self, value='0.00', size=(70, -1), min=0.0, max=9999.99, inc=0.01)
         self.hash_rate.SetDigits(2)
         self.watts = wx.SpinCtrl(self, -1, '0', min=0, max=999999, size=(70, -1))
 
@@ -195,12 +213,13 @@ class AlgoPanelData(wx.Panel):
         self.Bind(wx.EVT_SPINCTRL, parent.on_control_changed, self.watts)
         self.Bind(wx.EVT_TEXT, parent.on_control_changed, self.hash_rate)
         self.Bind(wx.EVT_TEXT, parent.on_control_changed, self.watts)
-        self.Bind(wx.EVT_CHECKBOX, self.on_control_changed, self.active_algo)
+        #self.Bind(wx.EVT_CHECKBOX, self.on_control_changed, self.active_algo)
 
-        sizer.Add(self.active_algo, 0, wx.ALL, 6)
-        sizer.Add(self.hash_rate, 0, wx.ALL, 4)
-        sizer.Add(self.watts, 0, wx.ALL, 4)
-        self.SetSizer(sizer)
+        sizerW.Add(self.active_algo, 0, wx.LEFT | wx.RIGHT | wx.TOP, 3)
+        self.sizer.Add(sizerW, 0, wx.LEFT | wx.RIGHT, 6)
+        self.sizer.Add(self.hash_rate, 0, wx.ALL, 4)
+        self.sizer.Add(self.watts, 0, wx.ALL, 4)
+        self.SetSizer(self.sizer)
 
     #------------------------------------------------------------------------------------------
     #----------------------------         GETTERS           -----------------------------------
@@ -263,19 +282,112 @@ class AlgoPanelData(wx.Panel):
     def isActiveAlgo(self):
         return self.active_algo.GetValue()
 
+    def algoButtonColors(self, event=None, stopped=False):
+        miningAlgo = self.parent.baseConfigTab.parentNotebook.getParentWindow().getMiningAlgo()
+        miningThisAlgo = not stopped and miningAlgo and self.algo.strip() == miningAlgo.strip()
+
+        if stopped and self.blinking:
+            self.blinking = False
+            #time.sleep(1)
+
+        if self.blinking and not stopped:
+            return
+
+        if self.active_algo.GetValue():
+            if  miningThisAlgo:
+                #print self.algo + " running"
+                self.activeAlgoColorsRunning()
+
+                if event:
+                    event.Skip()
+
+                return
+
+            #print self.algo + "Pressed"
+            self.activeAlgoColorsPressed()
+
+        else:
+            if miningThisAlgo:
+                #print self.algo + "Running disabled"
+                self.activeAlgoColorsRunningDisabled()
+                if event:
+                    event.Skip()
+
+                return
+
+            #print self.algo + "disabled"
+            self.activeAlgoColorsOff()
+
     def on_control_changed(self, event, trigger_to_frame=True):
         #self.fbb.Enable(self.active_algo.GetValue())
         self.hash_rate.Enable(self.active_algo.GetValue())
         self.watts.Enable(self.active_algo.GetValue())
+
         if trigger_to_frame:
             self.parent.on_control_changed(event)
 
     def on_mouse_over_active_algo(self, event):
+        #self.onHover(event)
         wx.PostEvent(self.parent.baseConfigTab.parentNotebook.getParentWindow(),
                      StatusBarEvent(message="Enable / Disable " + self.algo + " - " + str(self.active_algo.GetValue())))
 
     def on_mouse_leave_active_algo(self, event):
+        #self.onHover(event)
+        self.active_algo.SetBackgroundColour(None)
         wx.PostEvent(self.parent.baseConfigTab.parentNotebook.getParentWindow(), StatusBarEvent(message=""))
+
+    def activeAlgoDefaultColors(self):
+        self.active_algo.SetBackgroundColour(None)
+        self.active_algo.SetForegroundColour(None)
+
+    def activeAlgoColorsRunning(self):
+        self.active_algo.SetBackgroundColour(clr.COLOR_DARK_GREEN)
+        self.active_algo.SetForegroundColour(clr.COLOR_WHITE)
+        #self.active_algo.SetForegroundColour(clr.COLOR_BLACK)
+
+    def activeAlgoColorsRunningDisabled(self):
+        self.active_algo.SetBackgroundColour(clr.COLOR_DARK_GREEN_DISABLED)
+        self.active_algo.SetForegroundColour(clr.COLOR_WHITE)
+        #self.active_algo.SetForegroundColour(clr.COLOR_BLACK)
+
+    def activeAlgoColorsOff(self):
+        self.active_algo.SetBackgroundColour(clr.COLOR_LIGHTER_GRAY)
+        self.active_algo.SetForegroundColour(clr.COLOR_DARK_GRAY)
+
+    def activeAlgoColorsPressed(self):
+        self.active_algo.SetBackgroundColour(clr.COLOR_BLUE_PRESSED)
+        self.active_algo.SetForegroundColour(clr.COLOR_BLACK)
+
+    def activeAlgoColorsRunningBlink(self, algo):
+        if self.active_algo.GetValue() and algo.strip() == self.algo.strip():
+            thread = threading.Thread(target=self.activeAlgoRunningColorsBlinkThread, args=[algo])
+            thread.start()
+
+        else:
+            self.activeAlgoDefaultColors()
+
+    def activeAlgoRunningColorsBlinkThread(self, algo):
+        i = 0
+
+        self.blinking = True
+
+        while i < 8 and self.blinking:
+            if i % 2:
+                self.activeAlgoColorsRunning()
+            else:
+                self.activeAlgoDefaultColors()
+                #self.activeAlgoRunningdColorsOff()
+
+            i += 1
+
+            time.sleep(0.5)
+
+        self.activeAlgoColorsRunning()
+        self.blinking = False
+
+        #def __deviceReadyColors(self):
+        #    self.active_algo.SetBackgroundColour(clr.COLOR_ORANGE)
+        #    self.active_algo.SetForegroundColour(clr.COLOR_WHITE)
 
 
 class LowerConfigPanel(wx.Panel):
@@ -346,3 +458,110 @@ class LowerConfigPanel(wx.Panel):
             #self.combo_factor.Select(global_factor)
         except:
             print "Error: set_global_factor"
+
+
+class AlgoToggleButton(wx.ToggleButton):
+    def __init__(self, parent, id, algo, size):
+        wx.ToggleButton.__init__(self, parent, id, algo, size)
+
+#        EVT_SIZE = wx.PyEventBinder( wxEVT_SIZE )
+# = wx.PyEventBinder( wxEVT_SIZING )
+#EVT_MOVE = wx.PyEventBinder( wxEVT_MOVE )
+#EVT_MOVING = wx.PyEventBinder( wxEVT_MOVING )
+#EVT_MOVE_START = wx.PyEventBinder( wxEVT_MOVE_START )
+#EVT_MOVE_END = wx.PyEventBinder( wxEVT_MOVE_END )
+#EVT_CLOSE = wx.PyEventBinder( wxEVT_CLOSE_WINDOW )
+#EVT_END_SESSION = wx.PyEventBinder( wxEVT_END_SESSION )
+#EVT_QUERY_END_SESSION = wx.PyEventBinder( wxEVT_QUERY_END_SESSION )
+#EVT_PAINT = wx.PyEventBinder( wxEVT_PAINT )
+#EVT_NC_PAINT = wx.PyEventBinder( wxEVT_NC_PAINT )
+#EVT_ERASE_BACKGROUND = wx.PyEventBinder( wxEVT_ERASE_BACKGROUND )
+#EVT_CHAR = wx.PyEventBinder( wxEVT_CHAR )
+#EVT_KEY_DOWN = wx.PyEventBinder( wxEVT_KEY_DOWN )
+#EVT_KEY_UP = wx.PyEventBinder( wxEVT_KEY_UP )
+#EVT_HOTKEY = wx.PyEventBinder( wxEVT_HOTKEY, 1)
+#EVT_CHAR_HOOK = wx.PyEventBinder( wxEVT_CHAR_HOOK )
+#EVT_MENU_OPEN = wx.PyEventBinder( wxEVT_MENU_OPEN )
+#EVT_MENU_CLOSE = wx.PyEventBinder( wxEVT_MENU_CLOSE )
+#EVT_MENU_HIGHLIGHT = wx.PyEventBinder( wxEVT_MENU_HIGHLIGHT, 1)
+#EVT_MENU_HIGHLIGHT_ALL = wx.PyEventBinder( wxEVT_MENU_HIGHLIGHT )
+#EVT_SET_FOCUS = wx.PyEventBinder( wxEVT_SET_FOCUS )
+#EVT_KILL_FOCUS = wx.PyEventBinder( wxEVT_KILL_FOCUS )
+#EVT_CHILD_FOCUS = wx.PyEventBinder( wxEVT_CHILD_FOCUS )
+#EVT_ACTIVATE = wx.PyEventBinder( wxEVT_ACTIVATE )
+#EVT_ACTIVATE_APP = wx.PyEventBinder( wxEVT_ACTIVATE_APP )
+#EVT_HIBERNATE = wx.PyEventBinder( wxEVT_HIBERNATE )
+#EVT_END_SESSION = wx.PyEventBinder( wxEVT_END_SESSION )
+#EVT_QUERY_END_SESSION = wx.PyEventBinder( wxEVT_QUERY_END_SESSION )
+#EVT_DROP_FILES = wx.PyEventBinder( wxEVT_DROP_FILES )
+#EVT_INIT_DIALOG = wx.PyEventBinder( wxEVT_INIT_DIALOG )
+#EVT_SYS_COLOUR_CHANGED = wx.PyEventBinder( wxEVT_SYS_COLOUR_CHANGED )
+#EVT_DISPLAY_CHANGED = wx.PyEventBinder( wxEVT_DISPLAY_CHANGED )
+#EVT_SHOW = wx.PyEventBinder( wxEVT_SHOW )
+#EVT_MAXIMIZE = wx.PyEventBinder( wxEVT_MAXIMIZE )
+#EVT_ICONIZE = wx.PyEventBinder( wxEVT_ICONIZE )
+#EVT_NAVIGATION_KEY = wx.PyEventBinder( wxEVT_NAVIGATION_KEY )
+#EVT_PALETTE_CHANGED = wx.PyEventBinder( wxEVT_PALETTE_CHANGED )
+#EVT_QUERY_NEW_PALETTE = wx.PyEventBinder( wxEVT_QUERY_NEW_PALETTE )
+#EVT_WINDOW_CREATE = wx.PyEventBinder( wxEVT_CREATE )
+#EVT_WINDOW_DESTROY = wx.PyEventBinder( wxEVT_DESTROY )
+#EVT_SET_CURSOR = wx.PyEventBinder( wxEVT_SET_CURSOR )
+#EVT_MOUSE_CAPTURE_CHANGED = wx.PyEventBinder( wxEVT_MOUSE_CAPTURE_CHANGED )
+#EVT_MOUSE_CAPTURE_LOST = wx.PyEventBinder( wxEVT_MOUSE_CAPTURE_LOST )
+
+        self.Bind(wx.EVT_SET_FOCUS, self.onFocus)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.onFocus)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.onFocus)
+        self.Bind(wx.EVT_SIZE, self.onFocus)
+        self.Bind(wx.EVT_SIZING, self.onFocus)
+        self.Bind(wx.EVT_PAINT, self.onFocus)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.onFocus)
+        self.Bind(wx.EVT_SET_FOCUS, self.onFocus)
+        self.Bind(wx.EVT_KILL_FOCUS, self.onFocus)
+        self.Bind(wx.EVT_CHILD_FOCUS, self.onFocus)
+        self.Bind(wx.EVT_ACTIVATE, self.onFocus)
+        self.Bind(wx.EVT_ACTIVATE_APP, self.onFocus)
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.onFocus)
+        self.Bind(wx.EVT_DISPLAY_CHANGED, self.onFocus)
+        self.Bind(wx.EVT_PALETTE_CHANGED, self.onFocus)
+        self.Bind(wx.EVT_SET_CURSOR, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_CHANGED, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.onFocus)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_AUX1_DOWN, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_AUX1_UP, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_AUX1_DCLICK, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_AUX2_DOWN, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_AUX2_UP, self.onFocus)
+        self.Bind(wx.EVT_MOUSE_AUX2_DCLICK, self.onFocus)
+#
+#EVT_LEFT_DOWN = wx.PyEventBinder( wxEVT_LEFT_DOWN )
+#EVT_LEFT_UP = wx.PyEventBinder( wxEVT_LEFT_UP )
+#EVT_MIDDLE_DOWN = wx.PyEventBinder( wxEVT_MIDDLE_DOWN )
+#EVT_MIDDLE_UP = wx.PyEventBinder( wxEVT_MIDDLE_UP )
+#EVT_RIGHT_DOWN = wx.PyEventBinder( wxEVT_RIGHT_DOWN )
+#EVT_RIGHT_UP = wx.PyEventBinder( wxEVT_RIGHT_UP )
+#EVT_MOTION = wx.PyEventBinder( wxEVT_MOTION )
+#EVT_LEFT_DCLICK = wx.PyEventBinder( wxEVT_LEFT_DCLICK )
+#EVT_MIDDLE_DCLICK = wx.PyEventBinder( wxEVT_MIDDLE_DCLICK )
+#EVT_RIGHT_DCLICK = wx.PyEventBinder( wxEVT_RIGHT_DCLICK )
+#EVT_LEAVE_WINDOW = wx.PyEventBinder( wxEVT_LEAVE_WINDOW )
+#EVT_ENTER_WINDOW = wx.PyEventBinder( wxEVT_ENTER_WINDOW )
+#EVT_MOUSEWHEEL = wx.PyEventBinder( wxEVT_MOUSEWHEEL )
+#EVT_MOUSE_AUX1_DOWN = wx.PyEventBinder( wxEVT_AUX1_DOWN )
+#EVT_MOUSE_AUX1_UP = wx.PyEventBinder( wxEVT_AUX1_UP )
+#EVT_MOUSE_AUX1_DCLICK = wx.PyEventBinder( wxEVT_AUX1_DCLICK )
+#EVT_MOUSE_AUX2_DOWN = wx.PyEventBinder( wxEVT_AUX2_DOWN )
+#EVT_MOUSE_AUX2_UP = wx.PyEventBinder( wxEVT_AUX2_UP )
+#EVT_MOUSE_AUX2_DCLICK = wx.PyEventBinder( wxEVT_AUX2_DCLICK )
+
+    def onFocus(self, event):
+        print "derp = " + str(event)
+        if not self.GetValue():
+            event.Skip()
+
+    def onHover(self, event):
+        print "derp = " + str(event)
+        #event.Skip(False)
+        #if not self.GetValue():
+        #    event.Skip()

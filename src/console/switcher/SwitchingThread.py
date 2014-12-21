@@ -33,6 +33,7 @@ class SwitchingThread (threading.Thread):
         self.rebooting = rebooting
         self.resume = resume
         self.activeMiner = None
+        self.switcherData = None
 
         self.console = console
         threading.Thread.__init__(self)
@@ -55,10 +56,10 @@ class SwitchingThread (threading.Thread):
 
         self.console.onMiningProcessStarted()
 
-        switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
+        self.switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
 
         if self.resume or self.rebooting:
-            switcherData.loadData()
+            self.switcherData.loadData()
 
         errors = 0
 
@@ -80,26 +81,26 @@ class SwitchingThread (threading.Thread):
 
         while True:
             try:
-                dataError = switcherData.fetchData(thread.activeConfigFile)
-                self.mainMode = switcherData.config_json["mainMode"]
+                dataError = self.switcherData.fetchData(thread.activeConfigFile)
+                self.mainMode = self.switcherData.config_json["mainMode"]
 
                 threadStopped = self.isStopped()
 
                 if dataError:
-                    switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
+                    self.switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
 
                     if threadStopped:
                         break
                     else:
-                        loopMinerStatus = self.waitLoop(switcherData.config_json["sleepSHORT"], globalStopped, switcherData)
+                        loopMinerStatus = self.waitLoop(self.switcherData.config_json["sleepSHORT"], globalStopped, self.switcherData)
                         continue
 
                 # New Algo found to switch to!
-                if switcherData.isSwitchToNewAlgo(threadStopped):
+                if self.switcherData.isSwitchToNewAlgo(threadStopped):
                     prevSwitchtext = switchtext
 
-                    scriptPath = switcherData.getScriptPath()
-                    switchtext = "> " + switcherData.maxAlgo
+                    scriptPath = self.switcherData.getScriptPath()
+                    switchtext = "> " + self.switcherData.maxAlgo
 
                     restart = not threadStopped
                     status = "SWITCH"
@@ -108,36 +109,36 @@ class SwitchingThread (threading.Thread):
 
                 # Still same Algo, check if the miner is running OK
                 else:
-                    switchtext = "   " + switcherData.current
+                    switchtext = "   " + self.switcherData.current
 
-                    self.cpu2 = self.getCPUUsages(switcherData.getMiner())
+                    self.cpu2 = self.getCPUUsages(self.switcherData.getMiner())
 
                     #if not globalStopped or self.mainMode == "simple":
-                    stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(self.cpu1, self.cpu2, switcherData.getMiner(), switcherData.config_json)
+                    stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(self.cpu1, self.cpu2, self.switcherData.getMiner(), self.switcherData.config_json)
 
                     restart = ( not globalStopped or self.mainMode == "simple" ) and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
 
                     self.cpu1 = self.cpu2
 
                     if restart:
-                        switchtext = "x " + switcherData.current
+                        switchtext = "x " + self.switcherData.current
                         status = "FAIL"
                         errors += 1
 
-                        if errors >= switcherData.config_json["maxErrors"]:
+                        if errors >= self.switcherData.config_json["maxErrors"]:
                             status = "MAX_FAIL"
                             prevSwitchtext = switchtext
                             maxMinerFails = True
 
                     else:
-                        switchtext = ". " + switcherData.current
+                        switchtext = ". " + self.switcherData.current
                         status = "OK"
                         errors = 0
 
-                switcherData.initRound(status)
+                self.switcherData.initRound(status)
 
-                globalStopped = switcherData.globalStopped
-                wasStopped    = switcherData.wasStopped
+                globalStopped = self.switcherData.globalStopped
+                wasStopped    = self.switcherData.wasStopped
 
                 prevScriptPath = scriptPath
 
@@ -147,18 +148,18 @@ class SwitchingThread (threading.Thread):
                     if status != "SWITCH":
                         status = "OK"
 
-                    switchtext = "S " + switcherData.current
+                    switchtext = "S " + self.switcherData.current
 
                 if self.checkRestart(prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
-                    sleepTime = switcherData.config_json["sleepLONG"]
+                    sleepTime = self.switcherData.config_json["sleepLONG"]
 
                     t1 = time.time()
 
-                    if not switcherData.config_json["debug"]:
+                    if not self.switcherData.config_json["debug"]:
                         if self.mainMode == "advanced":
                             self.kill()
 
-                        retCode = self.startMiners(scriptPath, switcherData.maxAlgo, restart, status == "SWITCH")
+                        retCode = self.startMiners(scriptPath, self.switcherData.maxAlgo, restart, status == "SWITCH")
 
                         #retCode = subprocess.Popen('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
                         #subprocess.call('cd /d "' + unicode(workingDirectory) + '" && start cmd /c "' + unicode(scriptPath) + '"', shell=True)
@@ -168,32 +169,28 @@ class SwitchingThread (threading.Thread):
                             #switcherData.pl()
                             #switcherData.pl("Please, select a mining device first!: " + scriptPath, HTMLBuilder.COLOR_RED)
 
-                            import wx
                             #question = "Please, select a mining device in the lower panel to start mining."
                             #dlg = wx.MessageDialog(self.console, question, "Unable to start your mining session...", wx.OK)
                             #dlg.ShowModal()
                             #dlg.Destroy()
 
-                            dlg = wx.MessageDialog(self.console.frame_myr,
-                                                   "Pick at least one mining device in the lower panel to start your mining session.\n\n ",
-                                                   "Unable to start the mining session..." , wx.OK | wx.ICON_ERROR)
-                            dlg.ShowModal()
-                            dlg.Destroy()
+                            self.switcherData.pl()
+                            self.switcherData.pl("Failed to start your miner(s): " + scriptPath, HTMLBuilder.COLOR_RED)
 
                             breakAt = "No mining device set"
                             self.stop(True)
                             break
 
                         if not retCode:
-                            switcherData.pl()
-                            switcherData.pl("Failed to start your miner: " + scriptPath, HTMLBuilder.COLOR_RED)
+                            self.switcherData.pl()
+                            self.switcherData.pl("Failed to start your miner(s): " + scriptPath, HTMLBuilder.COLOR_RED)
                             breakAt = "failed miner start"
                             self.stop(True)
                             break
 
-                        if self.waitForMinerToStart(switcherData.getMiner(), switcherData.config_json["rampUptime"]):
-                            self.cpu1 = self.getCPUUsages(switcherData.getMiner())
-                            self.activeMiner = switcherData.getMiner()
+                        if self.waitForMinerToStart(self.switcherData.getMiner(), self.switcherData.config_json["rampUptime"]):
+                            self.cpu1 = self.getCPUUsages(self.switcherData.getMiner())
+                            self.activeMiner = self.switcherData.getMiner()
 
                             #if self.checkSwitchingThreadStopped():
                             #    breakAt = "after miner start"
@@ -202,32 +199,32 @@ class SwitchingThread (threading.Thread):
                     restartTime = time.time() - t1
 
                 else:
-                    sleepTime = switcherData.config_json["sleepSHORT"]
+                    sleepTime = self.switcherData.config_json["sleepSHORT"]
 
                 timeStopped = 0 if status != "FAIL" else LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
 
-                switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
+                self.switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
 
                 if self.isStopped():
                     breakAt = "after prints, thread stopped"
                     self.stop(True)
                     break
 
-                if self.checkMaxFails(status, stopReason, switcherData):
+                if self.checkMaxFails(status, stopReason, self.switcherData):
                     breakAt = "after prints, max fails"
                     self.stop(True)
                     break
 
-                loopMinerStatus = self.waitLoop(sleepTime, globalStopped, switcherData)
+                loopMinerStatus = self.waitLoop(sleepTime, globalStopped, self.switcherData)
 
-                switcherData.loadConfig(thread.activeConfigFile)
+                self.switcherData.loadConfig(thread.activeConfigFile)
 
             except Exception as ex:
-                switcherData.pl()
-                switcherData.pl("Unexpected error.", HTMLBuilder.COLOR_RED)
-                switcherData.pl()
+                self.switcherData.pl()
+                self.switcherData.pl("Unexpected error.", HTMLBuilder.COLOR_RED)
+                self.switcherData.pl()
                 for line in traceback.format_exc().split('\n'):
-                    switcherData.pl(line, HTMLBuilder.COLOR_RED)
+                    self.switcherData.pl(line, HTMLBuilder.COLOR_RED)
 
                 self.printTraceback("Unexpected error")
 
@@ -235,7 +232,7 @@ class SwitchingThread (threading.Thread):
 
                 break
 
-        switcherData.end()
+        self.switcherData.end()
         self.console.onMiningProcessStopped()
 
     def checkRestart(self, prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
