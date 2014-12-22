@@ -24,6 +24,7 @@ REVISION = 0
 GRAVITY = 0.7
 
 BUTTON_SIZE  = (76, 26)
+SPLITTER_ID = 32612
 
 class FrameMYRClass(wx.Frame):
     RESOURCE_PATH = None
@@ -57,7 +58,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonRun = wx.Button(self, -1, "Start  ", size=BUTTON_SIZE)
         self.buttonResume = wx.Button(self, -1, "Resume", size=BUTTON_SIZE)
         self.buttonStop = wx.Button(self, wx.ID_STOP, "Stop  ", size=BUTTON_SIZE)
-        self.buttonExit = wx.Button(self, wx.ID_EXIT, "Quit  ", size=BUTTON_SIZE)
+        self.buttonQuit = wx.Button(self, wx.ID_EXIT, "Quit  ", size=BUTTON_SIZE)
         self.buttonDefaults = wx.Button(self, wx.ID_RESET, "Defaults", size=BUTTON_SIZE)
         self.buttonMainMode = wx.ToggleButton(self, -1, "Simple", size=BUTTON_SIZE)
 
@@ -73,7 +74,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonRun.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/rungreen16.ico'), wx.LEFT)
         self.buttonResume.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/resume16.ico'), wx.LEFT)
         self.buttonStop.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/stop16.ico'), wx.LEFT)
-        self.buttonExit.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/exit-16.ico'), wx.LEFT)
+        self.buttonQuit.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/exit-16.ico'), wx.LEFT)
 
         self.buttonWait1.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-1.ico'), wx.LEFT)
         self.buttonWait2.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-2.ico'), wx.LEFT)
@@ -105,11 +106,16 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_BUTTON, self.onButtonRun, self.buttonRun)
         self.Bind(wx.EVT_BUTTON, self.onButtonResume, self.buttonResume)
-        self.Bind(wx.EVT_BUTTON, self.onButtonStop, self.buttonStop)
+        self.buttonStop.Bind(wx.EVT_BUTTON, self.onButtonStop)
         self.Bind(wx.EVT_BUTTON, self.onButtonCancel, self.buttonCancel)
         self.Bind(wx.EVT_BUTTON, self.onButtonDefaults, self.buttonDefaults)
         self.Bind(wx.EVT_BUTTON, self.onSave, self.buttonSave)
-        self.Bind(wx.EVT_BUTTON, self.onExit, self.buttonExit)
+        self.Bind(wx.EVT_BUTTON, self.onQuit, self.buttonQuit)
+
+        #self.buttonWait1.Bind(wx.EVT_BUTTON, self.onButtonWait)
+        #self.buttonWait2.Bind(wx.EVT_BUTTON, self.onButtonWait)
+        #self.buttonWait3.Bind(wx.EVT_BUTTON, self.onButtonWait)
+        #self.buttonWait4.Bind(wx.EVT_BUTTON, self.onButtonWait)
 
         #self.buttonSave.SetBitmapMargins(14, 0)
         #self.buttonCancel.SetBitmapMargins((14, 0))
@@ -122,9 +128,10 @@ class FrameMYRClass(wx.Frame):
         menuBar.Append(helpmenu,"&Help") # Adding the MenuBar to the Frame content.
         self.SetMenuBar(menuBar)
 
-        self.resizable_panel = wx.SplitterWindow(self, wx.ID_ANY)
+        self.resizable_panel = wx.SplitterWindow(self, SPLITTER_ID)
         self.resizable_panel.SetMinimumPaneSize(1)
         self.resizable_panel.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.onSplitterResized)
+        #self.resizable_panel.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, lambda event : None)
         self.resizable_panel.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.toggleSplitter)
 
         # Create the Notebook
@@ -188,7 +195,7 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
-        sizerButtons.Add(self.buttonExit, 0, wx.RIGHT, 4)
+        sizerButtons.Add(self.buttonQuit, 0, wx.RIGHT, 4)
         sizerButtonsWrapper.Add(sizerButtons, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
 
         self.sizerTotal.Add(self.panelNotebook, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 3)
@@ -209,16 +216,21 @@ class FrameMYRClass(wx.Frame):
         self.notebook.broadcastEventToAllTabs(event_id="main_config",
                                               event_value=("advanced" == self.getMainMode()))
 
-        self.Maximize()
-        self.Layout()
-        self.Show()
-
         self.buttonWait1.Hide()
         self.buttonWait2.Hide()
         self.buttonWait3.Hide()
         self.buttonWait4.Hide()
 
+        self.Maximize()
+        self.Layout()
+
+        self.miners.resizeMinerPanels()
+
+        self.Show()
+
         self.chechReboot()
+
+        self.stopEffectThread = None
 
         try:
             os.remove("reboot")
@@ -414,7 +426,7 @@ class FrameMYRClass(wx.Frame):
 
     def collapseMinersSplitter(self, event=None):
         #self.getGravity()
-        top = self.miners.miner0.handler.GetSize()[1] + 10
+        top = self.miners.miner0.handler.GetSize()[1] + 5
         self.resizable_panel.SetSashPosition(self.resizable_panel.GetSize()[1] - top)
 
     def expandMinersSplitter(self):
@@ -424,12 +436,18 @@ class FrameMYRClass(wx.Frame):
     def toggleSplitter(self, event=None):
         if self.miners.getExpansionStatus():
             self.collapseMinersSplitter()
+            self.miners.setButtonExpanded(False)
         else:
             self.expandMinersSplitter()
+            self.miners.setButtonExpanded(True)
 
     def onSplitterResized(self, event):
         try:
-            top = self.miners.miner0.handler.GetSize()[1] + 10
+            if not SPLITTER_ID == event.GetEventObject().GetId():
+                event.Skip()
+                return
+
+            top = self.miners.miner0.handler.GetSize()[1] + 5
             current = self.resizable_panel.GetSize()[1] - self.resizable_panel.GetSashPosition()
             #current = self.resizable_panel.GetSashPosition()
 
@@ -499,19 +517,29 @@ class FrameMYRClass(wx.Frame):
 
     def stopMiners(self, runStopButtonEffect=False, wait=False, exit=False):
         if runStopButtonEffect:
-            StopLabelSingletonThread(self, self.miners).start()
+            self.stopEffectThread = threading.Thread(target=self.stopLabelSingletonThread)
+            self.stopEffectThread.start()
+            #StopLabelSingletonThread(self, self.miners).start()
 
-        return self.miners.stopMiners(wait, exit)
+        ret = self.miners.stopMiners(wait, exit)
+
+        return ret
 
     def getMiningAlgo(self):
         return self.panelConsole.getMiningAlgo()
 
+    def onQuit(self, event):
+        self.Close(True)
+        event.Skip()
+
     def onExit(self, event):
         self.Close(True)
-        #self.terminate()
         event.Skip()
 
     def onClose(self, event):
+        if self.stopEffectThread and self.stopEffectThread.isAlive():
+            return
+
         self.terminate()
         event.Skip()
 
@@ -519,6 +547,8 @@ class FrameMYRClass(wx.Frame):
         #self.Iconize(True)
         #self.mining = False
         self.terminating = True
+
+        self.waitForStopThread()
 
         threadMiners = threading.Thread(target=self.stopMiners, kwargs={'runStopButtonEffect' : False, 'wait' : True, 'exit' : True })
         threadConsole = threading.Thread(target=self.panelConsole.stop, kwargs={'kill_miners' : False, 'wait' : True })
@@ -541,8 +571,28 @@ class FrameMYRClass(wx.Frame):
         #threadProgressBar.join()
         threadMiners.join()
         threadConsole.join()
+        #if self.stopEffectThread and self.stopEffectThread.isAlive():
+        #    self.stopEffectThread.join()
 
         self.finished = True
+
+        print "See ya!!"
+
+        #time.sleep(10)
+
+    #def finalSleep(self):
+    #    time.sleep(10)
+
+    def waitForStopThread(self):
+        MAX_WAIT_ITER = 120
+        count = 0
+        waitOnStop = self.stopEffectThread and self.stopEffectThread.isAlive()
+
+        while waitOnStop and count < MAX_WAIT_ITER:
+            time.sleep(1)
+            count += 1
+            self.stopEffectThread._reset_internal_locks()
+            waitOnStop = self.stopEffectThread and self.stopEffectThread.isAlive()
 
     def progressBarThread(self):
         try:
@@ -556,56 +606,60 @@ class FrameMYRClass(wx.Frame):
         except Exception as ex:
             pass
 
+    def stopLabelSingletonThread(self):
+        try:
+            MAX_WAIT_ITER = 60
 
-class StopLabelSingletonThread (threading.Thread):
-    _instance = None
-    lock = threading.RLock()
-
-    MAX_WAIT_ITER = 120
-
-    def __new__(self, *args, **kwargs):
-        if not self._instance:
-            self._instance = super(StopLabelSingletonThread, self).__new__(self, *args, **kwargs)
-        return self._instance
-
-    def __init__(self, frame, miners):
-        self.frame  = frame
-        self.miners = miners
-
-        threading.Thread.__init__ (self)
-
-    def run(self):
-        with StopLabelSingletonThread.lock:
             count = 0
 
-            previousBtn = self.frame.buttonStop
+            wx.CallAfter(self.buttonQuit.Disable)
+
+            previousBtn = self.buttonStop
             currentBtn = None
 
-            mining = self.frame.mining
+            mining = self.mining
             minersready = self.miners.checkMinersReady()
 
-            buttonsWait = [self.frame.buttonWait1, self.frame.buttonWait2, self.frame.buttonWait3, self.frame.buttonWait4]
-            while ( mining or not minersready ) and count < self.MAX_WAIT_ITER:
+            if self.terminating:
+                return
+
+            buttonsWait = [self.buttonWait1, self.buttonWait2, self.buttonWait3, self.buttonWait4]
+
+            while ( mining or not minersready ) and not self.terminating and count < MAX_WAIT_ITER:
                 mod = count % 4
+
                 if mod < 4:
+                    if self.terminating:
+                        return
+
                     currentBtn = buttonsWait[mod]
 
-                    currentBtn.Show()
-                    previousBtn.Hide()
-                    self.frame.Layout()
+                    wx.CallAfter(currentBtn.Enable)
+                    wx.CallAfter(currentBtn.Show)
+                    wx.CallAfter(previousBtn.Hide)
+                    wx.CallAfter(previousBtn.Disable)
+                    self.Layout()
 
                     previousBtn = currentBtn
 
-                mining = self.frame.mining
+                mining = self.mining
                 minersready = self.miners.checkMinersReady()
+
                 time.sleep(0.5)
 
                 count += 1
 
+            if self.terminating:
+                return
+
             if currentBtn:
-                currentBtn.Hide()
+                wx.CallAfter(currentBtn.Hide)
 
-            self.frame.buttonStop.Show()
+            wx.CallAfter(self.buttonStop.Show)
+            wx.CallAfter(self.buttonQuit.Enable)
 
-            self.frame.Layout()
-            self.frame.miningStoppedButtons()
+            wx.CallAfter(self.Layout)
+            wx.CallAfter(self.miningStoppedButtons)
+
+        except PyDeadObjectError:
+            pass

@@ -145,7 +145,7 @@ class PanelConsole(wx.Panel):
                     print str_out
 
                 else:
-                    str_out = "done, Bye!"
+                    str_out = "THREADS done, Bye!"
                     print str_out
                     #time.sleep(2)
                     success = True
@@ -154,7 +154,7 @@ class PanelConsole(wx.Panel):
             print "Threads: Exited with success = " + str(success)
 
             if not success:
-                str_out = "Damn it"
+                str_out = "THREADS Dammit"
                 print str_out
                 time.sleep(5)
 

@@ -207,7 +207,7 @@ class SwitchingThread (threading.Thread):
 
                 if self.isStopped():
                     breakAt = "after prints, thread stopped"
-                    self.stop(True)
+                    self.stop(self.mainMode == "advanced")
                     break
 
                 if self.checkMaxFails(status, stopReason, self.switcherData):

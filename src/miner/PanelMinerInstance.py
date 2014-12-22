@@ -27,8 +27,6 @@ STATUS_EXITED               = "STATUS_EXITED"
 
 MIN_TIME_THREAD_PROBED = 60
 
-WAIT_FOR_STREAMS = False
-
 MIN_ITERATIONS = 8
 MAX_ITERATIONS = 30
 
@@ -48,19 +46,18 @@ class PanelMinerInstance(wx.Panel):
         self.previousCPUUsage = None
         self.currentCPUUsage  = None
 
-        self.resizable_panel = wx.SplitterWindow(self, wx.ID_ANY)
-        self.resizable_panel.SetMinimumPaneSize(1)
-        self.resizable_panel.SetSashGravity(0.65)
+        self.res_panel = wx.SplitterWindow(self, wx.ID_ANY)
+        self.res_panel.SetMinimumPaneSize(1)
+        self.res_panel.SetSashGravity(0.65)
 
-        self.shellStdout = wx.TextCtrl(self.resizable_panel, id=wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_RICH2)
-        self.shellStderr = wx.TextCtrl(self.resizable_panel, id=wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_RICH2)
+        self.shellStdout = wx.TextCtrl(self.res_panel, id=wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_RICH2)
+        self.shellStderr = wx.TextCtrl(self.res_panel, id=wx.ID_ANY, style=wx.TE_MULTILINE | wx.TE_RICH2)
         self.shellStdout.SetDefaultStyle(wx.TextAttr(wx.BLACK, wx.NullColour, wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False)))
         self.shellStderr.SetDefaultStyle(wx.TextAttr(wx.RED,   wx.NullColour, wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False)))
 
         self.shellStdout.SetEditable(False)
         self.shellStderr.SetEditable(False)
 
-        self.waitForStreams = WAIT_FOR_STREAMS
         self.killSignal = False
 
         self.handler = PanelMinerInstanceHandler(self, size=(-1, 24))
@@ -69,12 +66,12 @@ class PanelMinerInstance(wx.Panel):
 
         sizer.Add(self.handler, 0, wx.EXPAND | wx.TOP, 1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(-1, 4)), 0, wx.EXPAND | wx.TOP, 0)
-        sizer.Add(self.resizable_panel, 1, wx.EXPAND | wx.BOTTOM, 0)
+        sizer.Add(self.res_panel, 1, wx.EXPAND | wx.BOTTOM, 0)
         #sizer.Add(self.shellStderr, 1, wx.EXPAND | wx.BOTTOM, 0)
 
-        self.resizable_panel.SplitHorizontally(self.shellStdout, self.shellStderr)
+        self.res_panel.SplitHorizontally(self.shellStdout, self.shellStderr)
 
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)
 
     def executeAlgo(self, maxAlgo, switch):
         if self.handler.status == STATUS_DISABLED:
@@ -98,24 +95,22 @@ class PanelMinerInstance(wx.Panel):
 
         if self.handler.status == STATUS_READY:
             if SwitcherData.scryptS == maxAlgo:
-                return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - Single.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - Single.conf" --text-only')
 
             if SwitcherData.groestlS == maxAlgo:
-                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only')
 
             if SwitcherData.skeinS == maxAlgo:
-                return self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                return self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
 
             if SwitcherData.qubitS == maxAlgo:
-                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
-                #self.handler.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only')
+                #self.handler.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only')
 
         return False
 
-    def execute(self, command, waitForStreams = False):
+    def execute(self, command):
         self._killMiner()
-
-        self.waitForStreams = waitForStreams
 
         self.clearAll()
 
@@ -125,7 +120,7 @@ class PanelMinerInstance(wx.Panel):
 
         self.killSignal = False
 
-        self.threadStreams = threading.Thread(target=self.__runStreamThreads, args = [waitForStreams])
+        self.threadStreams = threading.Thread(target=self.__runStreamThreads)
         self.threadStreams.start()
 
         time.sleep(1)
@@ -142,9 +137,7 @@ class PanelMinerInstance(wx.Panel):
     def stopMiner(self, exit=False):
         self.killSignal = True
 
-        if not self.waitForStreams:
-            self._killMiner()
-            #self.handler.statusReady()
+        self._killMiner()
 
         if exit:
             self.handler.statusExiting()
@@ -160,7 +153,7 @@ class PanelMinerInstance(wx.Panel):
                     ret = childProcess.kill()
                     ret = ret
 
-                print "terrrrrminatorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+                #print "terrrrrminatorrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
                 #ret = self.process.terminate()
                 ret = self.process.kill()
 
@@ -199,33 +192,32 @@ class PanelMinerInstance(wx.Panel):
         except PyDeadObjectError:
             pass
 
-    def __runStreamThreads(self, waitForStreams):
-        self.threadOut = threading.Thread(target=self.__outputThread, args=[self.shellStdout, self.process.stdout, waitForStreams])
-        self.threadErr = threading.Thread(target=self.__outputThread, args=(self.shellStderr, self.process.stderr, waitForStreams))
+    def __runStreamThreads(self):
+        self.threadOut = threading.Thread(target=self.__outputThread, args=[self.shellStdout, self.process.stdout])
+        self.threadErr = threading.Thread(target=self.__outputThread, args=(self.shellStderr, self.process.stderr))
 
         self.threadOut.start()
         self.threadErr.start()
 
-        if waitForStreams:
-            self.threadOut.join()
-            self.threadErr.join()
-
-            self._killMiner()
-
         #Check Miners...
         try:
+            CHECK_POLL_RATE = 5
+
+            #Wait 10 seconds before checking the miner to give it plenty of time to start
+            time.sleep(CHECK_POLL_RATE)
+
             while self.isMinerRunning() and not self.killSignal:
                 #print "checking miners .............................................. " + self.minerStatus()
-                time.sleep(10)
+                time.sleep(CHECK_POLL_RATE)
 
-                #if the kill signal is set, the miner was stopped by the user
+            #if the kill signal is set, the miner was stopped by the user
             if not self.killSignal:
                 self.handler.minerCrashed()
-                #print "checking miners2222 .............................................. " + self.minerStatus()
+                #print "checking miners CRASHED!!! .............................................. " + self.minerStatus()
 
             elif self.minerStatus() == STATUS_EXITING:
                 self.handler.status = STATUS_EXITED
-                #print "checking miners3333 .............................................. " + self.minerStatus()
+                #print "checking miners EXITED zzzzzzz .............................................. " + self.minerStatus()
 
             else:
                 self.handler.moveOn()
@@ -235,7 +227,7 @@ class PanelMinerInstance(wx.Panel):
 
         #print "both streams finished.............................................. " + self.minerStatus()
 
-    def __outputThread(self, shell, stream, waitForStreams):
+    def __outputThread(self, shell, stream):
         for line in iter(stream.readline, b''):
             try:
                 #print "so????"
@@ -421,17 +413,17 @@ class PanelMinerInstanceHandler(wx.Panel):
 
     def onDeviceEdit(self, event):
         #if not self.status == STATUS_RUNNING:
-        #self.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only', waitForStreams = WAIT_FOR_STREAMS)
+        #self.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only')
 
         #event.Skip()
         pass
 
-    def execute(self, command, waitForStreams):
+    def execute(self, command):
         self.command = command
 
         if not self.parent.isMinerRunning():
-            ret = self.parent.execute(command, waitForStreams)
-            #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only', waitForStreams = True)
+            ret = self.parent.execute(command)
+            #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only')
             #self.parent.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
 
             self.statusStarting()
@@ -587,9 +579,6 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.statusCrashed()
 
         time.sleep(2)
-
-        #if self.command:
-        #    self.execute(self.command, WAIT_FOR_STREAMS)
 
 
     ####################################################################################################################

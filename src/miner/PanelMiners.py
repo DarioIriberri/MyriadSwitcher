@@ -3,6 +3,7 @@ __author__ = 'Dario'
 import wx
 import time
 import threading
+import FrameMYR
 import PanelMinerInstance as PMI
 from wx._core import PyDeadObjectError
 from wx.lib.splitter import MultiSplitterWindow
@@ -23,7 +24,7 @@ class PanelMiners(wx.Panel):
         self.splitter = MultiSplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
         self.splitter.SetOrientation(wx.HORIZONTAL)
 
-        #self.miner0 = wx.TextCtrl(self, size=(-1, -1))
+        self.splitter.SetMinimumPaneSize(1)
 
         self.miner0 = PMI.PanelMinerInstance(self.splitter, self, "Miner #0")
         self.miner1 = PMI.PanelMinerInstance(self.splitter, self, "Miner #1")
@@ -35,7 +36,9 @@ class PanelMiners(wx.Panel):
         self.splitter.AppendWindow(self.miner2)
         self.splitter.AppendWindow(self.miner3)
 
-        self.Bind(wx.EVT_SIZE, self.resizeMinerPanels)
+        self.splitter.Bind(wx.EVT_SIZE, self.resizeMinerPanels)
+        #self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.sashChanging)
+        #self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.resizeMinerPanels)
 
         self.collapsePanel = CollapsePanel(self)
 
@@ -43,7 +46,7 @@ class PanelMiners(wx.Panel):
         sizerW = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.splitter, 1, wx.EXPAND)
         sizerW.Add(self.collapsePanel, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, -1)
-        sizer.Add(sizerW, 0, wx.TOP, 2)
+        sizer.Add(sizerW, 0, wx.EXPAND | wx.TOP, 1)
 
         self.SetSizer(sizer)
 
@@ -105,7 +108,7 @@ class PanelMiners(wx.Panel):
                 print str_out
 
             else:
-                str_out = "done, Bye!"
+                str_out = "MINERS done, Bye!"
                 print str_out
                 #time.sleep(2)
                 success = True
@@ -114,7 +117,7 @@ class PanelMiners(wx.Panel):
         print "Miners: Exited with success = " + str(success)
 
         if not success:
-            str_out = "Damn it"
+            str_out = "MINERS Dammit"
             print str_out
             time.sleep(5)
 
@@ -160,6 +163,10 @@ class PanelMiners(wx.Panel):
 
     def resizeMinerPanels(self, event=None, slide=False):
         try:
+            if not self.collapsePanel.resizeBtn.GetValue():
+                event.Skip()
+                return
+
             width = self.parent.GetSize()[0]
             best =  width / self.num_miners
 
@@ -255,19 +262,47 @@ class CollapsePanel(wx.Panel):
         self.parent = parent
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizerV = wx.BoxSizer(wx.VERTICAL)
 
-        self.collapseBtn = wx.ToggleButton(self, wx.ID_ANY, size=(24, 24), label=">>")
+        self.collapseBtn = wx.ToggleButton(self, wx.ID_ANY, size=(25, 25), label=">>")
+        self.resizeBtn = wx.ToggleButton(self, wx.ID_ANY, size=(25, 25))
+
+        self.collapseBtn.SetToolTip(wx.ToolTip("Collapse / Expand miners"))
+        self.resizeBtn.SetToolTip(wx.ToolTip("Auto-resize miners"))
+
+        self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize16.ico'))
+        #self.resizeBtn.SetBitmapHover(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize-no16.ico'))
         self.collapseBtn.SetFont(wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.collapseBtn.SetValue(True)
+        self.resizeBtn.SetValue(True)
         self.collapseBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onCollapseToggle)
-        #sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(0, -1)), 0, wx.EXPAND | wx.LEFT | wx.RIGHT, -1)
-        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(3, -1)), 0, wx.EXPAND)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(1, -1)), 0, wx.EXPAND)
-        sizer.Add(self.collapseBtn, 0, wx.TOP, -1)
+        self.resizeBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onResizeToggle)
+        #self.resizeBtn.Bind(wx.EVT_SET_CURSOR, self.onResizeToggle)
+        #self.resizeBtn.Bind(wx.EVT_PAINT, self.onResizeToggle)
+        #self.resizeBtn.Bind(wx.EVT_LEAVE_WINDOW, self.onResizeToggle)
+
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(1, -1)), 1, wx.EXPAND)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(2, -1)), 1, wx.EXPAND)
+        #sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(1, -1)), 0, wx.EXPAND)
+
+        sizerV.Add(self.collapseBtn, 0, wx.TOP, 0)
+        sizerV.Add(self.resizeBtn, 0, wx.TOP, 3)
+
+        sizer.Add(sizerV, 0, wx.TOP, -1)
 
         #self.SetBackgroundColour(wx.RED)
 
         self.SetSizer(sizer)
+
+    def onResizeToggle(self, event):
+        if self.resizeBtn.GetValue():
+            self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize16.ico'))
+
+        else:
+            self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize-no16.ico'))
+
+        self.parent.miner0.SetFocus()
+        #event.Skip()
 
     def onCollapseToggle(self, event):
         if self.collapseBtn.GetValue():
