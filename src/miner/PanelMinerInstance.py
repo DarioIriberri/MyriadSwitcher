@@ -34,9 +34,10 @@ MAX_ITERATIONS = 30
 
 
 class PanelMinerInstance(wx.Panel):
-    def __init__(self, parent, deviceLabel, isCollapse=False):
+    def __init__(self, parent, panelMiners, deviceLabel):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
         self.parent = parent
+        self.panelMiners = panelMiners
         self.deviceLabel = deviceLabel
         self.process = None
 
@@ -62,7 +63,7 @@ class PanelMinerInstance(wx.Panel):
         self.waitForStreams = WAIT_FOR_STREAMS
         self.killSignal = False
 
-        self.handler = PanelMinerInstanceHandler(self, size=(-1, 24), isCollapse=isCollapse)
+        self.handler = PanelMinerInstanceHandler(self, size=(-1, 24))
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -73,7 +74,7 @@ class PanelMinerInstance(wx.Panel):
 
         self.resizable_panel.SplitHorizontally(self.shellStdout, self.shellStderr)
 
-        self.SetSizer(sizer)
+        self.SetSizerAndFit(sizer)
 
     def executeAlgo(self, maxAlgo, switch):
         if self.handler.status == STATUS_DISABLED:
@@ -305,11 +306,10 @@ class CPUUsage():
 
 
 class PanelMinerInstanceHandler(wx.Panel):
-    def __init__(self, parent, size=wx.DefaultSize, isCollapse=False):
+    def __init__(self, parent, size=wx.DefaultSize):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY, size=size)
 
         self.parent = parent
-        self.isCollapse = isCollapse
 
         self.status = STATUS_DISABLED
         self.killedAlreadyFlag = False
@@ -382,37 +382,9 @@ class PanelMinerInstanceHandler(wx.Panel):
         sizer.Add(devEditor, 0, wx.EXPAND | wx.TOP, -1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(80, -1)), 1, wx.EXPAND, 0)
 
-        self.collapseBtn = None
-
-        if isCollapse:
-            self.collapseBtn = wx.ToggleButton(self, wx.ID_ANY, size=(24, 36), label=">>")
-            self.collapseBtn.SetFont(wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-            self.collapseBtn.SetValue(True)
-            self.collapseBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onCollapseToggle)
-            sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(6, -1)), 0, wx.EXPAND, 0)
-            sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(3, -1)), 0, wx.EXPAND, 0)
-            sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(6, -1)), 0, wx.EXPAND, 0)
-            sizer.Add(self.collapseBtn, 0, wx.EXPAND | wx.TOP, -1)
-
         self.SetSizer(sizer)
 
         self.enableDevice(False)
-
-    def onCollapseToggle(self, event):
-        if self.collapseBtn.GetValue():
-            self.collapseBtn.SetLabel(">>")
-            self.parent.parent.frame.expandSplitter()
-        else:
-            self.collapseBtn.SetLabel("<<")
-            self.parent.parent.frame.collapseSplitter(None)
-
-    def setButtonExpanded(self, expanded):
-        if expanded:
-            self.collapseBtn.SetValue(True)
-            self.collapseBtn.SetLabel(">>")
-        else:
-            self.collapseBtn.SetValue(False)
-            self.collapseBtn.SetLabel("<<")
 
     def onDeviceSelected(self, event):
         selection = self.deviceCombo.GetValue()
@@ -486,7 +458,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.status = STATUS_DISABLED
 
-        #self.parent.parent.resizeMinerPanels(slide=True)
+        self.parent.panelMiners.resizeMinerPanels(slide=True)
 
         self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
         self.deviceNum.SetValue(ALL_DEVICES)
@@ -507,7 +479,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
             self.status = STATUS_READY
 
-            self.parent.parent.resizeMinerPanels(slide=True)
+            self.parent.panelMiners.resizeMinerPanels(slide=True)
 
             self.__deviceReadyColors()
 

@@ -46,7 +46,6 @@ class PanelConsole(wx.Panel):
         self.wvConsole.SetPage('<html><body style="background-color: #000000;"></body></html>', "")
         self.wvBrowser.SetPage('<html><body style="background-color: #AAAAAA;"></body></html>', "")
 
-        #sizer.Add(self.wvConsole, 1, wx.EXPAND | wx.ALL, -1)
         sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizer(sizer)
 

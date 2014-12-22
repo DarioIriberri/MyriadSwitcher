@@ -135,7 +135,7 @@ class FrameMYRClass(wx.Frame):
         #self.panelConsole = webview.WebView.New(PanelConsole.PanelConsole)
         self.panelConsole.SetBackgroundColour("Black")
 
-        self.miners = PanelMiners(parent = self.resizable_panel, frame=self)
+        self.miners = PanelMiners(parent=self.resizable_panel, frame=self)
 
         self.notebook = ExpandableNotebook(self.panelNotebook, self)
         self.notebook.addTab(ConfigTab, "Main Config", FrameMYRClass.RESOURCE_PATH + 'img/aquachecked.ico')
@@ -412,20 +412,20 @@ class FrameMYRClass(wx.Frame):
         self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners)
         self.resizable_panel.Unsplit(self.miners)
 
-    def collapseSplitter(self, event=None):
+    def collapseMinersSplitter(self, event=None):
         #self.getGravity()
         top = self.miners.miner0.handler.GetSize()[1] + 10
         self.resizable_panel.SetSashPosition(self.resizable_panel.GetSize()[1] - top)
 
-    def expandSplitter(self):
+    def expandMinersSplitter(self):
         self.resizable_panel.SetSashPosition(self.resizable_panel_sash)
         self.Layout()
 
     def toggleSplitter(self, event=None):
         if self.miners.getExpansionStatus():
-            self.collapseSplitter()
+            self.collapseMinersSplitter()
         else:
-            self.expandSplitter()
+            self.expandMinersSplitter()
 
     def onSplitterResized(self, event):
         try:
