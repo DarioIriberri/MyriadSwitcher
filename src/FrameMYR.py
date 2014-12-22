@@ -41,8 +41,9 @@ class FrameMYRClass(wx.Frame):
                           size=(800, 383)
         )
 
-        if not os.path.isdir(os.environ['AppData'] + "/Electrum-MYR"):
-            msw.MyriadSwitcherWizard(self).runWizard()
+        wizard = msw.MyriadSwitcherWizard(self)
+        if not wizard.checkElectrumWalletExists():
+            wizard.startWizard()
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True

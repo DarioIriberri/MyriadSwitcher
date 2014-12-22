@@ -297,6 +297,7 @@ class CollapsePanel(wx.Panel):
     def onResizeToggle(self, event):
         if self.resizeBtn.GetValue():
             self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize16.ico'))
+            self.parent.resizeMinerPanels(slide=True)
 
         else:
             self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize-no16.ico'))
