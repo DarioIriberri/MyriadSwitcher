@@ -386,7 +386,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         if isCollapse:
             self.collapseBtn = wx.ToggleButton(self, wx.ID_ANY, size=(24, 36), label=">>")
-            self.collapseBtn.SetFont(wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+            self.collapseBtn.SetFont(wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
             self.collapseBtn.SetValue(True)
             self.collapseBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onCollapseToggle)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(6, -1)), 0, wx.EXPAND, 0)
@@ -486,7 +486,7 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.status = STATUS_DISABLED
 
-        self.parent.parent.resizeMinerPanels(slide=True)
+        #self.parent.parent.resizeMinerPanels(slide=True)
 
         self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
         self.deviceNum.SetValue(ALL_DEVICES)

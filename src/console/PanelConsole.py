@@ -33,12 +33,12 @@ class PanelConsole(wx.Panel):
         self.wvConsole = webview.WebView.New(self.notebook)
         self.wvBrowser = webview.WebView.New(self.notebook)
 
-        self.notebook.AddPage(self.wvConsole, "Output   ")
-        self.notebook.AddPage(self.wvBrowser, "Browser  ")
+        self.notebook.AddPage(self.wvConsole, "Output  ")
+        self.notebook.AddPage(self.wvBrowser, "Browser ")
         self.notebook.SetPageImage(INDEX_CONSOLE, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/console16.ico', wx.BITMAP_TYPE_ICO)))
         self.notebook.SetPageImage(INDEX_BROWSER, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/browser2.ico', wx.BITMAP_TYPE_ICO)))
 
-        self.notebook.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        self.notebook.SetFont(wx.Font(11, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         #self.SetBackgroundColour("Black")

@@ -227,3 +227,6 @@ class PanelMiners(MultiSplitterWindow):
 
     def setButtonExpanded(self, expanded):
         self.miner3.handler.setButtonExpanded(expanded)
+
+    def getExpansionStatus(self):
+        return self.miner3.handler.collapseBtn.GetValue()

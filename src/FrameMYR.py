@@ -4,6 +4,7 @@ import wx
 import os
 import time
 import threading
+from wizard import MyriadSwitcherWizard as msw
 from wx.lib.buttons import *
 from Tkinter import Tk
 from console.PanelConsole import PanelConsole
@@ -38,6 +39,9 @@ class FrameMYRClass(wx.Frame):
                           "Myriad Switcher Configurator... ",
                           size=(800, 383)
         )
+
+        if not os.path.isdir(os.environ['AppData'] + "/Electrum-MYR"):
+            msw.MyriadSwitcherWizard(self).runWizard()
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
@@ -121,7 +125,7 @@ class FrameMYRClass(wx.Frame):
         self.resizable_panel = wx.SplitterWindow(self, wx.ID_ANY)
         self.resizable_panel.SetMinimumPaneSize(1)
         self.resizable_panel.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.onSplitterResized)
-        self.resizable_panel.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.collapseSplitter)
+        self.resizable_panel.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.toggleSplitter)
 
         # Create the Notebook
         self.panelNotebook = wx.Panel(self)
@@ -157,6 +161,7 @@ class FrameMYRClass(wx.Frame):
         button_bottom_gap = 2
         flagsButtonRun = wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap).Proportion(0)
         sizerButtons = wx.BoxSizer(wx.HORIZONTAL)
+        sizerButtonsWrapper = wx.BoxSizer(wx.HORIZONTAL)
         sizerButtons.AddF(self.buttonSave, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(5, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.AddF(self.buttonCancel, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
@@ -183,14 +188,15 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
-        sizerButtons.AddF(self.buttonExit, flagsButtonRun)
+        sizerButtons.Add(self.buttonExit, 0, wx.RIGHT, 4)
+        sizerButtonsWrapper.Add(sizerButtons, 1, wx.EXPAND | wx.RIGHT | wx.LEFT, 1)
 
         self.sizerTotal.Add(self.panelNotebook, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 3)
-        self.sizerTotal.Add(sizerButtons, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.TOP, 1)
+        self.sizerTotal.Add(sizerButtonsWrapper, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.TOP, 1)
 
         self.resizable_panel.SetSashGravity(GRAVITY)
         #self.resizable_panel.SplitHorizontally(self.panelConsole, self.shell)
-        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT, 4)
+        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 4)
 
         self.icon = wx.Icon(FrameMYRClass.RESOURCE_PATH + 'img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
         self.SetIcon(self.icon)
@@ -406,7 +412,7 @@ class FrameMYRClass(wx.Frame):
         self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners)
         self.resizable_panel.Unsplit(self.miners)
 
-    def collapseSplitter(self, event):
+    def collapseSplitter(self, event=None):
         #self.getGravity()
         top = self.miners.miner0.handler.GetSize()[1] + 10
         self.resizable_panel.SetSashPosition(self.resizable_panel.GetSize()[1] - top)
@@ -414,6 +420,12 @@ class FrameMYRClass(wx.Frame):
     def expandSplitter(self):
         self.resizable_panel.SetSashPosition(self.resizable_panel_sash)
         self.Layout()
+
+    def toggleSplitter(self, event=None):
+        if self.miners.getExpansionStatus():
+            self.collapseSplitter()
+        else:
+            self.expandSplitter()
 
     def onSplitterResized(self, event):
         try:
