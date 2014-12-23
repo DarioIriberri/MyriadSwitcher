@@ -208,16 +208,19 @@ class PanelLogs(wx.Panel):
         self.wvLogs = webview.WebView.New(self)
         self.selection = None
 
-        #self.listLogs = wx.ListBox(self, wx.ID_ANY, (-1, -1), (160, 120), logFiles, wx.LB_SINGLE)
-        self.listLogs = dv.DataViewListCtrl(self, size=(108, -1), style=dv.DV_ROW_LINES)
-        #self.listLogs = ObjectListView(self, size=(108, -1), style=dv.DV_ROW_LINES)
-        self.listLogs.AppendTextColumn('Log File', width=87, flags=dv.DATAVIEW_COL_SORTABLE)
+        self.listLogs = ObjectListView(self, size=(108, -1), style=wx.LC_REPORT, sortable=False)
+        self.listLogs.oddRowsBackColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
-        self.listLogs.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False))
+        self.listLogs.SetColumns([
+            ColumnDefn("Log File", "center", 94, "log")
+        ])
+
+        self.listLogs.SetFont(wx.Font(8.5, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False))
 
         self.loadList()
 
-        self.Bind(dv.EVT_DATAVIEW_SELECTION_CHANGED, self.onLogSelected, self.listLogs)
+        self.listLogs.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onLogSelected)
+        #self.listLogs.Bind(wx.EVT_SCROLLWIN, self.onScrollWin)
         #self.Bind(wx.EVT_ENTER_WINDOW, self.onFocusWV, self.wvLogs)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -231,24 +234,23 @@ class PanelLogs(wx.Panel):
 
     def loadList(self):
         with self.lock:
-            logFiles = [ f for f in reversed(listdir(self.logPath)) if isfile(join(self.logPath, f)) and f.endswith('.html') ]
+            logFiles = [ {"log": os.path.splitext(f)[0] } for f in reversed(listdir(self.logPath)) if isfile(join(self.logPath, f)) and f.endswith('.html') ]
 
             self.listLogs.DeleteAllItems()
 
-            for logFile in logFiles:
-                self.listLogs.AppendItem([os.path.splitext(logFile)[0]])
+            self.listLogs.SetObjects(logFiles)
 
             if self.selection is not None:
-                self.onLogSelectedIndex(self.selection)
-                self.listLogs.SelectRow(self.selection)
-                #self.listLogs.SetFocus()
+                selectedObj = self.listLogs.GetObjects()[self.selection]
+                self.listLogs.SelectObjects([selectedObj])
+                self.listLogs.SetFocus()
 
     def onLogSelected(self, event):
-        self.selection = event.GetEventObject().GetSelectedRow()
+        self.selection = event.GetEventObject().GetFirstSelected()
         self.onLogSelectedIndex(self.selection)
 
-        self.parentNotebook.GetPage(INDEX_LOGS).SetFocus()
-        #self.listLogs.SetFocus()
+        #self.parentNotebook.GetPage(INDEX_LOGS).SetFocus()
+        self.listLogs.SetFocus()
 
         print "****************************************"
         print self.HasFocus()
@@ -262,11 +264,12 @@ class PanelLogs(wx.Panel):
 
         #self.Layout()
 
-        #event.Skip()
+        event.Skip()
 
     def onLogSelectedIndex(self, index):
         #logFile = event.GetEventObject().GetValue(self.selection, 0)
-        logFile = self.listLogs.GetValue(index, 0)
+        #logFile = self.listLogs.GetValue(index, 0)
+        logFile = self.listLogs.GetSelectedObjects()[0]['log']
         self.loadLogFile(logFile)
 
     def loadLogFile(self, logFile):
@@ -280,5 +283,8 @@ class PanelLogs(wx.Panel):
         self.wvLogs.SetPage(html, "")
         #self.wvLogs.Reload()
 
-    #def onFocusWV(self, index):
-    #    pass
+        #def onFocusWV(self, index):
+        #    pass
+
+    def onScrollWin(self, event):
+        pass

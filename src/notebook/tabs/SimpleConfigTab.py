@@ -207,9 +207,9 @@ class AlgoPanelSimple(wx.Panel):
     def onButtonEditor(self, event):
         dlg = PoolDialog(self, -1, "Edit " + self.algo + "pools...", self.poolDataJson, self.walletAdress)
         res = dlg.ShowModal()
-        scripts = dlg.scripts
 
         if res == 0:
+            self.poolDataJson = dlg.poolDataJson
             self.savePoolsFile(self.poolsFile)
 
             self.poolsCombo.Clear()
@@ -248,7 +248,8 @@ class PoolDialog(wx.Dialog):
             self, parent, ID, title, poolDataJson, walletAddress, size=wx.DefaultSize, pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
             ):
 
-        self.scripts = None
+        self.parent = parent
+        self.poolDataJson = poolDataJson
         self.walletAddress = walletAddress
 
         # Instead of calling wx.Dialog.__init__ we precreate the dialog
@@ -273,7 +274,8 @@ class PoolDialog(wx.Dialog):
         #poolsPanel = MyListCtrl(self, wx.ID_ANY, size=(350, 500))
         #poolsPanel = wx.ListBox(self, wx.ID_ANY, size=(500, 500))
         #poolsPanel = dv.DataViewListCtrl(self)
-        self.poolsPanel = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520))
+        self.poolsPanel = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520), sortable=False)
+        self.poolsPanel.oddRowsBackColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         #self.poolsPanel = dv.DataViewListCtrl(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520))
         #poolsPanel.AppendTextColumn('Pool', width=500)
         self.poolsPanel.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
@@ -285,13 +287,13 @@ class PoolDialog(wx.Dialog):
         #self.poolsPanel.EnableSorting()
 
         self.poolsPanel.SetColumns([
-            ColumnDefn("Pool URL", "left", 350, "poolUrl"),
-            ColumnDefn("Pool User", "left", 100, "poolUser"),
-            ColumnDefn("Pool Password", "left", 130, "poolPassword"),
-            ColumnDefn("Pool Balance URL", "left", 150, "poolBalanceUrl")
+            ColumnDefn("Pool URL", "left", 250, "poolUrl"),
+            ColumnDefn("User", "left", 250, "poolUser"),
+            ColumnDefn("Password", "left", 50, "poolPassword"),
+            ColumnDefn("Balance URL", "left", 300, "poolBalanceUrl")
         ])
 
-        self.poolsPanel.SetFont(wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False))
+        #self.poolsPanel.SetFont(wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False))
 
         boxTextAdd = wx.BoxSizer(wx.HORIZONTAL)
         textAddLabel = wx.StaticText(self, wx.ID_ANY, "New pool: ")
@@ -310,7 +312,7 @@ class PoolDialog(wx.Dialog):
         #    self.poolsPanel.AddObjects([{"pool": pool}, {"pool": pool}, {"pool": pool}, {"pool": pool}])
         #    #poolsPanel.AppendItem((pool,))
 
-        self.poolsPanel.AddObjects(poolDataJson)
+        self.poolsPanel.AddObjects(self.poolDataJson)
 
         box.Add(self.poolsPanel, 1, wx.EXPAND | wx.ALL, 3)
 
@@ -470,11 +472,8 @@ class PoolDialog(wx.Dialog):
         event.Skip()
 
     def onButtonSave(self, event):
-        objects = self.poolsPanel.GetObjects()
-        self.scripts = ""
-
-        for obj in objects:
-            self.scripts += obj["poolUrl"] + "\n"
+        #self.parent.savePoolsFile()
+        self.poolDataJson = self.poolsPanel.GetObjects()
 
         self.Destroy()
 
