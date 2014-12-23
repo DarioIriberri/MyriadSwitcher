@@ -3,7 +3,7 @@ __author__ = 'Dario'
 import os.path
 
 import wx
-import wx.lib.filebrowsebutton as Filebrowser
+import contrib.FileBrowseButton as Filebrowser
 
 import FrameMYR
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
@@ -13,8 +13,8 @@ class MainConfigTab(BaseConfigTab):
     def __init__(self, configTab, parentNotebook):
         BaseConfigTab.__init__(self, configTab, parentNotebook)
 
-    def getRightPanel(self, parent):
-        self.rightPanel = RightPanelAdvanced(self, parent)
+    def getRightPanel(self, parent, parentNotebook):
+        self.rightPanel = RightPanelAdvanced(self, parent, parentNotebook)
 
         return self.rightPanel
 
@@ -43,10 +43,11 @@ class MainConfigTab(BaseConfigTab):
         return json
 
 class RightPanelAdvanced(wx.Panel):
-    def __init__(self, parent, parentPanel):
+    def __init__(self, parent, parentPanel, parentNotebook):
         wx.Panel.__init__(self, parent=parentPanel, id=wx.ID_ANY)
 
         self.parent = parent
+        self.parentNotebook = parentNotebook
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 

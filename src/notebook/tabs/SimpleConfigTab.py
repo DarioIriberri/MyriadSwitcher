@@ -22,8 +22,8 @@ class SimpleConfigTab(BaseConfigTab):
     def __init__(self, configTab, parentNotebook):
         BaseConfigTab.__init__(self, configTab, parentNotebook)
 
-    def getRightPanel(self, parent):
-        return RightPanelSimple(parent)
+    def getRightPanel(self, parent, parentNotebook):
+        return RightPanelSimple(parent, parentNotebook)
 
     def getHeaderPanel(self):
         return HeaderPanel(self, "Pools")
@@ -43,10 +43,11 @@ class SimpleConfigTab(BaseConfigTab):
         return json
 
 class RightPanelSimple(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, parentNotebook):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.parent = parent
+        self.parentNotebook = parentNotebook
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -120,6 +121,8 @@ class AlgoPanelSimple(wx.Panel):
     def __init__(self, parent, algo, poolsFile, size=None):
         wx.Panel.__init__(self, parent=parent, size=size)
 
+        self.parent = parent
+
         self.algo = algo
         self.poolsFile = poolsFile
 
@@ -132,11 +135,17 @@ class AlgoPanelSimple(wx.Panel):
         choices = [entry['poolUrl'] for entry in self.poolDataJson]
 
         self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=choices, style=wx.CB_READONLY)
-        self.poolEditor = wx.Button(self, wx.ID_ANY, size=(36, -1))
+        self.poolEditor = wx.Button(self, wx.ID_ANY, size=(32, -1))
+        self.poolBalance = wx.Button(self, wx.ID_ANY, size=(32, -1))
         self.poolEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
+        self.poolBalance.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/myrNew16.ico'))
+        self.poolBalance.SetToolTip(wx.ToolTip("Go to webpage with the current balance for this address"))
         self.poolEditor.SetToolTip(wx.ToolTip("Edit " + algo + " pools"))
+        boxWrapper.Add( self.poolBalance, 0, wx.BOTTOM, -1)
+        boxWrapper.Add(wx.StaticText(self, wx.ID_ANY, size=(3, -1)), 0, wx.EXPAND, 0)
         boxWrapper.Add( self.poolEditor, 0, wx.BOTTOM, -1)
-        self.Bind(wx.EVT_BUTTON, self.onButton, self.poolEditor)
+        self.Bind(wx.EVT_BUTTON, self.onButtonBalance, self.poolBalance)
+        self.Bind(wx.EVT_BUTTON, self.onButtonEditor, self.poolEditor)
         #self.pool_editor = wx.ComboBox(self, size=(-1, 28), choices=pools, style=wx.CB_READONLY)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -168,19 +177,23 @@ class AlgoPanelSimple(wx.Panel):
             if 'poolUser' not in pool or pool['poolUser'] == '':
                 found = True
                 pool['poolUser'] = self.walletAdress
-
-        #found = False
-        #for i in range(0, len(self.poolDataJson)):
-        #    if 'poolUser' not in self.poolDataJson[i] or self.poolDataJson[i]['poolUser'] == '':
-        #        found = True
-        #        self.poolDataJson[i]['poolUser'] = self.walletAdress
+                pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + self.walletAdress
 
         if found:
             io.open(poolsFile, 'wt', encoding='utf-8').write(unicode(json.dumps(self.poolDataJson)))
 
         return self.poolDataJson
 
-    def onButton(self, event):
+    def onButtonBalance(self, event):
+        poolBalanceUrl = [entry['poolBalanceUrl'] for entry in self.poolDataJson if entry['poolUrl'] == self.poolsCombo.GetValue()][0]
+        if poolBalanceUrl:
+            frame = self.parent.parentNotebook.getParentWindow()
+            frame.browse(str(poolBalanceUrl))
+            frame.writeClipboard(poolBalanceUrl)
+
+
+
+    def onButtonEditor(self, event):
         dlg = PoolDialog(self, -1, "Edit " + self.algo + "pools...", self.poolDataJson, self.walletAdress)
         res = dlg.ShowModal()
         scripts = dlg.scripts

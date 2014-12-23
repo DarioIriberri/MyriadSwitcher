@@ -32,7 +32,7 @@ class BaseConfigTab(nbt.NotebookTab):
 
         self.leftPanel  = LeftPanel(self, dataPanel)
         #rightPanel = LeftPanel(dataPanel)
-        self.rightPanel = self.getRightPanel(dataPanel)
+        self.rightPanel = self.getRightPanel(dataPanel, parentNotebook)
         #rightPanel = wx.Panel(dataPanel)
         sizerData.Add(self.leftPanel, 0, wx.EXPAND | wx.ALL, 0)
         sizerData.Add(self.rightPanel, 1, wx.EXPAND | wx.TOP, 2)
@@ -51,7 +51,7 @@ class BaseConfigTab(nbt.NotebookTab):
         self.Show()
 
     #overridden
-    def getRightPanel(self, parent):
+    def getRightPanel(self, parent, parentNotebook=None):
         pass
 
     def getHeaderPanel(self):

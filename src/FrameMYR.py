@@ -282,7 +282,7 @@ class FrameMYRClass(wx.Frame):
         try:
             os.system("start README/README.html")
 
-            self.panelConsole.setBrowser('https://dl.dropboxusercontent.com/u/19353176/Myriad%20Switcher/README/README.html')
+            self.panelConsole.browse('https://dl.dropboxusercontent.com/u/19353176/Myriad%20Switcher/README/README.html')
             #self.panelConsole.setBrowser('http://wxpython.org/')
 
         except:
@@ -478,6 +478,9 @@ class FrameMYRClass(wx.Frame):
                     self.gravity = float(self.panelConsole.GetSize()[1]) / resizable_panel_height
 
         return self.gravity
+
+    def browse(self, url):
+        self.panelConsole.browse(url)
 
     def onMiningProcessStarted(self):
         self.mining = True

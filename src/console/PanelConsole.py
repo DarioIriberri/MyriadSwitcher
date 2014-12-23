@@ -88,7 +88,7 @@ class PanelConsole(wx.Panel):
         #self.wv.SetPage("<html><header><title>This is title</title></header><body>Hello world</body></html>", "")
         #self.wv.LoadURL("https://dl.dropboxusercontent.com/u/19353176/Myriad_log/2014-05-04-040554.html")
 
-    def setBrowser(self, url):
+    def browse(self, url):
         self.notebook.SetSelection(INDEX_BROWSER)
         #self.notebook.GetPage(1).Show()
         #self.wvBrowser.SetPage(html, "")
