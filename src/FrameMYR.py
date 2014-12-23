@@ -216,7 +216,7 @@ class FrameMYRClass(wx.Frame):
 
         self.resizable_panel.SetSashGravity(GRAVITY)
         #self.resizable_panel.SplitHorizontally(self.panelConsole, self.shell)
-        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 4)
+        self.sizerTotal.Add(self.resizable_panel, 5, wx.EXPAND | wx.BOTTOM | wx.RIGHT | wx.LEFT, 2)
 
         self.icon = wx.Icon(FrameMYRClass.RESOURCE_PATH + 'img/myriadS1.ico', wx.BITMAP_TYPE_ICO)
         self.SetIcon(self.icon)

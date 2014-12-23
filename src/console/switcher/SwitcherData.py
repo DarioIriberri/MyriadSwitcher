@@ -50,7 +50,7 @@ CURRENT_BLOCK_REWARD = 1000
 DATA_FILE_NAME = "m_s_data.myr"
 
 DATE_FORMAT_PATTERN = "%m/%d/%Y %H:%M:%S"
-LOG_FORMAT_PATTERN = "%Y-%m-%d-%H%M%S"
+LOG_FORMAT_PATTERN = "%y.%m.%d.%H%M%S"
 
 
 class SwitcherData():
