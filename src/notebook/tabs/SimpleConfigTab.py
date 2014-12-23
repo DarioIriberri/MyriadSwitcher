@@ -3,9 +3,11 @@ __author__ = 'Dario'
 import io
 
 import wx
+import json
 from wx.lib.mixins.listctrl import TextEditMixin
 from ObjectListView import ObjectListView, ColumnDefn
 import FrameMYR
+import wizard.MyriadSwitcherWizard as wz
 
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
@@ -121,11 +123,15 @@ class AlgoPanelSimple(wx.Panel):
         self.algo = algo
         self.poolsFile = poolsFile
 
+        self.walletAdress = self.getMyrAddress()
+
         self.poolList = self.readPoolsFile(poolsFile)
         boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
 
         #text_browser = wx.StaticText(self, wx.ID_ANY, "Dev " + str(self.dev) + ":", style=wx.BOLD)
-        self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=self.poolList, style=wx.CB_READONLY)
+        choices = [entry['poolUrl'] for entry in self.poolDataJson]
+
+        self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=choices, style=wx.CB_READONLY)
         self.poolEditor = wx.Button(self, wx.ID_ANY, size=(36, -1))
         self.poolEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
         self.poolEditor.SetToolTip(wx.ToolTip("Edit " + algo + " pools"))
@@ -140,17 +146,42 @@ class AlgoPanelSimple(wx.Panel):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(4, -1)), 0, wx.EXPAND | wx.TOP, 5)
         sizer.Add(boxWrapper, 0, wx.EXPAND | wx.TOP, 4)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(4, -1)), 0, wx.EXPAND | wx.TOP, 5)
+
         self.SetSizer(sizer)
+
+    def getMyrAddress(self):
+        f = open(wz.PATH_TO_WALLET)
+        data = f.read()
+        walletAddress = data[data.index('addr_history') + 17 : data.index('[]') - 3 ]
+        f.close()
+
+        return walletAddress
 
     def readPoolsFile(self, poolsFile):
         f = open(poolsFile)
-        self.poolList = f.read().splitlines()
+        poolList = f.read()
+        self.poolDataJson = json.loads(poolList)
         f.close()
 
-        return self.poolList
+        found = False
+        for pool in self.poolDataJson:
+            if 'poolUser' not in pool or pool['poolUser'] == '':
+                found = True
+                pool['poolUser'] = self.walletAdress
+
+        #found = False
+        #for i in range(0, len(self.poolDataJson)):
+        #    if 'poolUser' not in self.poolDataJson[i] or self.poolDataJson[i]['poolUser'] == '':
+        #        found = True
+        #        self.poolDataJson[i]['poolUser'] = self.walletAdress
+
+        if found:
+            io.open(poolsFile, 'wt', encoding='utf-8').write(unicode(json.dumps(self.poolDataJson)))
+
+        return self.poolDataJson
 
     def onButton(self, event):
-        dlg = PoolDialog(self, -1, "Edit " + self.algo + "pools...", self.poolList)
+        dlg = PoolDialog(self, -1, "Edit " + self.algo + "pools...", self.poolDataJson, self.walletAdress)
         res = dlg.ShowModal()
         scripts = dlg.scripts
 
@@ -189,10 +220,11 @@ class MyListCtrl(wx.ListCtrl, TextEditMixin):
 
 class PoolDialog(wx.Dialog):
     def __init__(
-            self, parent, ID, title, poolList, size=wx.DefaultSize, pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+            self, parent, ID, title, poolDataJson, walletAddress, size=wx.DefaultSize, pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
             ):
 
         self.scripts = None
+        self.walletAddress = walletAddress
 
         # Instead of calling wx.Dialog.__init__ we precreate the dialog
         # so we can set an extra style that must be set before
@@ -216,7 +248,7 @@ class PoolDialog(wx.Dialog):
         #poolsPanel = MyListCtrl(self, wx.ID_ANY, size=(350, 500))
         #poolsPanel = wx.ListBox(self, wx.ID_ANY, size=(500, 500))
         #poolsPanel = dv.DataViewListCtrl(self)
-        self.poolsPanel = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(540, 520))
+        self.poolsPanel = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520))
         #poolsPanel.AppendTextColumn('Pool', width=500)
         self.poolsPanel.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
         #self.poolsPanel.Bind(EVT_SORT, lambda event: event.Skip())
@@ -227,7 +259,10 @@ class PoolDialog(wx.Dialog):
         #self.poolsPanel.EnableSorting()
 
         self.poolsPanel.SetColumns([
-            ColumnDefn("Pool URL", "left", 520, "pool")
+            ColumnDefn("Pool URL", "left", 350, "poolUrl"),
+            ColumnDefn("Pool User", "left", 100, "poolUser"),
+            ColumnDefn("Pool Password", "left", 130, "poolPassword"),
+            ColumnDefn("Pool Balance URL", "left", 150, "poolBalanceUrl")
         ])
 
         self.poolsPanel.SetFont(wx.Font(10, wx.TELETYPE, wx.NORMAL, wx.NORMAL, False))
@@ -244,10 +279,12 @@ class PoolDialog(wx.Dialog):
 
         #poolsPanel = wx.RearrangeList(self, wx.ID_ANY, size=(350, 500))
 
-        for pool in poolList:
-            #poolsPanel.AddObjects(Pool(pool))
-            self.poolsPanel.AddObjects([{"pool": pool}])
-            #poolsPanel.AppendItem((pool,))
+        #for pool in poolDataJson:
+        #    #poolsPanel.AddObjects(Pool(pool))
+        #    self.poolsPanel.AddObjects([{"pool": pool}, {"pool": pool}, {"pool": pool}, {"pool": pool}])
+        #    #poolsPanel.AppendItem((pool,))
+
+        self.poolsPanel.AddObjects(poolDataJson)
 
         box.Add(self.poolsPanel, 1, wx.EXPAND | wx.ALL, 3)
 
@@ -347,7 +384,12 @@ class PoolDialog(wx.Dialog):
 
     def onButtonAdd(self, event):
         index = self.poolsPanel.GetFirstSelected()
-        object = {"pool": self.textAdd.GetValue()}
+        object = {
+                    "poolUrl": self.textAdd.GetValue(),
+                    "poolUser": self.walletAddress,
+                    "poolPassword": "x",
+                    "poolBalanceUrl": ""
+                 }
 
         if index >= 0:
             objects = self.poolsPanel.GetObjects()

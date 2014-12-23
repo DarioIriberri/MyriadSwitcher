@@ -217,17 +217,17 @@ class FrameMYRClass(wx.Frame):
         self.notebook.broadcastEventToAllTabs(event_id="main_config",
                                               event_value=("advanced" == self.getMainMode()))
 
-        self.buttonWait1.Hide()
-        self.buttonWait2.Hide()
-        self.buttonWait3.Hide()
-        self.buttonWait4.Hide()
-
         self.Maximize()
         self.Layout()
 
         self.miners.resizeMinerPanels()
 
         self.Show()
+
+        self.buttonWait1.Hide()
+        self.buttonWait2.Hide()
+        self.buttonWait3.Hide()
+        self.buttonWait4.Hide()
 
         self.chechReboot()
 

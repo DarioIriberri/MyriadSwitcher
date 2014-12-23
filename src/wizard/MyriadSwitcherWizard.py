@@ -9,10 +9,11 @@ import FrameMYR
 PAGE_WELCOME  = "PAGE_WELCOME"
 PAGE_ELECTRUM = "PAGE_ELECTRUM"
 PAGE_SHORTCUT = "PAGE_SHORTCUT"
-PAGE_DONE = "PAGE_DONE"
+PAGE_DONE     = "PAGE_DONE"
 
 PATH_TO_EXE = os.getcwd() + "\\electrum\\Electrum-MyrWallet.exe"
 PATH_TO_DOC = os.getcwd() + "\\README\\README.html"
+PATH_TO_WALLET = os.environ['AppData'] + "/Electrum-MYR/wallets/default_wallet"
 
 class MyriadSwitcherWizard(wiz.Wizard):
     def __init__(self, parent):
@@ -113,7 +114,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
         event.Skip()
 
     def checkElectrumWalletExists(self):
-        return os.path.isfile(os.environ['AppData'] + "/Electrum-MYR/wallets/default_wallet")
+        return os.path.isfile(PATH_TO_WALLET)
 
 
 class WizardPage(wiz.PyWizardPage):
