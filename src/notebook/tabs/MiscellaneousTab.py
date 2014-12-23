@@ -433,7 +433,7 @@ class LogElement(wx.StaticBoxSizer):
 
         sizerLog = wx.BoxSizer(wx.HORIZONTAL)
         self.txtDir = wx.TextCtrl(parent, -1, size=(-1, 23))
-        self.buttonDir = wx.Button(parent, -1, size=(34, 25))
+        self.buttonDir = wx.Button(parent, -1, size=(32, 25))
         self.buttonDir.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/browse16.ico'))
         boxWrapper.Add( self.buttonDir, 0, wx.TOP, -1)
         parent.Bind(wx.EVT_BUTTON, self.onShowDialog, self.buttonDir)

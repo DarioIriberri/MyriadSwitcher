@@ -3,14 +3,19 @@ __author__ = 'Dario'
 import time
 
 import wx
+import os
 import wx.html2 as webview
 import FrameMYR
 from event.Event import Event
+from os import listdir
+from os.path import isfile, join
+import wx.dataview as dv
 from console.switcher.SwitchingThread import SwitchingThread
 from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
 
 INDEX_CONSOLE = 0
 INDEX_BROWSER = 1
+INDEX_LOGS    = 2
 
 
 class PanelConsole(wx.Panel):
@@ -24,7 +29,6 @@ class PanelConsole(wx.Panel):
         self.threadCount = 0
         self.messageEvent = None
 
-
         self.notebook = wx.Notebook(self, id=wx.ID_ANY, style=wx.BK_RIGHT | wx.TE_NO_VSCROLL)
 
         self.il = wx.ImageList(16, 16)
@@ -32,11 +36,14 @@ class PanelConsole(wx.Panel):
 
         self.wvConsole = webview.WebView.New(self.notebook)
         self.wvBrowser = webview.WebView.New(self.notebook)
+        self.logs = PanelLogs(self.notebook, frame_myr)
 
         self.notebook.AddPage(self.wvConsole, "Output  ")
         self.notebook.AddPage(self.wvBrowser, "Browser ")
+        self.notebook.AddPage(self.logs, " Logs ")
         self.notebook.SetPageImage(INDEX_CONSOLE, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/console16.ico', wx.BITMAP_TYPE_ICO)))
         self.notebook.SetPageImage(INDEX_BROWSER, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/browser2.ico', wx.BITMAP_TYPE_ICO)))
+        self.notebook.SetPageImage(INDEX_LOGS, self.il.Add(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/logs16.ico', wx.BITMAP_TYPE_ICO)))
 
         self.notebook.SetFont(wx.Font(11, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
@@ -46,8 +53,10 @@ class PanelConsole(wx.Panel):
         self.wvConsole.SetPage('<html><body style="background-color: #000000;"></body></html>', "")
         self.wvBrowser.SetPage('<html><body style="background-color: #AAAAAA;"></body></html>', "")
 
-        sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 0)
+        sizer.Add(self.notebook, 1, wx.EXPAND | wx.LEFT, -3)
         self.SetSizer(sizer)
+
+        self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onPageChanged)
 
         self.Bind(EVT_CONSOLE_EVENT, self.onConsole)
         #EVT_CONSOLE_EVENT(self, self.onConsole)
@@ -71,9 +80,9 @@ class PanelConsole(wx.Panel):
         except Exception:
             return None
 
-    #def onConsoleEvent(self, html):
-    #    self.wv.SetPage(html, "")
-    #    self.wv.Reload()
+    def onPageChanged(self, event):
+        if event.Selection == INDEX_LOGS:
+            self.logs.loadList()
 
     def onConsole(self, event):
         #print "console     " + str(time.time()) + "   -   " + event.html
@@ -88,12 +97,23 @@ class PanelConsole(wx.Panel):
         #self.wv.SetPage("<html><header><title>This is title</title></header><body>Hello world</body></html>", "")
         #self.wv.LoadURL("https://dl.dropboxusercontent.com/u/19353176/Myriad_log/2014-05-04-040554.html")
 
-    def browse(self, url):
+    def onBrowse(self, url, title):
+        print "url = " + url + "  ---  title = " + title
         self.notebook.SetSelection(INDEX_BROWSER)
         #self.notebook.GetPage(1).Show()
         #self.wvBrowser.SetPage(html, "")
+        self.notebook.SetPageText(INDEX_BROWSER, title)
         self.wvBrowser.LoadURL(url)
-        self.wvBrowser.Reload()
+        #self.wvBrowser.Reload()
+
+    def onLog(self, url, title):
+        print "url = " + url + "  ---  title = " + title
+        self.notebook.SetSelection(INDEX_BROWSER)
+        #self.notebook.GetPage(1).Show()
+        #self.wvBrowser.SetPage(html, "")
+        self.notebook.SetPageText(INDEX_BROWSER, title)
+        self.logs.onLog(url)
+        #self.wvBrowser.Reload()
 
     def onMiningProcessStarted(self):
         self.frame_myr.onMiningProcessStarted()
@@ -163,3 +183,53 @@ class PanelConsole(wx.Panel):
         print str_out
         evt = ConsoleEvent(thread_ident=self.thread.ident, html=str_out)
         wx.PostEvent(self, evt)
+
+
+class PanelLogs(wx.Panel):
+    def __init__(self, parentNotebook, frame_myr, size=None, style=wx.BORDER_DEFAULT):
+        wx.Panel.__init__(self, parent=parentNotebook, size=size, id=wx.ID_ANY, style=style)
+        self.frame_myr = frame_myr
+        self.logPath = frame_myr.notebook.getTempConfigParam("logPath")
+
+        self.wvLogs = webview.WebView.New(self)
+
+        #self.listLogs = wx.ListBox(self, wx.ID_ANY, (-1, -1), (160, 120), logFiles, wx.LB_SINGLE)
+        self.listLogs = dv.DataViewListCtrl(self, size=(106, -1), style=dv.DV_ROW_LINES)
+        self.listLogs.AppendTextColumn('Log File', width=102)
+
+        self.listLogs.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False))
+
+        self.loadList()
+
+        self.listLogs.Bind(dv.EVT_DATAVIEW_ITEM_ACTIVATED, self.onLogSelected)
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        #self.SetBackgroundColour("Black")
+
+        self.wvLogs.SetPage('<html><body style="background-color: #000000;"></body></html>', "")
+
+        sizer.Add(self.wvLogs, 1, wx.EXPAND | wx.LEFT, -5)
+        sizer.Add(self.listLogs, 0, wx.EXPAND | wx.LEFT, -2)
+
+        self.SetSizer(sizer)
+
+    def loadList(self):
+        logFiles = [ f for f in reversed(listdir(self.logPath)) if isfile(join(self.logPath, f)) and f.endswith('.html') ]
+
+        self.listLogs.DeleteAllItems()
+
+        for logFile in logFiles:
+            self.listLogs.AppendItem([os.path.splitext(logFile)[0]])
+
+    def onLogSelected(self, event):
+        logFile = event.GetEventObject().GetValue(event.GetEventObject().GetSelectedRow(), 0)
+        f = open(self.logPath + "/" + logFile + ".html")
+        html = f.read()
+        f.close()
+        self.onLog(html)
+
+        event.Skip()
+
+    def onLog(self, html):
+        self.wvLogs.SetPage(html, "")
+        self.wvLogs.Reload()

@@ -119,7 +119,7 @@ class AlgoPanelAdvanced(wx.Panel):
         self.parent = parent
 
         self.fbb = FileBrowserMYR(
-            self, size=(-1, 30), dialogTitle = 'Pick a script for ' + algo + " ...", fileMask='*.bat;*.sh', algoBrowser=self.algo, buttonSize=(36, 30)
+            self, size=(-1, 30), dialogTitle = 'Pick a script for ' + algo + " ...", fileMask='*.bat;*.sh', algoBrowser=self.algo, buttonSize=(32, 30)
         )
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)

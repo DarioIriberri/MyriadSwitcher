@@ -4,9 +4,10 @@ import io
 
 import wx
 import json
+import FrameMYR
 from wx.lib.mixins.listctrl import TextEditMixin
 from ObjectListView import ObjectListView, ColumnDefn
-import FrameMYR
+import wx.dataview as dv
 import wizard.MyriadSwitcherWizard as wz
 
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
@@ -100,18 +101,22 @@ class RightPanelSimple(wx.Panel):
         if BaseConfigTab.SCRYPT == str(check.LabelText):
             self.algo_panel_scrypt.poolsCombo.Enable(check.GetValue())
             self.algo_panel_scrypt.poolEditor.Enable(check.GetValue())
+            self.algo_panel_scrypt.poolBalance.Enable(check.GetValue())
 
         if BaseConfigTab.GROESTL == str(check.LabelText):
             self.algo_panel_groestl.poolsCombo.Enable(check.GetValue())
             self.algo_panel_groestl.poolEditor.Enable(check.GetValue())
+            self.algo_panel_groestl.poolBalance.Enable(check.GetValue())
 
         if BaseConfigTab.SKEIN == str(check.LabelText):
             self.algo_panel_skein.poolsCombo.Enable(check.GetValue())
             self.algo_panel_skein.poolEditor.Enable(check.GetValue())
+            self.algo_panel_skein.poolBalance.Enable(check.GetValue())
 
         if BaseConfigTab.QUBIT == str(check.LabelText):
             self.algo_panel_qubit.poolsCombo.Enable(check.GetValue())
             self.algo_panel_qubit.poolEditor.Enable(check.GetValue())
+            self.algo_panel_qubit.poolBalance.Enable(check.GetValue())
 
     def on_control_changed(self, event):
         self.parent.on_control_changed(event)
@@ -132,7 +137,7 @@ class AlgoPanelSimple(wx.Panel):
         boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
 
         #text_browser = wx.StaticText(self, wx.ID_ANY, "Dev " + str(self.dev) + ":", style=wx.BOLD)
-        choices = [entry['poolUrl'] for entry in self.poolDataJson]
+        choices = self.getPoolComboEntries()
 
         self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=choices, style=wx.CB_READONLY)
         self.poolEditor = wx.Button(self, wx.ID_ANY, size=(32, -1))
@@ -166,6 +171,9 @@ class AlgoPanelSimple(wx.Panel):
 
         return walletAddress
 
+    def getPoolComboEntries(self):
+        return [entry['poolUrl'] for entry in self.poolDataJson]
+
     def readPoolsFile(self, poolsFile):
         f = open(poolsFile)
         poolList = f.read()
@@ -180,15 +188,18 @@ class AlgoPanelSimple(wx.Panel):
                 pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + self.walletAdress
 
         if found:
-            io.open(poolsFile, 'wt', encoding='utf-8').write(unicode(json.dumps(self.poolDataJson)))
+            self.savePoolsFile(poolsFile)
 
         return self.poolDataJson
+
+    def savePoolsFile(self, poolsFile):
+        io.open(poolsFile, 'wt', encoding='utf-8').write(unicode(json.dumps(self.poolDataJson)))
 
     def onButtonBalance(self, event):
         poolBalanceUrl = [entry['poolBalanceUrl'] for entry in self.poolDataJson if entry['poolUrl'] == self.poolsCombo.GetValue()][0]
         if poolBalanceUrl:
             frame = self.parent.parentNotebook.getParentWindow()
-            frame.browse(str(poolBalanceUrl))
+            frame.onBrowse(str(poolBalanceUrl), self.algo + "balance")
             frame.writeClipboard(poolBalanceUrl)
 
 
@@ -198,11 +209,11 @@ class AlgoPanelSimple(wx.Panel):
         res = dlg.ShowModal()
         scripts = dlg.scripts
 
-        if res == 0 and scripts:
-            f = io.open(self.poolsFile, 'wt', encoding='utf-8').write(unicode(scripts))
+        if res == 0:
+            self.savePoolsFile(self.poolsFile)
 
             self.poolsCombo.Clear()
-            self.poolsCombo.AppendItems(self.readPoolsFile(self.poolsFile))
+            self.poolsCombo.AppendItems(self.getPoolComboEntries())
 
     #------------------------------------------------------------------------------------------
     #----------------------------         GETTERS           -----------------------------------
@@ -224,6 +235,7 @@ class AlgoPanelSimple(wx.Panel):
 
         self.poolsCombo.Enable(factor)
         self.poolEditor.Enable(factor)
+        self.poolBalance.Enable(factor)
 
 
 class MyListCtrl(wx.ListCtrl, TextEditMixin):
@@ -262,6 +274,7 @@ class PoolDialog(wx.Dialog):
         #poolsPanel = wx.ListBox(self, wx.ID_ANY, size=(500, 500))
         #poolsPanel = dv.DataViewListCtrl(self)
         self.poolsPanel = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520))
+        #self.poolsPanel = dv.DataViewListCtrl(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520))
         #poolsPanel.AppendTextColumn('Pool', width=500)
         self.poolsPanel.cellEditMode = ObjectListView.CELLEDIT_DOUBLECLICK
         #self.poolsPanel.Bind(EVT_SORT, lambda event: event.Skip())
@@ -461,7 +474,7 @@ class PoolDialog(wx.Dialog):
         self.scripts = ""
 
         for obj in objects:
-            self.scripts += obj["pool"] + "\n"
+            self.scripts += obj["poolUrl"] + "\n"
 
         self.Destroy()
 

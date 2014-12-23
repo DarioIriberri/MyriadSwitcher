@@ -4,6 +4,7 @@ import wx
 import os
 import time
 import threading
+import psutil
 from wizard import MyriadSwitcherWizard as msw
 from wx.lib.buttons import *
 from Tkinter import Tk
@@ -41,9 +42,7 @@ class FrameMYRClass(wx.Frame):
                           size=(800, 383)
         )
 
-        wizard = msw.MyriadSwitcherWizard(self)
-        if not wizard.checkElectrumWalletExists():
-            wizard.startWizard()
+        self.onWizard(forceRun=False)
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
@@ -59,6 +58,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonRun = wx.Button(self, -1, "Start  ", size=BUTTON_SIZE)
         self.buttonResume = wx.Button(self, -1, "Resume", size=BUTTON_SIZE)
         self.buttonStop = wx.Button(self, wx.ID_STOP, "Stop  ", size=BUTTON_SIZE)
+        self.buttonWallet = wx.Button(self, wx.ID_ANY, "Wallet", size=BUTTON_SIZE)
         self.buttonQuit = wx.Button(self, wx.ID_EXIT, "Quit  ", size=BUTTON_SIZE)
         self.buttonDefaults = wx.Button(self, wx.ID_RESET, "Defaults", size=BUTTON_SIZE)
         self.buttonMainMode = wx.ToggleButton(self, -1, "Simple", size=BUTTON_SIZE)
@@ -76,6 +76,7 @@ class FrameMYRClass(wx.Frame):
         self.buttonResume.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/resume16.ico'), wx.LEFT)
         self.buttonStop.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/stop16.ico'), wx.LEFT)
         self.buttonQuit.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/exit-16.ico'), wx.LEFT)
+        self.buttonWallet.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/electrum16.ico'), wx.LEFT)
 
         self.buttonWait1.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-1.ico'), wx.LEFT)
         self.buttonWait2.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-2.ico'), wx.LEFT)
@@ -91,6 +92,7 @@ class FrameMYRClass(wx.Frame):
         menuSaveAs = filemenu.Append(wx.ID_SAVEAS, "Save &as..."," Save configuration as...")
         menuExit = filemenu.Append(wx.ID_EXIT,"E&xit"," Terminate the program")
         menuRTFM = helpmenu.Append(wx.ID_ANY, "&Open the User Guide"," Open the user guide")
+        menuWizard = helpmenu.Append(wx.ID_ANY, "Run the &wizard"," Run the wizard")
         menuAbout = helpmenu.Append(wx.ID_ABOUT, "&About"," Information about this program")
         menuDonateMYR = donationsmenu.Append(wx.ID_ANY, "Donate &Myriadcoins (MYR)"," Copies MYR address to clipboard to donate Myriadcoins")
         menuDonateBTC = donationsmenu.Append(wx.ID_ANY, "Donate &Bitcoins (BTC)"," Copies MYR address to clipboard to donate Bitcoins")
@@ -102,6 +104,7 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onExit, menuExit)
         self.Bind(wx.EVT_MENU, self.onAbout, menuAbout)
         self.Bind(wx.EVT_MENU, self.onRTFM, menuRTFM)
+        self.Bind(wx.EVT_MENU, self.onWizard, menuWizard)
         self.Bind(wx.EVT_MENU, self.onDonateMYR, menuDonateMYR)
         self.Bind(wx.EVT_MENU, self.onDonateBTC, menuDonateBTC)
         self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -112,6 +115,7 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onButtonDefaults, self.buttonDefaults)
         self.Bind(wx.EVT_BUTTON, self.onSave, self.buttonSave)
         self.Bind(wx.EVT_BUTTON, self.onQuit, self.buttonQuit)
+        self.Bind(wx.EVT_BUTTON, self.onWallet, self.buttonWallet)
 
         #self.buttonWait1.Bind(wx.EVT_BUTTON, self.onButtonWait)
         #self.buttonWait2.Bind(wx.EVT_BUTTON, self.onButtonWait)
@@ -138,19 +142,19 @@ class FrameMYRClass(wx.Frame):
         # Create the Notebook
         self.panelNotebook = wx.Panel(self)
 
-        self.panelConsole = PanelConsole(self.resizable_panel, self)
-        self.panelConsole.addMessageEventListener(self.set_status_text)
-        #self.panelConsole = webview.WebView.New(PanelConsole.PanelConsole)
-        self.panelConsole.SetBackgroundColour("Black")
-
-        self.miners = PanelMiners(parent=self.resizable_panel, frame=self)
-
         self.notebook = ExpandableNotebook(self.panelNotebook, self)
         self.notebook.addTab(ConfigTab, "Main Config", FrameMYRClass.RESOURCE_PATH + 'img/aquachecked.ico')
         self.notebook.addTab(SwitchingModesTab, "Switching Modes", FrameMYRClass.RESOURCE_PATH + 'img/switching16.ico')
         self.notebook.addTab(MiscellaneousTab, "Miscellaneous", FrameMYRClass.RESOURCE_PATH + 'img/advanced.ico')
         #self.notebook.addTab(MiscellaneousTab, "Miscellaneous2", FrameMYRClass.RESOURCE_PATH + 'img/advanced.ico')
         self.notebook.buildNotebook()
+
+        self.panelConsole = PanelConsole(self.resizable_panel, self)
+        self.panelConsole.addMessageEventListener(self.set_status_text)
+        #self.panelConsole = webview.WebView.New(PanelConsole.PanelConsole)
+        self.panelConsole.SetBackgroundColour("Black")
+
+        self.miners = PanelMiners(parent=self.resizable_panel, frame=self)
 
         self.setMainMode(self.notebook.getStoredConfigParam('mainMode'))
         self.setTitle(self.notebook.activeFile)
@@ -178,6 +182,10 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
+        sizerButtons.AddF(self.buttonWallet, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
+        sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
+        sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
+        sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.AddF(self.buttonMainMode, wx.SizerFlags().Expand().Border(wx.LEFT | wx.RIGHT | wx.BOTTOM, button_bottom_gap))
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         #sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
@@ -193,6 +201,10 @@ class FrameMYRClass(wx.Frame):
         sizerButtons.AddF(self.buttonWait2, flagsButtonRun)
         sizerButtons.AddF(self.buttonWait3, flagsButtonRun)
         sizerButtons.AddF(self.buttonWait4, flagsButtonRun)
+        #sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
+        #sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
+        #sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
+        #sizerButtons.Add(self.buttonWallet, 0, wx.RIGHT, 4)
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
         sizerButtons.Add(wx.StaticLine(self, -1, size=(-1, 20), style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.BOTTOM, 3)
         sizerButtons.Add(wx.StaticText(self, wx.ID_ANY, size=(15, -1)), 0, wx.EXPAND | wx.TOP, 0)
@@ -282,11 +294,16 @@ class FrameMYRClass(wx.Frame):
         try:
             os.system("start README/README.html")
 
-            self.panelConsole.browse('https://dl.dropboxusercontent.com/u/19353176/Myriad%20Switcher/README/README.html')
+            self.panelConsole.onBrowse('https://dl.dropboxusercontent.com/u/19353176/Myriad%20Switcher/README/README.html', 'User Guide')
             #self.panelConsole.setBrowser('http://wxpython.org/')
 
         except:
             print "Failed to open readme file"
+
+    def onWizard(self, event=None, forceRun=True):
+        wizard = msw.MyriadSwitcherWizard(self)
+        if forceRun or not wizard.checkElectrumWalletExists():
+            wizard.startWizard()
 
     def onDonateMYR(self, event):
         myr_address = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
@@ -308,6 +325,9 @@ class FrameMYRClass(wx.Frame):
         r.clipboard_clear()
         r.clipboard_append(address)
         r.destroy()
+
+    def onWallet(self, event):
+        psutil.Popen(FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
 
     def onOpen(self, event):
         activeFile = self.notebook.openConfig()
@@ -479,8 +499,8 @@ class FrameMYRClass(wx.Frame):
 
         return self.gravity
 
-    def browse(self, url):
-        self.panelConsole.browse(url)
+    def onBrowse(self, url, title):
+        self.panelConsole.onBrowse(url, title)
 
     def onMiningProcessStarted(self):
         self.mining = True

@@ -360,7 +360,7 @@ class PanelMinerInstanceHandler(wx.Panel):
         #self.deviceCombo.SetValue("AMD Radeon HD7950")
         self.deviceNum.SetValue("All")
 
-        devEditor = wx.Button(self, wx.ID_ANY, size=(36, -1))
+        devEditor = wx.Button(self, wx.ID_ANY, size=(34, -1))
         devEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
         devEditor.SetToolTip(wx.ToolTip("Edit " + parent.deviceLabel + " parameters"))
         devEditor.Bind(wx.EVT_BUTTON, self.onDeviceEdit)
