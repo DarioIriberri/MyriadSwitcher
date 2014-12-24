@@ -380,7 +380,7 @@ class FrameMYRClass(wx.Frame):
 
         if self.isThereAPreviousSession():
             question = "This will delete your previously stored session data. Are you sure you want to continue?"
-            dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.ICON_WARNING)
+            dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
             result = dlg.ShowModal() == wx.ID_YES
             dlg.Destroy()
 

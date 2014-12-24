@@ -162,6 +162,8 @@ class HTMLBuilder():
 
         htmlTime = time.time() - startT
 
+        wx.CallAfter(self.console.reloadLog)
+
         return htmlTime
 
     def getCoinsPerDay(self, coins, time, formated=False):

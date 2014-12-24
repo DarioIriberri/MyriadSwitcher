@@ -99,6 +99,9 @@ class PanelConsole(wx.Panel):
         if event.Selection == INDEX_LOGS:
             self.logs.loadList()
 
+        elif event.Selection == INDEX_BROWSER:
+            self.wvBrowser.Reload()
+
         self.Layout()
 
         event.Skip()
@@ -107,7 +110,7 @@ class PanelConsole(wx.Panel):
         #print "console     " + str(time.time()) + "   -   " + event.html
         #self.wv.SetPage(str(time.time()), "")
         self.wvConsole.SetPage(event.html, "")
-        #self.wvConsole.Reload()
+        self.wvConsole.Reload()
         #self.wv.Find(HTMLBuilder.ANCHOR)
         #self.Scroll(0, self.GetScrollRange(wx.VERTICAL))
         #self.parent.Scroll(0, self.parent.GetScrollRange(wx.VERTICAL))
@@ -121,12 +124,21 @@ class PanelConsole(wx.Panel):
         #self.notebook.GetPage(1).Show()
         #self.wvBrowser.SetPage(html, "")
         self.notebook.SetPageText(INDEX_BROWSER, title)
+
+        print "BROWSING " + title + " - url = " + url
+
         self.wvBrowser.LoadURL(url)
         #self.wvBrowser.Reload()
 
     def onLog(self, url, title):
         self.notebook.SetSelection(INDEX_LOGS)
         self.logs.onLog(url)
+
+        self.wvBrowser.Reload()
+
+    def reloadLog(self):
+        if self.notebook.GetSelection() == INDEX_LOGS:
+            self.logs.reloadLog()
 
     def onMiningProcessStarted(self):
         self.frame_myr.onMiningProcessStarted()
@@ -245,8 +257,7 @@ class PanelLogs(wx.Panel):
 
             if self.selection is not None:
                 try:
-                    selectedObj = self.listLogs.GetObjects()[self.selection]
-                    self.listLogs.SelectObjects([selectedObj])
+                    self.listLogs.SelectObjects([self.selection])
 
                 except IndexError:
                     self.selection = None
@@ -254,17 +265,17 @@ class PanelLogs(wx.Panel):
                 self.listLogs.SetFocus()
 
     def onLogSelected(self, event):
-        self.selection = event.GetEventObject().GetFirstSelected()
+        self.selection = self.listLogs.GetObjects()[event.GetEventObject().GetFirstSelected()]
         self.onLogSelectedIndex(self.selection)
 
         self.listLogs.SetFocus()
 
         event.Skip()
 
-    def onLogSelectedIndex(self, index):
+    def onLogSelectedIndex(self, selectedObj):
         #logFile = event.GetEventObject().GetValue(self.selection, 0)
         #logFile = self.listLogs.GetValue(index, 0)
-        logFile = self.listLogs.GetSelectedObjects()[0]['log']
+        logFile = selectedObj['log']
         self.loadLogFile(logFile)
 
     def loadLogFile(self, logFile):
@@ -275,6 +286,12 @@ class PanelLogs(wx.Panel):
 
     def onLog(self, html):
         self.wvLogs.SetPage(html, "")
+        self.wvLogs.Reload()
+
+    def reloadLog(self):
+        #self.wvLogs.Reload()
+        if self.selection:
+            self.loadLogFile(self.selection['log'])
 
     def OnRightClick(self, event):
         #self.log.WriteText("OnRightClick %s\n" % self.list.GetItemText(self.currentItem))

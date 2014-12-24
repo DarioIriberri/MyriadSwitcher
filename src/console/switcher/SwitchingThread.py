@@ -14,7 +14,7 @@ from console.switcher.ErrorReport import ErrorReport
 from console.switcher import HTMLBuilder, SwitcherData
 
 
-MIN_TIME_THREAD_PROBED = 60
+MIN_TIME_THREAD_PROBED = 120
 CPU_TIME               = 0
 TIME_PROBED            = 1
 LOOP_SLEEP_TIME        = 5

@@ -78,7 +78,7 @@ class SwitcherData():
 
         self.config_json = self.loadConfig(activeFile)
 
-        self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 60000)
+        self.htmlBuilder = HTMLBuilder.HTMLBuilder(self.console, self.config_json["sleepSHORT"] * 1000)
         #self.htmlBuilder.addHTMLEventListener(self.console.onConsoleEvent)
 
         time_now = time.strftime(DATE_FORMAT_PATTERN, time.localtime())
