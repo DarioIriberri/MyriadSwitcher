@@ -245,6 +245,8 @@ class FrameMYRClass(wx.Frame):
 
         self.stopEffectThread = None
 
+        self.onSave()
+
         try:
             os.remove("reboot")
             os.remove(os.getenv('APPDATA') + '\\Microsoft\Windows\Start Menu\Programs\Startup\\myriadSwitcher.lnk')
@@ -335,7 +337,7 @@ class FrameMYRClass(wx.Frame):
             self.setTitle(activeFile)
             self.enabled_buttons(False)
 
-    def onSave(self, event):
+    def onSave(self, event=None):
         #if self.notebook.saveConfig(self.activeFile, {"mainMode" : self.getMainMode()}):
         if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
             self.panelConsole.configChanged()
@@ -375,7 +377,7 @@ class FrameMYRClass(wx.Frame):
     def onButtonRun(self, event):
         result = True
 
-        if not self.checkMinersSelected():
+        if 'simple' == self.getMainMode() and not self.checkMinersSelected():
             return
 
         if self.isThereAPreviousSession():
@@ -390,7 +392,7 @@ class FrameMYRClass(wx.Frame):
                 self.panelConsole.mine(self.notebook.activeFile)
 
     def onButtonResume(self, event):
-        if not self.checkMinersSelected():
+        if 'simple' == self.getMainMode() and not self.checkMinersSelected():
             return
 
         if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
@@ -553,8 +555,29 @@ class FrameMYRClass(wx.Frame):
         return self.panelConsole.getMiningAlgo()
 
     def onQuit(self, event):
-        self.Close(True)
+        if self.checkConfigChangesPending():
+            self.Close(True)
+
         event.Skip()
+
+    def checkConfigChangesPending(self):
+        if self.buttonSave.IsEnabled():
+            question = "You have unsaved configuration changes.\nDo you want to save them now?"
+            dlg = wx.MessageDialog(self, question, "Save your changes", wx.YES | wx.NO | wx.CANCEL | wx.ICON_WARNING)
+            result = dlg.ShowModal()
+            dlg.Destroy()
+
+            if result == wx.ID_YES:
+                self.onSave()
+                return True
+
+            elif result == wx.ID_NO:
+                return True
+
+            elif result == wx.ID_CANCEL:
+                return False
+
+        return True
 
     def onExit(self, event):
         self.Close(True)

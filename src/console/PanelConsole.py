@@ -249,6 +249,9 @@ class PanelLogs(wx.Panel):
 
     def loadList(self):
         with self.lock:
+            if not self.logPath:
+                return
+
             logFiles = [ {"log": os.path.splitext(f)[0] } for f in reversed(listdir(self.logPath)) if isfile(join(self.logPath, f)) and f.endswith('.html') ]
 
             self.listLogs.DeleteAllItems()

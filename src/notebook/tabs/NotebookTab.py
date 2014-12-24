@@ -13,6 +13,38 @@ DEFAULTS = {
                 "groestlPool"           :   "stratum+tcp://birdspool.no-ip.org:3333",
                 "skeinPool"             :   "stratum+tcp://birdspool.no-ip.org:5589",
                 "qubitPool"             :   "stratum+tcp://birdspool.no-ip.org:5567",
+                "scryptPoolData" : [
+                                        {
+                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:5556",
+                                            "poolUser" : "",
+                                            "poolPassword" : "x",
+                                            "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
+                                        }
+                                    ],
+                "groestlPoolData" : [
+                                        {
+                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:3333",
+                                            "poolUser" : "",
+                                            "poolPassword" : "x",
+                                            "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
+                                        }
+                                    ],
+                "skeinPoolData" : [
+                                        {
+                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:5589",
+                                            "poolUser" : "",
+                                            "poolPassword" : "x",
+                                            "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
+                                        }
+                                    ],
+                "qubitPoolData" : [
+                                        {
+                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:5567",
+                                            "poolUser" : "",
+                                            "poolPassword" : "x",
+                                            "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
+                                        }
+                                    ],
                 "logActive"				: 	0,
                 "logPath"				: 	"",
                 "mode"					: 	1,

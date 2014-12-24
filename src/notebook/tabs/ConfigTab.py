@@ -63,7 +63,7 @@ class ConfigTab(nbt.NotebookTab):
             pass
 
     def showSimple(self):
-        self.simpleConfig.set_json(self.advancedConfig.get_json())
+        self.simpleConfig.leftPanel.set_json(self.advancedConfig.leftPanel.get_json())
 
         self.advancedConfig.Hide()
         self.simpleConfig.Show()
@@ -74,7 +74,7 @@ class ConfigTab(nbt.NotebookTab):
         self.mainMode = "simple"
 
     def showAdvanced(self):
-        self.advancedConfig.set_json(self.simpleConfig.get_json())
+        self.advancedConfig.leftPanel.set_json(self.simpleConfig.leftPanel.get_json())
 
         self.simpleConfig.Hide()
         self.advancedConfig.Show()

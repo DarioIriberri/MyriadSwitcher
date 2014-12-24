@@ -17,9 +17,9 @@ class ExpandableNotebookTab(wx.Panel):
             value = json[field_name]
 
         except KeyError:
-            return self.get_default_value(field_name)
+            #return self.get_default_value(field_name)
             #print(str(self) + " Error: get_value(" + field_name + ") - Not Found in json")
-            #pass
+            pass
 
         return value
 

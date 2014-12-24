@@ -16,6 +16,14 @@ class BaseConfigTab(nbt.NotebookTab):
     SKEIN   = "Skein "
     QUBIT   = "Qubit "
 
+    POOLS_MAP = {
+                    SCRYPT  : "scryptPool",
+                    GROESTL : "groestlPool",
+                    SKEIN   : "skeinPool",
+                    QUBIT   : "qubitPool",
+                }
+
+
     def __init__(self, parent, parentNotebook):
         nbt.NotebookTab.__init__(self, parent, id=wx.ID_ANY)
 

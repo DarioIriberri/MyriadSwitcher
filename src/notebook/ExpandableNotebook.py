@@ -10,7 +10,7 @@ import wx.lib.newevent
 NotebookBroadcastEvent, EVT_NOTEBOOK_BROADCAST_EVENT = wx.lib.newevent.NewEvent()
 
 class ExpandableNotebook(wx.Notebook):
-    def __init__(self, parent, parent_window, border=2, expandable=True, expansion=1, sizer=None):
+    def __init__(self, parent, parent_window, border=2, expandable=True, activeFile='ExpandableNotebook.conf', expansion=1, sizer=None):
         wx.Notebook.__init__(self, parent, id=wx.ID_ANY, style=wx.BK_TOP
                              #wx.BK_DEFAULT
                              #wx.BK_TOP
@@ -43,9 +43,12 @@ class ExpandableNotebook(wx.Notebook):
             if (lines and len(lines) > 0):
                 self.activeFile = lines[0]
             else:
-                self.activeFile = "ExpandableNotebook.conf"
+                self.activeFile = activeFile
 
             self.workingDir = os.getcwd()
+
+        else:
+            self.activeFile = activeFile
 
         self.il = wx.ImageList(16, 16)
         self.AssignImageList(self.il)
@@ -143,28 +146,6 @@ class ExpandableNotebook(wx.Notebook):
 
         return json.loads(config)
 
-    # Method to save the panel data into the currently active config file
-    def saveConfig(self, extraParams=None):
-        """Save the current Notebook data to a configuration file in json format.
-
-        Passing the active configuration file name. """
-        if self.expansionStatus != 1:
-            self.__transferSubNotebookData(self.expansionStatus, 1)
-
-        if not self.__checkFilesExist():
-            return False
-
-        config_json = self.__getConfigJson()
-
-        if extraParams:
-            config_json.update(extraParams)
-
-        string_out = self.__getConfigText(config_json)
-
-        io.open(self.activeFile, 'wt', encoding='utf-8').write(string_out.replace("\\", "\\\\"))
-
-        return True
-
     def openConfig(self):
         dlg = wx.FileDialog(self, "Choose a file", self.workingDir, os.getcwd(), "*.conf", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
@@ -183,6 +164,29 @@ class ExpandableNotebook(wx.Notebook):
         dlg.Destroy()
 
         return False
+
+    # Method to save the panel data into the currently active config file
+    def saveConfig(self, extraParams=None):
+        """Save the current Notebook data to a configuration file in json format.
+
+        Passing the active configuration file name. """
+        if self.expansionStatus != 1:
+            self.__transferSubNotebookData(self.expansionStatus, 1)
+
+        if not self.__checkFilesExist():
+            return False
+
+        config_json = self.__getConfigJson()
+
+        if extraParams:
+            config_json.update(extraParams)
+
+        string_out = json.dumps(config_json)
+
+        #io.open(self.activeFile, 'wt', encoding='utf-8').write(string_out.replace("\\", "\\\\"))
+        io.open(self.activeFile, 'wt', encoding='utf-8').write(unicode(string_out))
+
+        return True
 
     # Method to save the panel data into the currently active config file
     def saveConfigAs(self, extraParams=None):
@@ -271,13 +275,13 @@ class ExpandableNotebook(wx.Notebook):
 
                 #single tab sub-notebooks
                 for single_nb in range (0, expansion - 1):
-                    nb = ExpandableNotebook(self.parent, self.parent_window, self.border, expandable=False, expansion=expansion, sizer=self.sizer)
+                    nb = ExpandableNotebook(self.parent, self.parent_window, self.border, expandable=False, activeFile=self.activeFile, expansion=expansion, sizer=self.sizer)
                     sub_notebooks.append(nb.__buildExpandedNotebooks(single_nb, 1, self.TAB_MEMBERS))
 
                 #another sub-notebook with the rest of the tabs
                 rest_start = expansion - 1
                 rest_length = len(self.TAB_MEMBERS) - expansion + 1
-                nb = ExpandableNotebook(self.parent, self.parent_window, self.border, expandable=False, expansion=expansion, sizer=self.sizer)
+                nb = ExpandableNotebook(self.parent, self.parent_window, self.border, expandable=False, activeFile=self.activeFile, expansion=expansion, sizer=self.sizer)
                 sub_notebooks.append(nb.__buildExpandedNotebooks(rest_start, rest_length, self.TAB_MEMBERS))
 
                 self.NOTEBOOKS[expansion] = sub_notebooks
@@ -370,34 +374,6 @@ class ExpandableNotebook(wx.Notebook):
             config_json.update(page.get_json())
 
         return config_json
-
-    def __getConfigText(self, config_json):
-        #config_json = self.__getConfigJson()
-
-        string_out = "{\n"
-
-        for i, (key, value) in enumerate(config_json.iteritems()):
-            key_str = "\"" + key + "\""
-
-            if type(value) is unicode or type(value) is str:
-                string_out += ( key_str + " : \"" + value + "\"")
-
-            else:
-                if type(value) is bool:
-                    string_out += ( key_str + " : " + str(int(value)))
-
-                else:
-                    if type(value) is int or float:
-                        string_out += ( key_str + " : " + str(value))
-
-            if not ( i == len(config_json) -1 ) :
-                string_out += ", "
-
-            string_out += "\n"
-
-        string_out += "}"
-
-        return string_out
 
     def __configError(self):
         dlg = wx.MessageDialog(self, 'The config file ' + self.activeFile + " is unreadable. Using defaults",

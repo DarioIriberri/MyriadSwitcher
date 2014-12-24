@@ -1,3 +1,5 @@
+from distutils.command.config import config
+
 __author__ = 'Dario'
 
 import io
@@ -8,15 +10,16 @@ import FrameMYR
 from wx.lib.mixins.listctrl import TextEditMixin
 from ObjectListView import ObjectListView, ColumnDefn
 import wx.dataview as dv
+from ConfigTabPanels import BaseConfigTab
 import wizard.MyriadSwitcherWizard as wz
 
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
 
-POOLS_SCRYPT  = "poolsScrypt.conf"
-POOLS_GROESTL = "poolsGroestl.conf"
-POOLS_SKEIN   = "poolsSkein.conf"
-POOLS_QUBIT   = "poolsQubit.conf"
+#POOLS_SCRYPT  = "poolsScrypt.conf"
+#POOLS_GROESTL = "poolsGroestl.conf"
+#POOLS_SKEIN   = "poolsSkein.conf"
+#POOLS_QUBIT   = "poolsQubit.conf"
 
 
 class SimpleConfigTab(BaseConfigTab):
@@ -31,10 +34,17 @@ class SimpleConfigTab(BaseConfigTab):
 
     def set_json(self, config_json):
         super(SimpleConfigTab, self).set_json(config_json)
+
+        self.rightPanel.algo_panel_scrypt.set_pool_data(self.get_value(config_json, 'scryptPoolData'))
+        self.rightPanel.algo_panel_groestl.set_pool_data(self.get_value(config_json, 'groestlPoolData'))
+        self.rightPanel.algo_panel_skein.set_pool_data(self.get_value(config_json, 'skeinPoolData'))
+        self.rightPanel.algo_panel_qubit.set_pool_data(self.get_value(config_json, 'qubitPoolData'))
+
         self.rightPanel.algo_panel_scrypt.set_pool(self.get_value(config_json, 'scryptPool') , self.get_value(config_json, 'scryptFactor'))
         self.rightPanel.algo_panel_groestl.set_pool(self.get_value(config_json, 'groestlPool'), self.get_value(config_json, 'groestlFactor'))
         self.rightPanel.algo_panel_skein.set_pool(self.get_value(config_json, 'skeinPool'), self.get_value(config_json, 'skeinFactor'))
         self.rightPanel.algo_panel_qubit.set_pool(self.get_value(config_json, 'qubitPool'), self.get_value(config_json, 'qubitFactor'))
+
 
     def get_json(self):
         json = super(SimpleConfigTab, self).get_json()
@@ -52,10 +62,10 @@ class RightPanelSimple(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.algo_panel_scrypt = AlgoPanelSimple(self, BaseConfigTab.SCRYPT, POOLS_SCRYPT, size=(-1, 28))
-        self.algo_panel_groestl = AlgoPanelSimple(self, BaseConfigTab.GROESTL, POOLS_GROESTL, size=(-1, 28))
-        self.algo_panel_skein = AlgoPanelSimple(self, BaseConfigTab.SKEIN, POOLS_SKEIN, size=(-1, 28))
-        self.algo_panel_qubit = AlgoPanelSimple(self, BaseConfigTab.QUBIT, POOLS_QUBIT, size=(-1, 28))
+        self.algo_panel_scrypt = AlgoPanelSimple(self, BaseConfigTab.SCRYPT , size=(-1, 28))
+        self.algo_panel_groestl = AlgoPanelSimple(self, BaseConfigTab.GROESTL, size=(-1, 28))
+        self.algo_panel_skein = AlgoPanelSimple(self, BaseConfigTab.SKEIN, size=(-1, 28))
+        self.algo_panel_qubit = AlgoPanelSimple(self, BaseConfigTab.QUBIT, size=(-1, 28))
 
         sizer.Add(self.algo_panel_scrypt, 0, wx.EXPAND | wx.TOP, -3)
         sizer.Add(self.algo_panel_groestl, 0, wx.EXPAND | wx.TOP, 3)
@@ -65,37 +75,69 @@ class RightPanelSimple(wx.Panel):
         self.SetSizer(sizer)
 
     def get_json(self):
-        json = dict()
+        config_json = dict()
 
         try:
-            json.update({'scryptPool': self.algo_panel_scrypt.get_pool()})
+            config_json.update({'scryptPool': self.algo_panel_scrypt.get_pool()})
 
         except:
             print "Error: get_values - scryptPool"
             pass
 
         try:
-            json.update({'groestlPool': self.algo_panel_groestl.get_pool()})
+            config_json.update({'groestlPool': self.algo_panel_groestl.get_pool()})
 
         except:
             print "Error: get_values - groestlPool"
             pass
 
         try:
-            json.update({'skeinPool': self.algo_panel_skein.get_pool()})
+            config_json.update({'skeinPool': self.algo_panel_skein.get_pool()})
 
         except:
             print "Error: get_values - skeinPool"
             pass
 
         try:
-            json.update({'qubitPool': self.algo_panel_qubit.get_pool()})
+            config_json.update({'qubitPool': self.algo_panel_qubit.get_pool()})
 
         except:
             print "Error: get_values - qubitPool"
             pass
 
-        return json
+        try:
+            if self.algo_panel_scrypt.poolDataJson:
+                config_json.update({'scryptPoolData': self.algo_panel_scrypt.poolDataJson})
+
+        except:
+            print "Error: get_values - scryptPoolData"
+            pass
+
+        try:
+            if self.algo_panel_groestl.poolDataJson:
+                config_json.update({'groestlPoolData': self.algo_panel_groestl.poolDataJson})
+
+        except:
+            print "Error: get_values - groestlPoolData"
+            pass
+
+        try:
+            if self.algo_panel_skein.poolDataJson:
+                config_json.update({'skeinPoolData': self.algo_panel_skein.poolDataJson})
+
+        except:
+            print "Error: get_values - skeinPoolData"
+            pass
+
+        try:
+            if self.algo_panel_qubit.poolDataJson:
+                config_json.update({'qubitPoolData': self.algo_panel_qubit.poolDataJson})
+
+        except:
+            print "Error: get_values - qubitPoolData"
+            pass
+
+        return config_json
 
     def algoChecked(self, check):
         if BaseConfigTab.SCRYPT == str(check.LabelText):
@@ -123,23 +165,22 @@ class RightPanelSimple(wx.Panel):
 
 
 class AlgoPanelSimple(wx.Panel):
-    def __init__(self, parent, algo, poolsFile, size=None):
+    def __init__(self, parent, algo, size=None):
         wx.Panel.__init__(self, parent=parent, size=size)
 
         self.parent = parent
+        self.poolDataJson = None
 
         self.algo = algo
-        self.poolsFile = poolsFile
 
         self.walletAdress = self.getMyrAddress()
 
-        self.poolList = self.readPoolsFile(poolsFile)
         boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
 
         #text_browser = wx.StaticText(self, wx.ID_ANY, "Dev " + str(self.dev) + ":", style=wx.BOLD)
-        choices = self.getPoolComboEntries()
+        #choices = self.getPoolComboEntries()
 
-        self.poolsCombo = wx.ComboBox(self, size=(-1, -1), choices=choices, style=wx.CB_READONLY)
+        self.poolsCombo = wx.ComboBox(self, size=(-1, -1), style=wx.CB_READONLY)
         self.poolEditor = wx.Button(self, wx.ID_ANY, size=(32, -1))
         self.poolBalance = wx.Button(self, wx.ID_ANY, size=(32, -1))
         self.poolEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
@@ -151,6 +192,7 @@ class AlgoPanelSimple(wx.Panel):
         boxWrapper.Add( self.poolEditor, 0, wx.BOTTOM, -1)
         self.Bind(wx.EVT_BUTTON, self.onButtonBalance, self.poolBalance)
         self.Bind(wx.EVT_BUTTON, self.onButtonEditor, self.poolEditor)
+        self.Bind(wx.EVT_COMBOBOX, self.parent.parentNotebook.notebookControlChanged, self.poolsCombo)
         #self.pool_editor = wx.ComboBox(self, size=(-1, 28), choices=pools, style=wx.CB_READONLY)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -171,24 +213,21 @@ class AlgoPanelSimple(wx.Panel):
 
         return walletAddress
 
-    def getPoolComboEntries(self):
-        return [entry['poolUrl'] for entry in self.poolDataJson]
+    def getPoolComboEntries(self, poolDataJson):
+        if poolDataJson:
+            return [entry['poolUrl'] for entry in poolDataJson]
 
-    def readPoolsFile(self, poolsFile):
-        f = open(poolsFile)
-        poolList = f.read()
-        self.poolDataJson = json.loads(poolList)
-        f.close()
-
+    def fillWalletAddress(self, walletAdress):
         found = False
-        for pool in self.poolDataJson:
-            if 'poolUser' not in pool or pool['poolUser'] == '':
-                found = True
-                pool['poolUser'] = self.walletAdress
-                pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + self.walletAdress
+        if self.poolDataJson:
+            for pool in self.poolDataJson:
+                if 'poolUser' not in pool or pool['poolUser'] == '':
+                    found = True
+                    pool['poolUser'] = walletAdress
+                    pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + walletAdress
 
-        if found:
-            self.savePoolsFile(poolsFile)
+            #if found:
+            #    self.parent.parentNotebook.getParentWindow().onSave()
 
         return self.poolDataJson
 
@@ -210,10 +249,34 @@ class AlgoPanelSimple(wx.Panel):
 
         if res == 0:
             self.poolDataJson = dlg.poolDataJson
-            self.savePoolsFile(self.poolsFile)
+            #self.savePoolsFile(self.poolsFile)
 
+            self.loadPoolComboChoices(self.getPoolComboEntries(self.poolDataJson))
+
+            # pick the combo selection
+            poolConfigName = BaseConfigTab.POOLS_MAP[self.algo]
+
+            configPool = self.parent.parentNotebook.getStoredConfigParam(poolConfigName)
+            firstPool  = None if not self.poolDataJson or \
+                                 len(self.poolDataJson) == 0 or \
+                                 not 'poolUrl' in self.poolDataJson[0] \
+                              else self.poolDataJson[0]['poolUrl']
+
+            choices = self.poolsCombo.GetStrings()
+
+            if configPool in choices:
+                self.poolsCombo.SetValue(configPool)
+
+            elif firstPool in choices:
+                self.poolsCombo.SetValue(firstPool)
+
+            self.parent.parentNotebook.notebookControlChanged()
+
+    def loadPoolComboChoices(self, choices):
+        if choices:
             self.poolsCombo.Clear()
-            self.poolsCombo.AppendItems(self.getPoolComboEntries())
+            self.poolsCombo.AppendItems(choices)
+
 
     #------------------------------------------------------------------------------------------
     #----------------------------         GETTERS           -----------------------------------
@@ -236,6 +299,12 @@ class AlgoPanelSimple(wx.Panel):
         self.poolsCombo.Enable(factor)
         self.poolEditor.Enable(factor)
         self.poolBalance.Enable(factor)
+
+    def set_pool_data(self, poolData):
+        self.poolDataJson = poolData
+
+        self.loadPoolComboChoices(self.getPoolComboEntries(poolData))
+        self.fillWalletAddress(self.walletAdress)
 
 
 class MyListCtrl(wx.ListCtrl, TextEditMixin):
@@ -343,7 +412,7 @@ class PoolDialog(wx.Dialog):
         self.btnRemove = wx.Button(self, wx.ID_REMOVE, size=FrameMYR.BUTTON_SIZE)
         self.btnMoveUp = wx.Button(self, wx.ID_UP, size=FrameMYR.BUTTON_SIZE)
         self.btnMoveDown = wx.Button(self, wx.ID_DOWN, size=FrameMYR.BUTTON_SIZE)
-        self.btnSave = wx.Button(self, wx.ID_SAVE, size=FrameMYR.BUTTON_SIZE)
+        self.btnSave = wx.Button(self, wx.ID_ANY, "Save  ", size=FrameMYR.BUTTON_SIZE)
         self.btnCancel = wx.Button(self, wx.ID_CANCEL, size=FrameMYR.BUTTON_SIZE)
 
         self.btnAdd.Enable(False)
