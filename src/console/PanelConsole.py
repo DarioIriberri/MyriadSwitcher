@@ -1,3 +1,5 @@
+import psutil
+
 __author__ = 'Dario'
 
 import time
@@ -7,6 +9,7 @@ import os
 import wx.html2 as webview
 import FrameMYR
 import threading
+import  wx.lib.scrolledpanel as scrolled
 from event.Event import Event
 from os import listdir
 from os.path import isfile, join
@@ -208,6 +211,7 @@ class PanelLogs(wx.Panel):
         self.wvLogs = webview.WebView.New(self)
         self.selection = None
 
+        #scrollPanel = wx.Panel(self)
         self.listLogs = ObjectListView(self, size=(108, -1), style=wx.LC_REPORT, sortable=False)
         self.listLogs.oddRowsBackColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
@@ -220,12 +224,11 @@ class PanelLogs(wx.Panel):
         self.loadList()
 
         self.listLogs.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onLogSelected)
-        #self.listLogs.Bind(wx.EVT_SCROLLWIN, self.onScrollWin)
-        #self.Bind(wx.EVT_ENTER_WINDOW, self.onFocusWV, self.wvLogs)
+        self.listLogs.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnRightClick)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.wvLogs.SetPage('<html><body style="background-color: #000000;"></body></html>', "")
+        self.wvLogs.SetPage('<html><body style="background-color: #111111;"></body></html>', "")
 
         sizer.Add(self.wvLogs, 1, wx.EXPAND | wx.BOTTOM | wx.LEFT | wx.TOP, -3)
         sizer.Add(self.listLogs, 0, wx.EXPAND | wx.LEFT, 0)
@@ -241,28 +244,20 @@ class PanelLogs(wx.Panel):
             self.listLogs.SetObjects(logFiles)
 
             if self.selection is not None:
-                selectedObj = self.listLogs.GetObjects()[self.selection]
-                self.listLogs.SelectObjects([selectedObj])
+                try:
+                    selectedObj = self.listLogs.GetObjects()[self.selection]
+                    self.listLogs.SelectObjects([selectedObj])
+
+                except IndexError:
+                    self.selection = None
+
                 self.listLogs.SetFocus()
 
     def onLogSelected(self, event):
         self.selection = event.GetEventObject().GetFirstSelected()
         self.onLogSelectedIndex(self.selection)
 
-        #self.parentNotebook.GetPage(INDEX_LOGS).SetFocus()
         self.listLogs.SetFocus()
-
-        print "****************************************"
-        print self.HasFocus()
-        print self.listLogs.HasFocus()
-        print self.wvLogs.HasFocus()
-        print self.parentNotebook.HasFocus()
-        print self.parentNotebook.GetPage(0).HasFocus()
-        print self.parentNotebook.GetPage(1).HasFocus()
-        print self.parentNotebook.GetPage(2).HasFocus()
-        print "---------------------------------------"
-
-        #self.Layout()
 
         event.Skip()
 
@@ -279,12 +274,47 @@ class PanelLogs(wx.Panel):
         self.onLog(html)
 
     def onLog(self, html):
-        #self.wvLogs.LoadURL("https://dl.dropboxusercontent.com/u/19353176/Myriad%20Switcher/Myriad_log/14.12.23.174707.html")
         self.wvLogs.SetPage(html, "")
-        #self.wvLogs.Reload()
 
-        #def onFocusWV(self, index):
-        #    pass
+    def OnRightClick(self, event):
+        #self.log.WriteText("OnRightClick %s\n" % self.list.GetItemText(self.currentItem))
 
-    def onScrollWin(self, event):
-        pass
+        # only do this part the first time so the events are only bound once
+        if not hasattr(self, "popupID1"):
+            self.popupOpenLocation = wx.NewId()
+            self.popupDelete = wx.NewId()
+
+            self.Bind(wx.EVT_MENU, self.onPopUpOpenLocation, id=self.popupOpenLocation)
+            self.Bind(wx.EVT_MENU, self.onPopUpDelete, id=self.popupDelete)
+
+        # make a menu
+        menu = wx.Menu()
+        # add some items
+        menu.Append(self.popupOpenLocation, "Open file location")
+        menu.Append(self.popupDelete, "Delete files...")
+
+        # Popup the menu.  If an item is selected then its handler
+        # will be called before PopupMenu returns.
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def onPopUpOpenLocation(self, event):
+        if os.name == "nt":
+            #os.spawnl(os.P_NOWAIT, os.getenv('windir') + '\\explorer.exe', '.', '/n,/e,/select,"%s"'%self.logPath+"\\")
+            psutil.Popen('explorer ' + '"' + self.logPath + '"')
+
+        if os.name == "posix":
+            pass
+
+    def onPopUpDelete(self, event):
+        question = "Are you sure you want to delete those files?"
+        dlg = wx.MessageDialog(self, question, "Confirm deletion", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
+        result = dlg.ShowModal() == wx.ID_YES
+        dlg.Destroy()
+
+        if result:
+            selected = self.listLogs.GetSelectedObjects()
+            for file in selected:
+                os.remove(self.logPath + '/' + file['log'] + '.html')
+
+            self.loadList()

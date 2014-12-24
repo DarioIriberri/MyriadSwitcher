@@ -61,12 +61,14 @@ class HTMLBuilder():
 
         self.refresh_milisecs = str(refresh_milisecs)
 
-    def html_begin(self, text_size=80):
+    def html_begin(self, text_size=80, isLog=False):
+        backgroundColor = "#111111" if isLog else "#000000"
+
         html =  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN"
         html += "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"
         html += "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
         html += "<head>"
-        html += "<style>BODY{background-color:#000000;color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:110em;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
+        html += "<style>BODY{background-color:" + backgroundColor + ";color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:110em;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
         #html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {location.reload();}," + self.refresh_t + ")}</script>"
         html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {window.scrollTo(0, document.body.scrollHeight);location.reload();}," + self.refresh_milisecs + ")}</script>"
         html += '<link id="page_favicon" href="data:image/x-icon;base64,AAABAAEAGBgAAAEAIACICQAAFgAAACgAAAAYAAAAMAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMiM/QS7dPwbvHT8KqqI/AN2cfwVgH38BQ' \
@@ -89,6 +91,8 @@ class HTMLBuilder():
                 ' rel="icon" type="image/x-icon" />'
         html += " </head>"
         html += " <body>"
+        if isLog:
+            html += " <h3>Myriad Switcher " + self.console.frame_myr.getVersion() + " Log...</h3>"
         html += "   <table>"
         html += "    <colgroup>"
         html += "       <col />"
@@ -96,8 +100,8 @@ class HTMLBuilder():
 
         return html
 
-    def buildHTML(self, lines, text_size=80):
-        html = self.html_begin(text_size)
+    def buildHTML(self, lines, text_size=80, isLog=False):
+        html = self.html_begin(text_size, isLog)
         for line in lines:
             html += line
 
@@ -153,7 +157,7 @@ class HTMLBuilder():
             startT = time.time()
 
             f = open(logFileName, "w")
-            f.write(self.buildHTML(self.lines, 80))
+            f.write(self.buildHTML(self.lines, 80, isLog=True))
             f.close()
 
         htmlTime = time.time() - startT
