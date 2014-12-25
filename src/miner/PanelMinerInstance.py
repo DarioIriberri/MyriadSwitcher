@@ -373,6 +373,9 @@ class PanelMinerInstanceHandler(wx.Panel):
         else:
             self.device = self.findDevice(selection)
 
+            #self.notebook.broadcastEventToAllTabs(event_id="main_config",
+            #                                  event_value=("advanced" == self.getMainMode()))
+
         self.parent.clearAll()
         self.parent.panelMiners.saveDevices()
 

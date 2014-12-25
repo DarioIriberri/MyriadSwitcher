@@ -47,7 +47,7 @@ class PanelMiners(wx.Panel):
         #self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.sashChanging)
         #self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.resizeMinerPanels)
 
-        self.collapsePanel = CollapsePanel(self, self.devicesJson['resize'])
+        self.collapsePanel = CollapsePanel(self, self.devicesJson['resize'], self.devicesJson['transfer'])
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizerW = wx.BoxSizer(wx.HORIZONTAL)
@@ -76,6 +76,7 @@ class PanelMiners(wx.Panel):
         self.devicesJson['miner3'] = sel3
 
         self.devicesJson['resize'] = self.collapsePanel.resizeBtn.GetValue()
+        self.devicesJson['transfer'] = self.collapsePanel.transferBtn.GetValue()
 
         io.open(DEVICES_FILE, 'wt', encoding='utf-8').write(unicode(json.dumps(self.devicesJson)))
 
@@ -285,7 +286,7 @@ class PanelMiners(wx.Panel):
         return self.collapsePanel.collapseBtn.GetValue()
 
 class CollapsePanel(wx.Panel):
-    def __init__(self, parent, resize):
+    def __init__(self, parent, resize, transfer):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.parent = parent
@@ -295,17 +296,22 @@ class CollapsePanel(wx.Panel):
 
         self.collapseBtn = wx.ToggleButton(self, wx.ID_ANY, size=(25, 25), label=">>")
         self.resizeBtn = wx.ToggleButton(self, wx.ID_ANY, size=(25, 25))
+        self.transferBtn = wx.ToggleButton(self, wx.ID_ANY, size=(25, 25))
 
         self.collapseBtn.SetToolTip(wx.ToolTip("Collapse / Expand miners"))
         self.resizeBtn.SetToolTip(wx.ToolTip("Auto-resize miners"))
+        self.transferBtn.SetToolTip(wx.ToolTip("Use pre-calculated hashrates and power consumptions"))
 
         self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + ('img/resize16.ico' if resize else 'img/resize-no16.ico')))
+        self.transferBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + ('img/transfer16.ico' if transfer else 'img/transfer-no16.ico')))
         #self.resizeBtn.SetBitmapHover(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize-no16.ico'))
         self.collapseBtn.SetFont(wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.collapseBtn.SetValue(True)
         self.resizeBtn.SetValue(resize)
+        self.transferBtn.SetValue(transfer)
         self.collapseBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onCollapseToggle)
         self.resizeBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onResizeToggle)
+        self.transferBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onTransferToggle)
         #self.resizeBtn.Bind(wx.EVT_SET_CURSOR, self.onResizeToggle)
         #self.resizeBtn.Bind(wx.EVT_PAINT, self.onResizeToggle)
         #self.resizeBtn.Bind(wx.EVT_LEAVE_WINDOW, self.onResizeToggle)
@@ -316,6 +322,7 @@ class CollapsePanel(wx.Panel):
 
         sizerV.Add(self.collapseBtn, 0, wx.TOP, 0)
         sizerV.Add(self.resizeBtn, 0, wx.TOP, 3)
+        sizerV.Add(self.transferBtn, 0, wx.TOP, 3)
 
         sizer.Add(sizerV, 0, wx.TOP, -1)
 
@@ -330,6 +337,18 @@ class CollapsePanel(wx.Panel):
 
         else:
             self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize-no16.ico'))
+
+        self.parent.miner0.SetFocus()
+
+        self.parent.saveDevices()
+        #event.Skip()
+
+    def onTransferToggle(self, event=None):
+        if self.transferBtn.GetValue():
+            self.transferBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/transfer16.ico'))
+
+        else:
+            self.transferBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/transfer-no16.ico'))
 
         self.parent.miner0.SetFocus()
 
