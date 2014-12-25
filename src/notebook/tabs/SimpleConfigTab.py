@@ -5,6 +5,7 @@ __author__ = 'Dario'
 import io
 
 import wx
+import os
 import json
 import FrameMYR
 from wx.lib.mixins.listctrl import TextEditMixin
@@ -173,7 +174,7 @@ class AlgoPanelSimple(wx.Panel):
 
         self.algo = algo
 
-        self.walletAdress = self.getMyrAddress()
+        self.walletAdress = self.parent.parentNotebook.getParentWindow().walletAddress
 
         boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -205,29 +206,16 @@ class AlgoPanelSimple(wx.Panel):
 
         self.SetSizer(sizer)
 
-    def getMyrAddress(self):
-        f = open(wz.PATH_TO_WALLET)
-        data = f.read()
-        walletAddress = data[data.index('addr_history') + 17 : data.index('[]') - 3 ]
-        f.close()
-
-        return walletAddress
-
     def getPoolComboEntries(self, poolDataJson):
         if poolDataJson:
             return [entry['poolUrl'] for entry in poolDataJson]
 
     def fillWalletAddress(self, walletAdress):
-        found = False
-        if self.poolDataJson:
+        if self.poolDataJson and walletAdress:
             for pool in self.poolDataJson:
                 if 'poolUser' not in pool or pool['poolUser'] == '':
-                    found = True
                     pool['poolUser'] = walletAdress
                     pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + walletAdress
-
-            #if found:
-            #    self.parent.parentNotebook.getParentWindow().onSave()
 
         return self.poolDataJson
 
@@ -240,8 +228,6 @@ class AlgoPanelSimple(wx.Panel):
             frame = self.parent.parentNotebook.getParentWindow()
             frame.onBrowse(str(poolBalanceUrl), self.algo + "balance")
             frame.writeClipboard(poolBalanceUrl)
-
-
 
     def onButtonEditor(self, event):
         dlg = PoolDialog(self, -1, "Edit " + self.algo + "pools...", self.poolDataJson, self.walletAdress)

@@ -134,11 +134,12 @@ class PanelConsole(wx.Panel):
         self.notebook.SetSelection(INDEX_LOGS)
         self.logs.onLog(url)
 
-        self.wvBrowser.Reload()
-
     def reloadLog(self):
         if self.notebook.GetSelection() == INDEX_LOGS:
             self.logs.reloadLog()
+
+        if self.notebook.GetSelection() == INDEX_BROWSER:
+            self.wvBrowser.Reload()
 
     def onMiningProcessStarted(self):
         self.frame_myr.onMiningProcessStarted()

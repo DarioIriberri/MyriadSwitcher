@@ -5,7 +5,9 @@ import os
 import time
 import threading
 import psutil
-from wizard import MyriadSwitcherWizard as msw
+import subprocess
+from wx.tools.Editra.src.ebmlib.clipboard import Clipboard
+from wizard import MyriadSwitcherWizard as wz
 from wx.lib.buttons import *
 from Tkinter import Tk
 from console.PanelConsole import PanelConsole
@@ -43,10 +45,12 @@ class FrameMYRClass(wx.Frame):
         )
 
         self.onWizard(forceRun=False)
+        self.walletAddress = self.getMyrAddress()
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
         self.terminating = False
+        self.pWallet = None
 
         #self.setTitle(self.activeFile)
         #self.Bind(wx.EVT_SIZE, self.OnResize)
@@ -303,9 +307,20 @@ class FrameMYRClass(wx.Frame):
             print "Failed to open readme file"
 
     def onWizard(self, event=None, forceRun=True):
-        wizard = msw.MyriadSwitcherWizard(self)
+        wizard = wz.MyriadSwitcherWizard(self)
         if forceRun or not wizard.checkElectrumWalletExists():
             wizard.startWizard()
+
+    def getMyrAddress(self):
+        walletAddress = None
+
+        if os.path.isfile(wz.PATH_TO_WALLET):
+            f = open(wz.PATH_TO_WALLET)
+            data = f.read()
+            f.close()
+            walletAddress = data[data.index('addr_history') + 17 : data.index('[]') - 3 ]
+
+        return walletAddress
 
     def onDonateMYR(self, event):
         myr_address = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
@@ -322,14 +337,29 @@ class FrameMYRClass(wx.Frame):
         dlg.Destroy()
 
     def writeClipboard(self, address):
-        r = Tk()
-        r.withdraw()
-        r.clipboard_clear()
-        r.clipboard_append(address)
-        r.destroy()
+        Clipboard.SystemSet(address)
 
-    def onWallet(self, event):
-        psutil.Popen(FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
+    def onWallet(self, event=None):
+        pWallet = psutil.Popen(FrameMYRClass.RESOURCE_PATH + "electrum/Electrum-MyrWallet.exe", shell=False)
+        #print self.pWallet
+
+        #self.threadWallet = threading.Thread(target=self.walletThread)
+        #self.threadWallet.start()
+
+    def walletThread(self):
+        if os.name == "nt":
+            #if self.pWallet:
+            #    self.pWallet.kill()
+            #self.pWallet = psutil.Popen(FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
+            #print self.pWallet
+
+            #callS = 'cd /d "E:/Projects/Python/MyriadSwitcher/master/electrum" && Electrum-MyrWallet.exe'
+            #callS = '"E:/Projects/Python/MyriadSwitcher/master/electrum/"Electrum-MyrWallet.exe'
+            callS = os.getcwd() + "\\" + FrameMYRClass.RESOURCE_PATH + 'electrum\\Electrum-MyrWallet.exe'
+            subprocess.call(callS, shell=True)
+
+        if os.name == "posix":
+            pass
 
     def onOpen(self, event):
         activeFile = self.notebook.openConfig()
@@ -342,8 +372,6 @@ class FrameMYRClass(wx.Frame):
         if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
             self.panelConsole.configChanged()
             self.enabled_buttons(False)
-            #else:
-            #    self.onButtonCancel(None)
 
     def onSaveAs(self, event):
         activeFile = self.notebook.saveConfigAs({"mainMode" : self.getMainMode()})
@@ -412,14 +440,8 @@ class FrameMYRClass(wx.Frame):
         return True
 
     def onButtonStop(self, event):
-        #self.buttonStop.SetLabelText("Stopping   ")
         self.panelConsole.stop(kill_miners=False, wait=False)
         self.stopMiners(runStopButtonEffect=True)
-        #self.buttonRun.Enable(True)
-        #self.buttonStop.Enable(False)
-
-    #def signalStop(self):
-    #    StopLabelSingletonThread(self, self.miners).start()
 
     def isThereAPreviousSession(self):
         return os.path.isfile(SwitcherData.DATA_FILE_NAME)
@@ -438,8 +460,6 @@ class FrameMYRClass(wx.Frame):
     def showSimple(self):
         self.buttonMainMode.SetLabel("Simple")
         self.resizable_panel.SplitHorizontally(self.panelConsole, self.miners, self.resizable_panel.GetSize()[1] * self.getGravity())
-        #self.shell.rearrangeMiners(self.shell.GetSize()[0])
-        #self.resizable_panel.Unsplit(self.advancedConfig)
 
     def showAdvanced(self):
         self.buttonMainMode.SetLabel("Advanced")
@@ -615,20 +635,12 @@ class FrameMYRClass(wx.Frame):
             threadProgressBar.start()
 
 
-        #threadProgressBar.join()
         threadMiners.join()
         threadConsole.join()
-        #if self.stopEffectThread and self.stopEffectThread.isAlive():
-        #    self.stopEffectThread.join()
 
         self.finished = True
 
         print "See ya!!"
-
-        #time.sleep(10)
-
-    #def finalSleep(self):
-    #    time.sleep(10)
 
     def waitForStopThread(self):
         MAX_WAIT_ITER = 120

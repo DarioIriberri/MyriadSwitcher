@@ -87,12 +87,18 @@ class SwitchingThread (threading.Thread):
                 threadStopped = self.isStopped()
 
                 if dataError:
-                    self.switcherData.pl(dataError, HTMLBuilder.COLOR_RED)
+
+                    nowP = time.strftime("%H:%M:%S", time.localtime(time.time()))
+
+                    hcF = HTMLBuilder.hashColorF1["FAIL"]
+                    hcB = HTMLBuilder.hashColorB1["FAIL"]
+
+                    self.switcherData.pl(nowP + " >  " + dataError + (" " * 109), hcF, hcB)
 
                     if threadStopped:
                         break
                     else:
-                        loopMinerStatus = self.waitLoop(self.switcherData.config_json["sleepSHORT"], globalStopped, self.switcherData)
+                        loopMinerStatus = self.waitLoop(self.switcherData.config_json["sleepSHORT"], globalStopped, self.switcherData, dataError=True)
                         continue
 
                 # New Algo found to switch to!
@@ -243,7 +249,7 @@ class SwitchingThread (threading.Thread):
     def scriptChanged(self, prevScriptPath, scriptPath, restart, globalStopped):
         return not restart and not globalStopped and ( prevScriptPath and scriptPath and (prevScriptPath != scriptPath) )
 
-    def waitLoop(self, sleepTime, globalStopped, switcherData):
+    def waitLoop(self, sleepTime, globalStopped, switcherData, dataError=False):
         self.cpuF1 = self.cpu1
         t_initSleep = time.time()
 
@@ -251,9 +257,10 @@ class SwitchingThread (threading.Thread):
             if self.isStopped():
                 return None
 
-            ret = self.checkMinersInLoop(globalStopped, switcherData)
-            if ret:
-                return ret
+            if not dataError:
+                ret = self.checkMinersInLoop(globalStopped, switcherData)
+                if ret:
+                    return ret
 
             #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
             time.sleep(LOOP_SLEEP_TIME)
