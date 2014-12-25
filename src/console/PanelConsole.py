@@ -224,6 +224,7 @@ class PanelLogs(wx.Panel):
         self.wvLogs = webview.WebView.New(self)
         self.selection = None
 
+
         #scrollPanel = wx.Panel(self)
         self.listLogs = ObjectListView(self, size=(108, -1), style=wx.LC_REPORT, sortable=False)
         self.listLogs.oddRowsBackColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
@@ -238,6 +239,7 @@ class PanelLogs(wx.Panel):
 
         self.listLogs.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onLogSelected)
         self.listLogs.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnRightClick)
+        self.wvLogs.Bind(webview.EVT_WEBVIEW_TITLE_CHANGED, self.onFocusLost)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -247,6 +249,10 @@ class PanelLogs(wx.Panel):
         sizer.Add(self.listLogs, 0, wx.EXPAND | wx.LEFT, 0)
 
         self.SetSizer(sizer)
+
+    def onFocusLost(self, event):
+        self.listLogs.SetFocus()
+        event.Skip()
 
     def loadList(self):
         with self.lock:

@@ -142,24 +142,16 @@ class RightPanelSimple(wx.Panel):
 
     def algoChecked(self, check):
         if BaseConfigTab.SCRYPT == str(check.LabelText):
-            self.algo_panel_scrypt.poolsCombo.Enable(check.GetValue())
-            self.algo_panel_scrypt.poolEditor.Enable(check.GetValue())
-            self.algo_panel_scrypt.poolBalance.Enable(check.GetValue())
+            self.algo_panel_scrypt.algoChecked(check.GetValue())
 
         if BaseConfigTab.GROESTL == str(check.LabelText):
-            self.algo_panel_groestl.poolsCombo.Enable(check.GetValue())
-            self.algo_panel_groestl.poolEditor.Enable(check.GetValue())
-            self.algo_panel_groestl.poolBalance.Enable(check.GetValue())
+            self.algo_panel_groestl.algoChecked(check.GetValue())
 
         if BaseConfigTab.SKEIN == str(check.LabelText):
-            self.algo_panel_skein.poolsCombo.Enable(check.GetValue())
-            self.algo_panel_skein.poolEditor.Enable(check.GetValue())
-            self.algo_panel_skein.poolBalance.Enable(check.GetValue())
+            self.algo_panel_skein.algoChecked(check.GetValue())
 
         if BaseConfigTab.QUBIT == str(check.LabelText):
-            self.algo_panel_qubit.poolsCombo.Enable(check.GetValue())
-            self.algo_panel_qubit.poolEditor.Enable(check.GetValue())
-            self.algo_panel_qubit.poolBalance.Enable(check.GetValue())
+            self.algo_panel_qubit.algoChecked(check.GetValue())
 
     def on_control_changed(self, event):
         self.parent.on_control_changed(event)
@@ -263,6 +255,11 @@ class AlgoPanelSimple(wx.Panel):
             self.poolsCombo.Clear()
             self.poolsCombo.AppendItems(choices)
 
+    def algoChecked(self, factor):
+        self.poolsCombo.Enable(factor)
+        #self.poolEditor.Enable(factor)
+        #self.poolBalance.Enable(factor)
+
 
     #------------------------------------------------------------------------------------------
     #----------------------------         GETTERS           -----------------------------------
@@ -282,9 +279,7 @@ class AlgoPanelSimple(wx.Panel):
         except:
             print "Error: set_pools + " + str(script)
 
-        self.poolsCombo.Enable(factor)
-        self.poolEditor.Enable(factor)
-        self.poolBalance.Enable(factor)
+        self.algoChecked(factor)
 
     def set_pool_data(self, poolData):
         self.poolDataJson = poolData
@@ -329,7 +324,7 @@ class PoolDialog(wx.Dialog):
         #poolsPanel = MyListCtrl(self, wx.ID_ANY, size=(350, 500))
         #poolsPanel = wx.ListBox(self, wx.ID_ANY, size=(500, 500))
         #poolsPanel = dv.DataViewListCtrl(self)
-        self.poolsPanel = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520), sortable=False)
+        self.poolsPanel = ObjectListView(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(880, 320), sortable=False)
         self.poolsPanel.oddRowsBackColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         #self.poolsPanel = dv.DataViewListCtrl(self, wx.ID_ANY, style=wx.LC_REPORT | wx.DOUBLE_BORDER, size=(740, 520))
         #poolsPanel.AppendTextColumn('Pool', width=500)
@@ -344,7 +339,7 @@ class PoolDialog(wx.Dialog):
         self.poolsPanel.SetColumns([
             ColumnDefn("Pool URL", "left", 250, "poolUrl"),
             ColumnDefn("User", "left", 250, "poolUser"),
-            ColumnDefn("Password", "left", 50, "poolPassword"),
+            ColumnDefn("Password", "left", 70, "poolPassword"),
             ColumnDefn("Balance URL", "left", 300, "poolBalanceUrl")
         ])
 
@@ -426,11 +421,18 @@ class PoolDialog(wx.Dialog):
         #btnSave.SetBitmapMargins((14,0))
         #btnCancel.SetBitmapMargins((14,0))
 
+        buttonGap = 15
+
         btnsizerAddRemove.Add(self.btnAdd, 0, wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, 2)
+        btnsizerAddRemove.Add(wx.StaticText(self, wx.ID_ANY, size=(buttonGap, -1)), 1, wx.ALIGN_CENTER | wx.ALL, 0)
         btnsizerAddRemove.Add(self.btnRemove, 0, wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, 2)
+
         btnsizerUpDown.Add(self.btnMoveUp, 0, wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, 2)
+        btnsizerUpDown.Add(wx.StaticText(self, wx.ID_ANY, size=(buttonGap, -1)), 1, wx.ALIGN_CENTER | wx.ALL, 0)
         btnsizerUpDown.Add(self.btnMoveDown, 0, wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, 2)
+
         btnsizerSaveCancel.Add(self.btnSave, 0, wx.ALIGN_RIGHT | wx.EXPAND | wx.ALL, 2)
+        btnsizerSaveCancel.Add(wx.StaticText(self, wx.ID_ANY, size=(buttonGap, -1)), 1, wx.ALIGN_CENTER | wx.ALL, 0)
         btnsizerSaveCancel.Add(self.btnCancel, 0, wx.ALIGN_RIGHT | wx.EXPAND | wx.ALL, 2)
 
         self.btnCancel.SetDefault()
