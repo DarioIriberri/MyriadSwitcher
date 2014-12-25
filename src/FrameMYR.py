@@ -236,7 +236,7 @@ class FrameMYRClass(wx.Frame):
         self.Maximize()
         self.Layout()
 
-        self.miners.resizeMinerPanels()
+        self.miners.resizeMinerPanels(forceResize=True)
 
         self.Show()
 

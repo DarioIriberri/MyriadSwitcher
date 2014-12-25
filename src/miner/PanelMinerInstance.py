@@ -32,11 +32,15 @@ MAX_ITERATIONS = 30
 
 
 class PanelMinerInstance(wx.Panel):
-    def __init__(self, parent, panelMiners, deviceLabel):
+    def __init__(self, parent, panelMiners, deviceLabel, activeDevice, devices):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
         self.parent = parent
         self.panelMiners = panelMiners
+
         self.deviceLabel = deviceLabel
+        self.activeDevice = activeDevice
+        self.devices = devices
+
         self.process = None
 
         self.threadStreams = None
@@ -96,7 +100,8 @@ class PanelMinerInstance(wx.Panel):
         if self.handler.status == STATUS_READY:
             if SwitcherData.scryptS == maxAlgo:
                 #return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - Single.conf" --text-only')
-                return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - ELECTRUM.conf" --text-only')
+                #return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - ELECTRUM.conf" --text-only')
+                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYR - ELECTRUM.conf" --text-only')
 
             if SwitcherData.groestlS == maxAlgo:
                 #return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only')
@@ -312,34 +317,8 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.devices = [
-                            DEVICE_NONE_SELECTED,
-                            "AMD Radeon HD5770",
-                            "AMD Radeon HD5850",
-                            "AMD Radeon HD5870",
-                            "AMD Radeon HD6950",
-                            "AMD Radeon HD6970",
-                            "AMD Radeon HD7950",
-                            "AMD Radeon HD7970",
-                            "AMD Radeon R9 280",
-                            "AMD Radeon R9 280X",
-                            "AMD Radeon R9 290",
-                            "AMD Radeon R9 290X",
-                            "Nvidia GeForce GTX 280",
-                            "Nvidia GeForce GTX 460",
-                            "Nvidia GeForce GTX 470",
-                            "Nvidia GeForce GTX 480",
-                            "Nvidia GeForce GTX 560",
-                            "Nvidia GeForce GTX 560 Ti",
-                            "Nvidia GeForce GTX 570",
-                            "Nvidia GeForce GTX 580",
-                            "Nvidia GeForce GTX 670",
-                            "Nvidia GeForce GTX 680",
-                            "Nvidia GeForce GTX 770",
-                            "Nvidia GeForce GTX 780",
-                            "Nvidia GeForce GTX 780 Ti",
-                            "Nvidia GeForce Titan"
-                       ]
+        self.devices = [DEVICE_NONE_SELECTED] + [device['name'] for device in self.parent.devices]
+        self.device = None
 
         self.numDevices = [
                             ALL_DEVICES,
@@ -359,8 +338,15 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.deviceCombo.Bind(wx.EVT_COMBOBOX, self.onDeviceSelected)
         self.deviceNum = wx.ComboBox(self, size=(50, 26), choices=self.numDevices, style=wx.CB_READONLY)
 
-        self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
-        #self.deviceCombo.SetValue("AMD Radeon HD7950")
+        if self.parent.activeDevice and self.parent.activeDevice != DEVICE_NONE_SELECTED :
+            self.deviceCombo.SetValue(self.parent.activeDevice)
+            self.device = self.findDevice(self.parent.activeDevice)
+            self.enableDevice(True)
+        else:
+            self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
+            self.device = None
+            self.enableDevice(False)
+
         self.deviceNum.SetValue("All")
 
         devEditor = wx.Button(self, wx.ID_ANY, size=(34, -1))
@@ -379,12 +365,16 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.SetSizer(sizer)
 
-        self.enableDevice(False)
-
     def onDeviceSelected(self, event):
         selection = self.deviceCombo.GetValue()
 
+        if selection == DEVICE_NONE_SELECTED:
+            self.device = None
+        else:
+            self.device = self.findDevice(selection)
+
         self.parent.clearAll()
+        self.parent.panelMiners.saveDevices()
 
         if (selection == DEVICE_NONE_SELECTED):
             self.enableDevice(False)
@@ -395,6 +385,9 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.deviceLabel.SetValue(True)
 
         #event.Skip()
+
+    def findDevice(self, name):
+        return  [device for device in self.parent.devices if device['name'] == name][0]
 
     def onDeviceToggle(self, event):
         if self.status == STATUS_RUNNING:

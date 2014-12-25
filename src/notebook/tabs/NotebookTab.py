@@ -15,33 +15,33 @@ DEFAULTS = {
                 "qubitPool"             :   "stratum+tcp://birdspool.no-ip.org:5567",
                 "scryptPoolData" : [
                                         {
-                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:5556",
-                                            "poolUser" : "",
-                                            "poolPassword" : "x",
+                                            "url" : "stratum+tcp://birdspool.no-ip.org:5556",
+                                            "user" : "",
+                                            "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }
                                     ],
                 "groestlPoolData" : [
                                         {
-                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:3333",
-                                            "poolUser" : "",
-                                            "poolPassword" : "x",
+                                            "url" : "stratum+tcp://birdspool.no-ip.org:3333",
+                                            "user" : "",
+                                            "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }
                                     ],
                 "skeinPoolData" : [
                                         {
-                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:5589",
-                                            "poolUser" : "",
-                                            "poolPassword" : "x",
+                                            "url" : "stratum+tcp://birdspool.no-ip.org:5589",
+                                            "user" : "",
+                                            "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }
                                     ],
                 "qubitPoolData" : [
                                         {
-                                            "poolUrl" : "stratum+tcp://birdspool.no-ip.org:5567",
-                                            "poolUser" : "",
-                                            "poolPassword" : "x",
+                                            "url" : "stratum+tcp://birdspool.no-ip.org:5567",
+                                            "user" : "",
+                                            "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }
                                     ],

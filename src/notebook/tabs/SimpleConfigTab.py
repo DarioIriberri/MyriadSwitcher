@@ -200,22 +200,19 @@ class AlgoPanelSimple(wx.Panel):
 
     def getPoolComboEntries(self, poolDataJson):
         if poolDataJson:
-            return [entry['poolUrl'] for entry in poolDataJson]
+            return [entry['url'] for entry in poolDataJson]
 
     def fillWalletAddress(self, walletAdress):
         if self.poolDataJson and walletAdress:
             for pool in self.poolDataJson:
-                if 'poolUser' not in pool or pool['poolUser'] == '':
-                    pool['poolUser'] = walletAdress
+                if 'user' not in pool or pool['user'] == '':
+                    pool['user'] = walletAdress
                     pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + walletAdress
 
         return self.poolDataJson
 
-    def savePoolsFile(self, poolsFile):
-        io.open(poolsFile, 'wt', encoding='utf-8').write(unicode(json.dumps(self.poolDataJson)))
-
     def onButtonBalance(self, event):
-        poolBalanceUrl = [entry['poolBalanceUrl'] for entry in self.poolDataJson if entry['poolUrl'] == self.poolsCombo.GetValue()][0]
+        poolBalanceUrl = [entry['poolBalanceUrl'] for entry in self.poolDataJson if entry['url'] == self.poolsCombo.GetValue()][0]
         if poolBalanceUrl:
             frame = self.parent.parentNotebook.getParentWindow()
             frame.onBrowse(str(poolBalanceUrl), self.algo + "balance")
@@ -237,8 +234,8 @@ class AlgoPanelSimple(wx.Panel):
             configPool = self.parent.parentNotebook.getStoredConfigParam(poolConfigName)
             firstPool  = None if not self.poolDataJson or \
                                  len(self.poolDataJson) == 0 or \
-                                 not 'poolUrl' in self.poolDataJson[0] \
-                              else self.poolDataJson[0]['poolUrl']
+                                 not 'url' in self.poolDataJson[0] \
+                              else self.poolDataJson[0]['url']
 
             choices = self.poolsCombo.GetStrings()
 
@@ -337,9 +334,9 @@ class PoolDialog(wx.Dialog):
         #self.poolsPanel.EnableSorting()
 
         self.poolsPanel.SetColumns([
-            ColumnDefn("Pool URL", "left", 250, "poolUrl"),
-            ColumnDefn("User", "left", 250, "poolUser"),
-            ColumnDefn("Password", "left", 70, "poolPassword"),
+            ColumnDefn("Pool URL", "left", 250, "url"),
+            ColumnDefn("User", "left", 250, "user"),
+            ColumnDefn("Password", "left", 70, "pass"),
             ColumnDefn("Balance URL", "left", 300, "poolBalanceUrl")
         ])
 
@@ -470,9 +467,9 @@ class PoolDialog(wx.Dialog):
     def onButtonAdd(self, event):
         index = self.poolsPanel.GetFirstSelected()
         object = {
-                    "poolUrl": self.textAdd.GetValue(),
-                    "poolUser": self.walletAddress,
-                    "poolPassword": "x",
+                    "url": self.textAdd.GetValue(),
+                    "user": self.walletAddress,
+                    "pass": "x",
                     "poolBalanceUrl": ""
                  }
 

@@ -1,12 +1,17 @@
 __author__ = 'Dario'
 
 import wx
+import io
 import time
+import json
 import threading
 import FrameMYR
 import PanelMinerInstance as PMI
 from wx._core import PyDeadObjectError
 from wx.lib.splitter import MultiSplitterWindow
+
+
+DEVICES_FILE = 'devices.conf'
 
 
 class PanelMiners(wx.Panel):
@@ -21,15 +26,17 @@ class PanelMiners(wx.Panel):
 
         self.num_miners = num_miners
 
+        self.devicesJson = self.loadDevices()
+
         self.splitter = MultiSplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
         self.splitter.SetOrientation(wx.HORIZONTAL)
 
         self.splitter.SetMinimumPaneSize(1)
 
-        self.miner0 = PMI.PanelMinerInstance(self.splitter, self, "Miner #0")
-        self.miner1 = PMI.PanelMinerInstance(self.splitter, self, "Miner #1")
-        self.miner2 = PMI.PanelMinerInstance(self.splitter, self, "Miner #2")
-        self.miner3 = PMI.PanelMinerInstance(self.splitter, self, "Miner #3")
+        self.miner0 = PMI.PanelMinerInstance(self.splitter, self, "Miner #0", self.devicesJson['miner0'], self.devicesJson['devices'])
+        self.miner1 = PMI.PanelMinerInstance(self.splitter, self, "Miner #1", self.devicesJson['miner1'], self.devicesJson['devices'])
+        self.miner2 = PMI.PanelMinerInstance(self.splitter, self, "Miner #2", self.devicesJson['miner2'], self.devicesJson['devices'])
+        self.miner3 = PMI.PanelMinerInstance(self.splitter, self, "Miner #3", self.devicesJson['miner3'], self.devicesJson['devices'])
 
         self.splitter.AppendWindow(self.miner0)
         self.splitter.AppendWindow(self.miner1)
@@ -40,7 +47,7 @@ class PanelMiners(wx.Panel):
         #self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.sashChanging)
         #self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.resizeMinerPanels)
 
-        self.collapsePanel = CollapsePanel(self)
+        self.collapsePanel = CollapsePanel(self, self.devicesJson['resize'])
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizerW = wx.BoxSizer(wx.HORIZONTAL)
@@ -49,6 +56,28 @@ class PanelMiners(wx.Panel):
         sizer.Add(sizerW, 0, wx.EXPAND | wx.TOP, 1)
 
         self.SetSizer(sizer)
+
+    def loadDevices(self):
+        f = open(DEVICES_FILE)
+        data = f.read()
+        f.close()
+
+        return json.loads(data)
+
+    def saveDevices(self):
+        sel0 = self.miner0.handler.deviceCombo.GetValue()
+        sel1 = self.miner1.handler.deviceCombo.GetValue()
+        sel2 = self.miner2.handler.deviceCombo.GetValue()
+        sel3 = self.miner3.handler.deviceCombo.GetValue()
+
+        self.devicesJson['miner0'] = sel0
+        self.devicesJson['miner1'] = sel1
+        self.devicesJson['miner2'] = sel2
+        self.devicesJson['miner3'] = sel3
+
+        self.devicesJson['resize'] = self.collapsePanel.resizeBtn.GetValue()
+
+        io.open(DEVICES_FILE, 'wt', encoding='utf-8').write(unicode(json.dumps(self.devicesJson)))
 
     def executeAlgo(self, maxAlgo, switch):
         if switch:
@@ -161,9 +190,9 @@ class PanelMiners(wx.Panel):
 
         return True
 
-    def resizeMinerPanels(self, event=None, slide=False):
+    def resizeMinerPanels(self, event=None, slide=False, forceResize=False):
         try:
-            if not self.collapsePanel.resizeBtn.GetValue():
+            if not self.collapsePanel.resizeBtn.GetValue() and not forceResize:
                 event.Skip()
                 return
 
@@ -179,7 +208,7 @@ class PanelMiners(wx.Panel):
 
             num_not_ready = self.num_miners - num_ready
 
-            if num_ready == 0 or num_not_ready == 0:
+            if num_ready == 0 or num_not_ready == 0 or forceResize:
                 wide = narrow = best
             else:
                 factored_num_ready = num_ready * factor
@@ -256,7 +285,7 @@ class PanelMiners(wx.Panel):
         return self.collapsePanel.collapseBtn.GetValue()
 
 class CollapsePanel(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, resize):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         self.parent = parent
@@ -270,11 +299,11 @@ class CollapsePanel(wx.Panel):
         self.collapseBtn.SetToolTip(wx.ToolTip("Collapse / Expand miners"))
         self.resizeBtn.SetToolTip(wx.ToolTip("Auto-resize miners"))
 
-        self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize16.ico'))
+        self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + ('img/resize16.ico' if resize else 'img/resize-no16.ico')))
         #self.resizeBtn.SetBitmapHover(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize-no16.ico'))
         self.collapseBtn.SetFont(wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.collapseBtn.SetValue(True)
-        self.resizeBtn.SetValue(True)
+        self.resizeBtn.SetValue(resize)
         self.collapseBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onCollapseToggle)
         self.resizeBtn.Bind(wx.EVT_TOGGLEBUTTON, self.onResizeToggle)
         #self.resizeBtn.Bind(wx.EVT_SET_CURSOR, self.onResizeToggle)
@@ -294,7 +323,7 @@ class CollapsePanel(wx.Panel):
 
         self.SetSizer(sizer)
 
-    def onResizeToggle(self, event):
+    def onResizeToggle(self, event=None):
         if self.resizeBtn.GetValue():
             self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize16.ico'))
             self.parent.resizeMinerPanels(slide=True)
@@ -303,6 +332,8 @@ class CollapsePanel(wx.Panel):
             self.resizeBtn.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/resize-no16.ico'))
 
         self.parent.miner0.SetFocus()
+
+        self.parent.saveDevices()
         #event.Skip()
 
     def onCollapseToggle(self, event):
