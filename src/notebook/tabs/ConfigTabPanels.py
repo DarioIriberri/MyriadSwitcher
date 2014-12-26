@@ -59,7 +59,7 @@ class BaseConfigTab(nbt.NotebookTab):
         self.Show()
 
     #overridden
-    def getRightPanel(self, parent, parentNotebook=None):
+    def getRightPanel(self, parent, parentNotebook):
         pass
 
     def getHeaderPanel(self):
@@ -92,7 +92,6 @@ class BaseConfigTab(nbt.NotebookTab):
         return json
 
     def on_control_changed(self, event=None):
-        #self.on_control_changed(event)
         self.configTab.on_control_changed(event)
 
 
@@ -187,6 +186,12 @@ class LeftPanel(wx.Panel):
         self.algo_panel_groestl.algoButtonColors(stopped=True)
         self.algo_panel_skein.algoButtonColors(stopped=True)
         self.algo_panel_qubit.algoButtonColors(stopped=True)
+
+    def updateMinerData(self, data):
+        self.algo_panel_scrypt.updateMinerData(data, 'scrypt')
+        self.algo_panel_groestl.updateMinerData(data, 'groestl')
+        self.algo_panel_skein.updateMinerData(data, 'skein')
+        self.algo_panel_qubit.updateMinerData(data, 'qubit')
 
 
 class AlgoPanelData(wx.Panel):
@@ -286,6 +291,8 @@ class AlgoPanelData(wx.Panel):
             self.watts.SetValue(watts)
         except:
             print "Error: set_watts + " + str(watts)
+
+    #------------------------------------------------------------------------------------------
 
     def isActiveAlgo(self):
         return self.active_algo.GetValue()
@@ -396,6 +403,25 @@ class AlgoPanelData(wx.Panel):
         #def __deviceReadyColors(self):
         #    self.active_algo.SetBackgroundColour(clr.COLOR_ORANGE)
         #    self.active_algo.SetForegroundColour(clr.COLOR_WHITE)
+
+    def updateMinerData(self, data, algo):
+        hasrate = 0
+        watts   = 0
+
+        for minerData in data:
+            if minerData and algo in minerData:
+                num = minerData['num']
+
+                minerAlgoData = minerData[algo]
+                hasrate += minerAlgoData['hashrate'] * num
+                watts += minerAlgoData['watts'] * num
+
+        watts += self.parent.baseConfigTab.parentNotebook.getTempConfigParam('idleWatts')
+
+        self.hash_rate.SetValue(hasrate)
+        self.watts.SetValue(watts)
+
+        self.parent.baseConfigTab.parentNotebook.notebookControlChanged()
 
 
 class LowerConfigPanel(wx.Panel):

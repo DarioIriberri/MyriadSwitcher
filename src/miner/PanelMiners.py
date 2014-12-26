@@ -33,10 +33,10 @@ class PanelMiners(wx.Panel):
 
         self.splitter.SetMinimumPaneSize(1)
 
-        self.miner0 = PMI.PanelMinerInstance(self.splitter, self, "Miner #0", self.devicesJson['miner0'], self.devicesJson['devices'])
-        self.miner1 = PMI.PanelMinerInstance(self.splitter, self, "Miner #1", self.devicesJson['miner1'], self.devicesJson['devices'])
-        self.miner2 = PMI.PanelMinerInstance(self.splitter, self, "Miner #2", self.devicesJson['miner2'], self.devicesJson['devices'])
-        self.miner3 = PMI.PanelMinerInstance(self.splitter, self, "Miner #3", self.devicesJson['miner3'], self.devicesJson['devices'])
+        self.miner0 = PMI.PanelMinerInstance(self.splitter, self, "Miner #0", self.devicesJson['miner0'], self.devicesJson['miner0num'], self.devicesJson['devices'])
+        self.miner1 = PMI.PanelMinerInstance(self.splitter, self, "Miner #1", self.devicesJson['miner1'], self.devicesJson['miner1num'], self.devicesJson['devices'])
+        self.miner2 = PMI.PanelMinerInstance(self.splitter, self, "Miner #2", self.devicesJson['miner2'], self.devicesJson['miner2num'], self.devicesJson['devices'])
+        self.miner3 = PMI.PanelMinerInstance(self.splitter, self, "Miner #3", self.devicesJson['miner3'], self.devicesJson['miner3num'], self.devicesJson['devices'])
 
         self.splitter.AppendWindow(self.miner0)
         self.splitter.AppendWindow(self.miner1)
@@ -70,15 +70,34 @@ class PanelMiners(wx.Panel):
         sel2 = self.miner2.handler.deviceCombo.GetValue()
         sel3 = self.miner3.handler.deviceCombo.GetValue()
 
+        num0 = self.miner0.handler.deviceNum.GetValue()
+        num1 = self.miner1.handler.deviceNum.GetValue()
+        num2 = self.miner2.handler.deviceNum.GetValue()
+        num3 = self.miner3.handler.deviceNum.GetValue()
+
         self.devicesJson['miner0'] = sel0
         self.devicesJson['miner1'] = sel1
         self.devicesJson['miner2'] = sel2
         self.devicesJson['miner3'] = sel3
 
+        self.devicesJson['miner0num'] = num0
+        self.devicesJson['miner1num'] = num1
+        self.devicesJson['miner2num'] = num2
+        self.devicesJson['miner3num'] = num3
+
         self.devicesJson['resize'] = self.collapsePanel.resizeBtn.GetValue()
         self.devicesJson['transfer'] = self.collapsePanel.transferBtn.GetValue()
 
         io.open(DEVICES_FILE, 'wt', encoding='utf-8').write(unicode(json.dumps(self.devicesJson)))
+
+    def deviceChanged(self):
+        if self.collapsePanel.transferBtn.GetValue():
+            devices = [self.miner0.handler.getDevice(),
+                       self.miner1.handler.getDevice(),
+                       self.miner2.handler.getDevice(),
+                       self.miner3.handler.getDevice()]
+
+            self.frame.notebook.broadcastEventToAllTabs(event_id="miner", event_value=devices)
 
     def executeAlgo(self, maxAlgo, switch):
         if switch:

@@ -7,14 +7,16 @@ import psutil
 import subprocess
 import threading
 import FrameMYR
+import copy
 import socket
 import json
 from wx._core import PyDeadObjectError
 from console.switcher import HTMLBuilder as clr
 from console.switcher import SwitcherData
 
+
 DEVICE_NONE_SELECTED = "Pick a device..."
-ALL_DEVICES          = "All"
+#ALL_DEVICES          = "All"
 
 STATUS_DISABLED             = "STATUS_DISABLED"
 STATUS_READY                = "STATUS_READY"
@@ -32,13 +34,14 @@ MAX_ITERATIONS = 30
 
 
 class PanelMinerInstance(wx.Panel):
-    def __init__(self, parent, panelMiners, deviceLabel, activeDevice, devices):
+    def __init__(self, parent, panelMiners, deviceLabel, activeDevice, numDevice, devices):
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
         self.parent = parent
         self.panelMiners = panelMiners
 
         self.deviceLabel = deviceLabel
         self.activeDevice = activeDevice
+        self.numDevice = numDevice
         self.devices = devices
 
         self.process = None
@@ -318,15 +321,15 @@ class PanelMinerInstanceHandler(wx.Panel):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.devices = [DEVICE_NONE_SELECTED] + [device['name'] for device in self.parent.devices]
-        self.device = None
 
         self.numDevices = [
-                            ALL_DEVICES,
-                            "x 1",
-                            "x 2",
-                            "x 3",
-                            "x 4"
-                          ]
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6'
+        ]
 
         self.deviceLabel = wx.ToggleButton(self, -1, label=parent.deviceLabel, size=(68, -1))
         self.deviceLabel.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
@@ -336,18 +339,21 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.deviceCombo = wx.ComboBox(self, size=(200, 26), choices=self.devices, style=wx.CB_READONLY)
         self.deviceCombo.Bind(wx.EVT_COMBOBOX, self.onDeviceSelected)
-        self.deviceNum = wx.ComboBox(self, size=(50, 26), choices=self.numDevices, style=wx.CB_READONLY)
+        self.deviceNum = wx.ComboBox(self, size=(30, 26), choices=self.numDevices, style=wx.CB_READONLY)
+        self.deviceNum.Bind(wx.EVT_COMBOBOX, self.onNumDeviceSelected)
 
-        if self.parent.activeDevice and self.parent.activeDevice != DEVICE_NONE_SELECTED :
+        if self.parent.activeDevice and self.parent.activeDevice != DEVICE_NONE_SELECTED:
             self.deviceCombo.SetValue(self.parent.activeDevice)
-            self.device = self.findDevice(self.parent.activeDevice)
             self.enableDevice(True)
+
         else:
             self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
-            self.device = None
             self.enableDevice(False)
 
-        self.deviceNum.SetValue("All")
+        if self.parent.numDevice:
+            self.deviceNum.SetValue(self.parent.numDevice)
+        else:
+            self.deviceNum.SetValue(self.numDevices[0])
 
         devEditor = wx.Button(self, wx.ID_ANY, size=(34, -1))
         devEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
@@ -357,7 +363,8 @@ class PanelMinerInstanceHandler(wx.Panel):
         sizer.Add(self.deviceLabel, 0, wx.EXPAND | wx.TOP, -1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(34, -1)), 0, wx.EXPAND, 0)
         sizer.Add(self.deviceCombo, 10, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(6, -1)), 1, wx.EXPAND, 0)
+        sizer.Add(wx.StaticText(self, id=wx.ID_ANY, size=(6, -1)), 1, wx.EXPAND, 0)
+        sizer.Add(wx.StaticText(self, label=" x ", id=wx.ID_ANY, size=(-1, -1)), 0, wx.TOP, 4)
         sizer.Add(self.deviceNum, 0, wx.EXPAND | wx.BOTTOM | wx.ALIGN_BOTTOM, 1)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, size=(34, -1)), 1, wx.EXPAND, 0)
         sizer.Add(devEditor, 0, wx.EXPAND | wx.TOP, -1)
@@ -365,32 +372,38 @@ class PanelMinerInstanceHandler(wx.Panel):
 
         self.SetSizer(sizer)
 
+    def getDevice(self):
+        device = self.findDevice(self.deviceCombo.GetValue())
+        if not device:
+            return None
+
+        device['num'] = int(self.deviceNum.GetValue())
+        return device
+
     def onDeviceSelected(self, event):
         selection = self.deviceCombo.GetValue()
 
-        if selection == DEVICE_NONE_SELECTED:
-            self.device = None
-        else:
-            self.device = self.findDevice(selection)
-
-            #self.notebook.broadcastEventToAllTabs(event_id="main_config",
-            #                                  event_value=("advanced" == self.getMainMode()))
+        self.parent.panelMiners.deviceChanged()
 
         self.parent.clearAll()
         self.parent.panelMiners.saveDevices()
 
-        if (selection == DEVICE_NONE_SELECTED):
-            self.enableDevice(False)
-        else:
-            self.enableDevice(True)
+        self.enableDevice(not selection == DEVICE_NONE_SELECTED)
 
         #self.deviceLabel.SetFocus()
         self.deviceLabel.SetValue(True)
 
         #event.Skip()
 
+    def onNumDeviceSelected(self, event):
+        self.parent.panelMiners.deviceChanged()
+        self.parent.panelMiners.saveDevices()
+
+        #event.Skip()
+
     def findDevice(self, name):
-        return  [device for device in self.parent.devices if device['name'] == name][0]
+        dev = [device for device in self.parent.devices if device['name'] == name]
+        return copy.deepcopy(dev[0]) if len(dev) == 1 else None
 
     def onDeviceToggle(self, event):
         if self.status == STATUS_RUNNING:
@@ -452,7 +465,7 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.parent.panelMiners.resizeMinerPanels(slide=True)
 
         self.deviceCombo.SetValue(DEVICE_NONE_SELECTED)
-        self.deviceNum.SetValue(ALL_DEVICES)
+        self.deviceNum.SetValue(self.numDevices[0])
 
         self.__deviceDisabledColors()
 
