@@ -2,18 +2,17 @@ __author__ = 'Dario'
 
 import wx
 import os
-import psutil
-import wx.wizard as wiz
+#from wallet import Electrum as wallet
+from wallet import QTWallet as wallet
 import FrameMYR
+import wx.wizard as wiz
+
 
 PAGE_WELCOME  = "PAGE_WELCOME"
 PAGE_ELECTRUM = "PAGE_ELECTRUM"
 PAGE_SHORTCUT = "PAGE_SHORTCUT"
 PAGE_DONE     = "PAGE_DONE"
 
-PATH_TO_EXE = os.getcwd() + "\\electrum\\Electrum-MyrWallet.exe"
-PATH_TO_DOC = os.getcwd() + "\\README\\README.html"
-PATH_TO_WALLET = os.environ['AppData'] + "\\Electrum-MYR\\wallets\\default_wallet"
 
 class MyriadSwitcherWizard(wiz.Wizard):
     def __init__(self, parent):
@@ -44,7 +43,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
         page3.sizer.Add(wx.StaticText(page3, -1, """
     You can find your wallet at
 
-    """ + PATH_TO_EXE + """
+    """ + wallet.PATH_TO_EXE + """
 
     or you can open it using the desktop shortcut if you created it.
 
@@ -52,7 +51,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
     Menu -> Help -> Open User Guide
     or browse to
 
-    """ + PATH_TO_DOC + """
+    """ + wallet.PATH_TO_DOC + """
 
     The application will start now. Just pick your mining device(s)
     in the lower panel and start mining by pressing the 'Start' button."""))
@@ -95,7 +94,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
             self.isRunning = True
             if os.name == "nt":
                 #psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
-                FrameMYR.FrameMYRClass.onWallet()
+                wallet.openWallet()
 
             if os.name == "posix":
                 pass
@@ -103,23 +102,12 @@ class MyriadSwitcherWizard(wiz.Wizard):
         if event.GetPage().pageId == PAGE_SHORTCUT:
             if os.name == "nt":
                 if event.GetPage().prev.cb.GetValue():
-                    import win32com.client
-
-                    ws = win32com.client.Dispatch("wscript.shell")
-                    scut = ws.CreateShortcut(os.getenv('UserProfile') + '\\Desktop\\Electrum-MyrWallet.lnk')
-                    #self.htmlBuilder.pl(os.getcwd())
-                    #scut.TargetPath = '"' + (os.getcwd() + '\\electrum\\Electrum-MyrWallet.exe"')
-                    scut.TargetPath = '\"' + PATH_TO_EXE + '\"'
-                    scut.WorkingDirectory = os.getcwd() + '\\electrum'
-                    scut.Save()
+                    wallet.createDesktopShortcut()
 
             if os.name == "posix":
                 pass
 
         event.Skip()
-
-    def checkElectrumWalletExists(self):
-        return os.path.isfile(PATH_TO_WALLET)
 
 
 class WizardPage(wiz.PyWizardPage):
@@ -154,7 +142,7 @@ class WizardPage2(WizardPage):
         self.sizer.Add(self.cb, 0, wx.ALL, 5)
 
     def GetNext(self):
-        if not self.parent.checkElectrumWalletExists():
+        if not wallet.checkIfWalletExists():
             return self.parent.page4
 
         return self.next

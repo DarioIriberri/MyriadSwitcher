@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "electrum_myr_gui\qt\main_window.pyc", line 2288, in closeEvent
+  File "electrum_myr\simple_config.pyc", line 77, in set_key
+  File "electrum_myr\simple_config.pyc", line 167, in save_user_config
+IOError: [Errno 22] invalid mode ('w') or filename: 'C:\\Users\\Dario\\AppData\\Roaming\\Electrum-MYR\\config'
+Traceback (most recent call last):
+  File "electrum_myr_gui\qt\main_window.pyc", line 2288, in closeEvent
+  File "electrum_myr\simple_config.pyc", line 77, in set_key
+  File "electrum_myr\simple_config.pyc", line 167, in save_user_config
+IOError: [Errno 22] invalid mode ('w') or filename: 'C:\\Users\\Dario\\AppData\\Roaming\\Electrum-MYR\\config'
+Exception in thread Thread-6 (most likely raised during interpreter shutdown):Exception in thread Thread-1 (most likely raised during interpreter shutdown):Exception in thread Thread-5 (most likely raised during interpreter shutdown):Exception in thread Thread-6 (most likely raised during interpreter shutdown):Exception in thread Thread-1 (most likely raised during interpreter shutdown):Exception in thread Thread-8 (most likely raised during interpreter shutdown):

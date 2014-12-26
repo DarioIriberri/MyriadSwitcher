@@ -171,12 +171,14 @@ class PanelMinerInstance(wx.Panel):
         config = self.handler.getDevice()[algoKey]['config']
         configPath = FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner + '/' + config
 
+        #Open the config file
         f = open(os.getcwd() + '/' + configPath)
         data = f.read()
         f.close()
 
         configData = json.loads(data)
 
+        #Add the pool section with the user config, then save it back
         poolData = self.panelMiners.frame.notebook.getStoredConfigParam(algoKey + 'PoolData')
         for pool in poolData:
             del pool['poolBalanceUrl']

@@ -10,6 +10,8 @@ from wx.tools.Editra.src.ebmlib.clipboard import Clipboard
 from wizard import MyriadSwitcherWizard as wz
 from wx.lib.buttons import *
 from Tkinter import Tk
+#from wallet import Electrum as wallet
+from wallet import QTWallet as wallet
 from console.PanelConsole import PanelConsole
 from console.switcher import SwitcherData
 from miner.PanelMiners import PanelMiners
@@ -45,7 +47,7 @@ class FrameMYRClass(wx.Frame):
         )
 
         self.onWizard(forceRun=False)
-        self.walletAddress = self.getMyrAddress()
+        self.walletAddress = wallet.getMyrAddress()
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
@@ -119,7 +121,7 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onButtonDefaults, self.buttonDefaults)
         self.Bind(wx.EVT_BUTTON, self.onSave, self.buttonSave)
         self.Bind(wx.EVT_BUTTON, self.onQuit, self.buttonQuit)
-        self.Bind(wx.EVT_BUTTON, self.onWallet, self.buttonWallet)
+        self.Bind(wx.EVT_BUTTON, wallet.openWallet, self.buttonWallet)
 
         #self.buttonWait1.Bind(wx.EVT_BUTTON, self.onButtonWait)
         #self.buttonWait2.Bind(wx.EVT_BUTTON, self.onButtonWait)
@@ -308,19 +310,8 @@ class FrameMYRClass(wx.Frame):
 
     def onWizard(self, event=None, forceRun=True):
         wizard = wz.MyriadSwitcherWizard(self)
-        if forceRun or not wizard.checkElectrumWalletExists():
+        if forceRun or not wallet.checkIfWalletExists():
             wizard.startWizard()
-
-    def getMyrAddress(self):
-        walletAddress = None
-
-        if os.path.isfile(wz.PATH_TO_WALLET):
-            f = open(wz.PATH_TO_WALLET)
-            data = f.read()
-            f.close()
-            walletAddress = data[data.index('addr_history') + 17 : data.index('[]') - 3 ]
-
-        return walletAddress
 
     def onDonateMYR(self, event):
         myr_address = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
@@ -338,13 +329,6 @@ class FrameMYRClass(wx.Frame):
 
     def writeClipboard(self, address):
         Clipboard.SystemSet(address)
-
-    def onWallet(self, event=None):
-        pWallet = psutil.Popen(FrameMYRClass.RESOURCE_PATH + "electrum/Electrum-MyrWallet.exe", shell=False)
-        #print self.pWallet
-
-        #self.threadWallet = threading.Thread(target=self.walletThread)
-        #self.threadWallet.start()
 
     def walletThread(self):
         if os.name == "nt":
