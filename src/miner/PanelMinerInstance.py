@@ -8,7 +8,7 @@ import subprocess
 import threading
 import FrameMYR
 import copy
-import socket
+import io
 import json
 from wx._core import PyDeadObjectError
 from console.switcher import HTMLBuilder as clr
@@ -101,22 +101,28 @@ class PanelMinerInstance(wx.Panel):
                 return False
 
         if self.handler.status == STATUS_READY:
-            if SwitcherData.scryptS == maxAlgo:
-                #return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - Single.conf" --text-only')
-                #return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - ELECTRUM.conf" --text-only')
-                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYR - ELECTRUM.conf" --text-only')
+            algoKey = maxAlgo.strip().lower()
+            minerS = self.__findMiner(algoKey)
+            configS = self.__findConfig(algoKey)
 
-            if SwitcherData.groestlS == maxAlgo:
-                #return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only')
-                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG - ELECTRUM.conf" --text-only')
+            return self.handler.execute('"' + minerS + '" --config "' + configS + '" --text-only')
 
-            if SwitcherData.skeinS == maxAlgo:
-                #return self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
-                return self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR - ELECTRUM.conf" --text-only')
-
-            if SwitcherData.qubitS == maxAlgo:
-                #self.handler.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only')
-                return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ - ELECTRUM.conf" --text-only')
+            #if SwitcherData.scryptS == maxAlgo:
+            #    #return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - Single.conf" --text-only')
+            #    #return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - ELECTRUM.conf" --text-only')
+            #    return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYR - ELECTRUM.conf" --text-only')
+            #
+            #if SwitcherData.groestlS == maxAlgo:
+            #    #return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG.conf" --text-only')
+            #    return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRG - ELECTRUM.conf" --text-only')
+            #
+            #if SwitcherData.skeinS == maxAlgo:
+            #    #return self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
+            #    return self.handler.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR - ELECTRUM.conf" --text-only')
+            #
+            #if SwitcherData.qubitS == maxAlgo:
+            #    #self.handler.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only')
+            #    return self.handler.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ - ELECTRUM.conf" --text-only')
 
         return False
 
@@ -154,6 +160,32 @@ class PanelMinerInstance(wx.Panel):
             self.handler.statusExiting()
         else:
             self.handler.statusStopping()
+
+    def __findMiner(self, algoKey):
+        miner = self.handler.getDevice()[algoKey]['miner']
+
+        return FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner + '/' + miner
+
+    def __findConfig(self, algoKey):
+        miner = self.handler.getDevice()[algoKey]['miner']
+        config = self.handler.getDevice()[algoKey]['config']
+        configPath = FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner + '/' + config
+
+        f = open(os.getcwd() + '/' + configPath)
+        data = f.read()
+        f.close()
+
+        configData = json.loads(data)
+
+        poolData = self.panelMiners.frame.notebook.getStoredConfigParam(algoKey + 'PoolData')
+        for pool in poolData:
+            del pool['poolBalanceUrl']
+
+        configData['pools'] = poolData
+
+        io.open(configPath, 'wt', encoding='utf-8').write(unicode(json.dumps(configData)))
+
+        return configPath
 
     def _killMiner(self):
         try:
