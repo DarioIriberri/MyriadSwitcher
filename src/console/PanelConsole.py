@@ -124,9 +124,7 @@ class PanelConsole(wx.Panel):
         #self.notebook.GetPage(1).Show()
         #self.wvBrowser.SetPage(html, "")
         self.notebook.SetPageText(INDEX_BROWSER, title)
-
-        print "BROWSING " + title + " - url = " + url
-
+        #print "BROWSING " + title + " - url = " + url
         self.wvBrowser.LoadURL(url)
         #self.wvBrowser.Reload()
 

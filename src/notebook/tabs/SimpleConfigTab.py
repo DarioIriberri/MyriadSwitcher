@@ -165,14 +165,14 @@ class AlgoPanelSimple(wx.Panel):
 
         self.algo = algo
 
-        self.walletAdress = self.parent.parentNotebook.getParentWindow().walletAddress
+        self.walletAdress = self.parent.parentNotebook.getParentWindow().walletAddresses[algo.strip().lower()]
 
         boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
 
         #text_browser = wx.StaticText(self, wx.ID_ANY, "Dev " + str(self.dev) + ":", style=wx.BOLD)
         #choices = self.getPoolComboEntries()
 
-        self.poolsCombo = wx.ComboBox(self, size=(-1, -1), style=wx.CB_READONLY)
+        self.poolsCombo = wx.ComboBox(self, size=(200, -1), style=wx.CB_READONLY)
         self.poolEditor = wx.Button(self, wx.ID_ANY, size=(32, -1))
         self.poolBalance = wx.Button(self, wx.ID_ANY, size=(32, -1))
         self.poolEditor.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/edit16.ico'))
@@ -210,27 +210,28 @@ class AlgoPanelSimple(wx.Panel):
 
                 userAddress = pool['user']
 
-                try:
-                    addressBelongsToWallet = wallet.checkAddress(userAddress)
+                if self.parent.parentNotebook.getStoredConfigParam('validateAddresses'):
+                    try:
+                        addressBelongsToWallet = wallet.checkAddress(userAddress)
 
-                except Exception as ex:
-                    pass
+                    except Exception as ex:
+                        pass
 
-                addressRegistered = userAddress in frame.validAddresses or userAddress in frame.invalidAddresses
+                    addressRegistered = userAddress in frame.validAddresses or userAddress in frame.invalidAddresses
 
-                if not addressBelongsToWallet and userAddress and not addressRegistered:
-                    badAddress = userAddress
+                    if not addressBelongsToWallet and userAddress and not addressRegistered:
+                        badAddress = userAddress
 
-                    question = 'An address that is not in your wallet \n\n(' + badAddress + ')\n\nwas set for ' + self.algo.strip().lower() + '\n' \
-                               'Do you want to replace it with one that is? \n\n(' + walletAdress + ')'
-                    dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_WARNING)
+                        question = 'An address that is not in your wallet \n\n(' + badAddress + ')\n\nwas set for ' + self.algo.strip().lower() + '\n' \
+                                   'Do you want to replace it with one that is? \n\n(' + walletAdress + ')'
+                        dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_WARNING)
 
-                    if dlg.ShowModal() == wx.ID_YES:
-                        frame.registerInvalidAddress(badAddress)
-                    else:
-                        frame.registerValidAddress(badAddress)
+                        if dlg.ShowModal() == wx.ID_YES:
+                            frame.registerInvalidAddress(badAddress)
+                        else:
+                            frame.registerValidAddress(badAddress)
 
-                    dlg.Destroy()
+                        dlg.Destroy()
 
                 if 'user' not in pool or not userAddress  or userAddress == '' or userAddress in frame.invalidAddresses:
                     pool['user'] = walletAdress

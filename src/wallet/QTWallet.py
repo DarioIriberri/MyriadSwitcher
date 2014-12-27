@@ -44,7 +44,7 @@ def createDesktopShortcut():
 def checkIfWalletExists():
     return os.path.isfile(PATH_TO_WALLET)
 
-def getMyrAddress():
+def getNewAddress(acc=""):
     global walletProcess
     global rpc_conn
 
@@ -60,7 +60,8 @@ def getMyrAddress():
     while not walletAddress and count < MAX_ITER:
         try:
             rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:8333"%("myriadswitcher", "123"))
-            walletAddress = rpc_conn.getaccountaddress("")
+            walletAddress = rpc_conn.getaccountaddress('MyriadSwitcher_' + acc)
+            #walletAddress = rpc_conn.getaccountaddress("Myriad_Switcher")
         except:
             pass
 
@@ -82,7 +83,13 @@ def checkAddress(address):
         #acc = rpc_conn.getaccount(address)
     listAddGrp = rpc_conn.listaddressgroupings()
 
-    listAdd = [rpc_conn.getaccountaddress("")]
+    listAdd = [
+                   rpc_conn.getaccountaddress(""),
+                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.SCRYPT),
+                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.GROESTL),
+                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.SKEIN),
+                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.QUBIT)
+              ]
 
     for list1 in listAddGrp:
         for list2 in list1:

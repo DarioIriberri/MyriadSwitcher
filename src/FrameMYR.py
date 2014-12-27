@@ -22,6 +22,11 @@ from notebook.tabs.SwitchingModesTab import SwitchingModesTab
 from notebook.tabs.MiscellaneousTab import MiscellaneousTab
 from event.EventLib import EVT_STATUS_BAR_EVENT, EVT_DUMMY_EVENT, DummyEvent
 
+SCRYPT  = "scrypt"
+GROESTL = "groestl"
+SKEIN   = "skein"
+QUBIT   = "qubit"
+
 
 VERSION  = "0.3"
 REVISION = 0
@@ -47,7 +52,12 @@ class FrameMYRClass(wx.Frame):
         )
 
         #self.onWizard(forceRun=False)
-        self.walletAddress = wallet.getMyrAddress()
+        self.walletAddresses = dict()
+
+        self.walletAddresses[SCRYPT] = wallet.getNewAddress(SCRYPT)
+        self.walletAddresses[GROESTL] = wallet.getNewAddress(GROESTL)
+        self.walletAddresses[SKEIN] = wallet.getNewAddress(SKEIN)
+        self.walletAddresses[QUBIT] = wallet.getNewAddress(QUBIT)
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
@@ -56,6 +66,8 @@ class FrameMYRClass(wx.Frame):
 
         self.validAddresses   = list()
         self.invalidAddresses = list()
+
+        self.validateAddresses = True
 
         #self.setTitle(self.activeFile)
         #self.Bind(wx.EVT_SIZE, self.OnResize)
@@ -97,6 +109,7 @@ class FrameMYRClass(wx.Frame):
         filemenu= wx.Menu()
         donationsmenu= wx.Menu()
         helpmenu= wx.Menu()
+        toolsmenu= wx.Menu()
         menuOpen = filemenu.Append(wx.ID_OPEN, "&Open"," Open a file to edit")
         menuSave = filemenu.Append(wx.ID_SAVE, "&Save"," Save configuration")
         menuSaveAs = filemenu.Append(wx.ID_SAVEAS, "Save &as..."," Save configuration as...")
@@ -106,6 +119,12 @@ class FrameMYRClass(wx.Frame):
         menuAbout = helpmenu.Append(wx.ID_ABOUT, "&About"," Information about this program")
         menuDonateMYR = donationsmenu.Append(wx.ID_ANY, "Donate &Myriadcoins (MYR)"," Copies MYR address to clipboard to donate Myriadcoins")
         menuDonateBTC = donationsmenu.Append(wx.ID_ANY, "Donate &Bitcoins (BTC)"," Copies MYR address to clipboard to donate Bitcoins")
+        #self.validateAddressesMenuItem = wx.MenuItem(parentMenu=toolsmenu, id=wx.ID_ANY, text="Validate Addresses",
+        #                            help=" Check addresses on startup to confirm they are all in your wallet",
+        #                            kind=wx.ITEM_CHECK)
+        self.menuValidateAddresses = toolsmenu.Append(id=wx.ID_ANY, text="Validate Addresses",
+                                    help=" Check addresses on startup to confirm they are all in your wallet",
+                                    kind=wx.ITEM_CHECK)
 
         # Events.
         self.Bind(wx.EVT_MENU, self.onOpen, menuOpen)
@@ -117,6 +136,7 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onWizard, menuWizard)
         self.Bind(wx.EVT_MENU, self.onDonateMYR, menuDonateMYR)
         self.Bind(wx.EVT_MENU, self.onDonateBTC, menuDonateBTC)
+        self.Bind(wx.EVT_MENU, self.onValidateAddresses, self.menuValidateAddresses)
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_BUTTON, self.onButtonRun, self.buttonRun)
         self.Bind(wx.EVT_BUTTON, self.onButtonResume, self.buttonResume)
@@ -139,6 +159,7 @@ class FrameMYRClass(wx.Frame):
         menuBar = wx.MenuBar()
         # Adding the "filemenu" to the MenuBar
         menuBar.Append(filemenu,"&File") # Adding the "filemenu" to the MenuBar
+        menuBar.Append(toolsmenu,"&Tools") # Adding the "filemenu" to the MenuBar
         menuBar.Append(donationsmenu,"&Donations") # Adding the "filemenu" to the MenuBar
         menuBar.Append(helpmenu,"&Help") # Adding the MenuBar to the Frame content.
         self.SetMenuBar(menuBar)
@@ -167,6 +188,9 @@ class FrameMYRClass(wx.Frame):
         self.miners = PanelMiners(parent=self.resizable_panel, frame=self)
 
         self.setMainMode(self.notebook.getStoredConfigParam('mainMode'))
+        self.validateAddresses = self.notebook.getStoredConfigParam('validateAddresses')
+        self.menuValidateAddresses.Check(self.validateAddresses)
+
         self.setTitle(self.notebook.activeFile)
 
         self.Bind(wx.EVT_TOGGLEBUTTON, self.onMainModeToggle, self.buttonMainMode)
@@ -333,6 +357,10 @@ class FrameMYRClass(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
+    def onValidateAddresses(self, event):
+        self.validateAddresses = self.menuValidateAddresses.IsChecked()
+        self.onSave()
+
     def writeClipboard(self, address):
         Clipboard.SystemSet(address)
 
@@ -344,12 +372,14 @@ class FrameMYRClass(wx.Frame):
 
     def onSave(self, event=None):
         #if self.notebook.saveConfig(self.activeFile, {"mainMode" : self.getMainMode()}):
-        if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
+        if self.notebook.saveConfig({"mainMode" : self.getMainMode(),
+                                     "validateAddresses" : self.validateAddresses}):
             self.panelConsole.configChanged()
             self.enabled_buttons(False)
 
     def onSaveAs(self, event):
-        activeFile = self.notebook.saveConfigAs({"mainMode" : self.getMainMode()})
+        activeFile = self.notebook.saveConfigAs({"mainMode" : self.getMainMode(),
+                                                 "validateAddresses" : self.validateAddresses})
         if activeFile:
             self.setTitle(activeFile)
             self.enabled_buttons(False)

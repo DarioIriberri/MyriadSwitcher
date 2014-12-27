@@ -59,6 +59,7 @@ DEFAULTS = {
                 "qubitHashRate"			: 	7,
                 "globalCorrectionFactor": 	95,
                 "mainMode"			    : 	"simple",
+                "validateAddresses"		: 	True,
                 "scryptFactor"			: 	1,
                 "groestlFactor"			: 	1,
                 "skeinFactor"			: 	1,
