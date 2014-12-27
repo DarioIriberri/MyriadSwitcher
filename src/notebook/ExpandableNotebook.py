@@ -141,7 +141,7 @@ class ExpandableNotebook(wx.Notebook):
                     for nbsub in nb:
                         nbsub.loadConfig(activeFile)
 
-        except:
+        except Exception as ex:
             return self.__configError()
 
         return json.loads(config)

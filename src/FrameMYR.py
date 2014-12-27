@@ -54,6 +54,9 @@ class FrameMYRClass(wx.Frame):
         self.terminating = False
         self.pWallet = None
 
+        self.validAddresses   = list()
+        self.invalidAddresses = list()
+
         #self.setTitle(self.activeFile)
         #self.Bind(wx.EVT_SIZE, self.OnResize)
 
@@ -570,6 +573,12 @@ class FrameMYRClass(wx.Frame):
                 return False
 
         return True
+
+    def registerValidAddress(self, passAddress):
+        self.validAddresses.append(passAddress)
+
+    def registerInvalidAddress(self, badAddress):
+        self.invalidAddresses.append(badAddress)
 
     def onExit(self, event):
         self.Close(True)

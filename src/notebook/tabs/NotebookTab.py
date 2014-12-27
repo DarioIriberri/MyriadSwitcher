@@ -16,7 +16,7 @@ DEFAULTS = {
                 "scryptPoolData" : [
                                         {
                                             "url" : "stratum+tcp://birdspool.no-ip.org:5556",
-                                            "user" : "",
+                                            "user" : None,
                                             "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }
@@ -24,7 +24,7 @@ DEFAULTS = {
                 "groestlPoolData" : [
                                         {
                                             "url" : "stratum+tcp://birdspool.no-ip.org:3333",
-                                            "user" : "",
+                                            "user" : None,
                                             "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }
@@ -32,7 +32,7 @@ DEFAULTS = {
                 "skeinPoolData" : [
                                         {
                                             "url" : "stratum+tcp://birdspool.no-ip.org:5589",
-                                            "user" : "",
+                                            "user" : None,
                                             "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }
@@ -40,7 +40,7 @@ DEFAULTS = {
                 "qubitPoolData" : [
                                         {
                                             "url" : "stratum+tcp://birdspool.no-ip.org:5567",
-                                            "user" : "",
+                                            "user" : None,
                                             "pass" : "x",
                                             "poolBalanceUrl" : "http://birdonwheels5.no-ip.org:3000/address/"
                                         }

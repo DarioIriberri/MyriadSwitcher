@@ -203,28 +203,39 @@ class AlgoPanelSimple(wx.Panel):
 
     def fillWalletAddress(self, walletAdress):
         if self.poolDataJson and walletAdress:
+            frame = self.parent.parentNotebook.getParentWindow()
+
             for pool in self.poolDataJson:
-                acc = True
+                addressBelongsToWallet = True
+
+                userAddress = pool['user']
 
                 try:
-                    acc = wallet.checkAddress(pool['user'])
+                    addressBelongsToWallet = wallet.checkAddress(userAddress)
+
                 except Exception as ex:
                     pass
 
-                replaceAddress = None
+                addressRegistered = userAddress in frame.validAddresses or userAddress in frame.invalidAddresses
 
-                if acc == False and replaceAddress is None:
-                    badAddress = pool['user']
+                if not addressBelongsToWallet and userAddress and not addressRegistered:
+                    badAddress = userAddress
 
                     question = 'An address that is not in your wallet \n\n(' + badAddress + ')\n\nwas set for ' + self.algo.strip().lower() + '\n' \
                                'Do you want to replace it with one that is? \n\n(' + walletAdress + ')'
                     dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_WARNING)
-                    replaceAddress = dlg.ShowModal() == wx.ID_YES
+
+                    if dlg.ShowModal() == wx.ID_YES:
+                        frame.registerInvalidAddress(badAddress)
+                    else:
+                        frame.registerValidAddress(badAddress)
+
                     dlg.Destroy()
 
-                if 'user' not in pool or pool['user'] == '' or replaceAddress:
+                if 'user' not in pool or not userAddress  or userAddress == '' or userAddress in frame.invalidAddresses:
                     pool['user'] = walletAdress
-                    pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + walletAdress
+                    if pool['poolBalanceUrl'].endswith('/') or pool['poolBalanceUrl'].endswith('\\'):
+                        pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + walletAdress
 
         return self.poolDataJson
 
