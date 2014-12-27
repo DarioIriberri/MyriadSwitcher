@@ -11,7 +11,7 @@ import win32con
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 
-PATH_TO_EXE = os.getcwd() + "\\wallets\\myriadcoin-qt.exe"
+#PATH_TO_EXE = os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets\\myriadcoin-qt.exe"
 PATH_TO_DOC = os.getcwd() + "\\README\\README.html"
 PATH_TO_WALLET = os.environ['AppData'] + "\\Myriadcoin\\wallet.dat"
 PATH_TO_WALLET_DIR = os.environ['AppData'] + "\\Myriadcoin\\"
@@ -37,9 +37,12 @@ def createDesktopShortcut():
     scut = ws.CreateShortcut(os.getenv('UserProfile') + '\\Desktop\\myriadcoin-qt.lnk')
     #self.htmlBuilder.pl(os.getcwd())
     #scut.TargetPath = '"' + (os.getcwd() + '\\electrum\\Electrum-MyrWallet.exe"')
-    scut.TargetPath = '\"' + PATH_TO_EXE + '\"'
-    scut.WorkingDirectory = os.getcwd() + '\\wallets'
+    scut.TargetPath = '\"' + getPathToExe() + '\"'
+    scut.WorkingDirectory = os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets"
     scut.Save()
+
+def getPathToExe():
+    return os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets\\myriadcoin-qt.exe"
 
 def checkIfWalletExists():
     return os.path.isfile(PATH_TO_WALLET)

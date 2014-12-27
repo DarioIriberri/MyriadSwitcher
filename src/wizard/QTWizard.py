@@ -4,6 +4,7 @@ import wx
 import os
 #from wallet import Electrum as wallet
 from wallet import QTWallet as wallet
+import urlparse
 import FrameMYR
 import wx.wizard as wiz
 
@@ -18,72 +19,89 @@ class MyriadSwitcherWizard(wiz.Wizard):
     def __init__(self, parent):
         wiz.Wizard.__init__(self, parent, wx.ID_ANY, "Myriad Switcher Wizard", wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH + 'img/myriadS1.ico'))
         #self.Bind(wiz.EVT_WIZARD_PAGE_CHANGED, self.onPageChanged)
-        self.Bind(wiz.EVT_WIZARD_BEFORE_PAGE_CHANGED, self.onBeforePageChanged)
+        #self.Bind(wiz.EVT_WIZARD_BEFORE_PAGE_CHANGED, self.onBeforePageChanged)
         self.isRunning = False
 
     def startWizard(self):
-        page1 = WizardPage(self, "Welcome to Myriad Switcher", PAGE_WELCOME)
-        page2 = WizardPage2(self, "Wallet shortcut in your desktop?", PAGE_ELECTRUM)
-        page3 = WizardPage(self, "That's it! Happy mining", PAGE_SHORTCUT)
-        self.page4 = WizardPage(self, "Oops, your Electrum setup failed.", PAGE_DONE)
-        self.page1 = page1
+        message = "Welcome to Myriad Switcher \n\n" \
+                  "You can find your wallet at\n\n" + wallet.getPathToExe() + \
+                  "\n\nor you can open it using the desktop shortcut if you choose to create it.\n\n" \
+                  "You can access the documentation via Menu -> Help -> Open User Guide or browse to\n\n" + \
+                  wallet.PATH_TO_DOC + "\n\nThe application will start now. \n" \
+                  "Just pick your mining device(s) in the lower panel \n" \
+                  "and start mining by pressing the 'Start' button.\n\n" \
+                  "Do you want to create a desktop shotcut to your wallet?"
 
-        page1.sizer.Add(wx.StaticText(page1, -1, """
-    This wizard will guide you through the process of setting up
-    everything you need to start mining Myriadcoin in just a few.
-    steps.
+        dlg = wx.MessageDialog(self, message, "Welcome", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_INFORMATION)
+        result = dlg.ShowModal() == wx.ID_YES
+        dlg.Destroy()
 
-    First we need a wallet to store your mined coins. Press 'Next'
-    to open your wallet and follow the instructions if any.
+        if result:
+            wallet.createDesktopShortcut()
 
-    Once the wallet shows up after the setup process is done
-    come back to the wizard and complete the next steps."""))
-
-        page3.sizer.Add(wx.StaticText(page3, -1, """
-    You can find your wallet at
-
-    """ + wallet.PATH_TO_EXE + """
-
-    or you can open it using the desktop shortcut if you created it.
-
-    You can access the documentation via
-    Menu -> Help -> Open User Guide
-    or browse to
-
-    """ + wallet.PATH_TO_DOC + """
-
-    The application will start now. Just pick your mining device(s)
-    in the lower panel and start mining by pressing the 'Start' button."""))
-
-        self.page4.sizer.Add(wx.StaticText(self.page4, -1, """
-    Click 'Next' to run the wizard again."""))
-
-        #self.FitToPage(page1)
-        self.FitToPage(page3)
-
-        page1.SetNext(page2)
-        page2.SetPrev(page1)
-        page2.SetNext(page3)
-        page3.SetPrev(page2)
-        #page3.SetNext(page4)
-        self.page4.SetNext(WizardPage(self, ""))
-
-        self.GetPageAreaSizer().Add(page1)
-
-        if self.RunWizard(page1):
-            pass
-            #wx.MessageBox("Wizard completed successfully", "That's all folks!")
-        else:
-            wx.MessageBox("Wizard was cancelled", "Configuration may be incomplete")
-
-    #def onPageChanged(self, event):
-    #    if event.GetPage().pageId == PAGE_ELECTRUM:
-    #        psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
+    #def startWizard(self):
+    #    page1 = WizardPage(self, "Welcome to Myriad Switcher", PAGE_WELCOME)
+    #    page2 = WizardPage2(self, "Wallet shortcut in your desktop?", PAGE_ELECTRUM)
+    #    page3 = WizardPage(self, "That's it! Happy mining", PAGE_SHORTCUT)
+    #    self.page4 = WizardPage(self, "Oops, your Electrum setup failed.", PAGE_DONE)
+    #    self.page1 = page1
     #
-    #    if event.GetPage().pageId == PAGE_SHORTCUT:
-    #        psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
+    #    page1.sizer.Add(wx.StaticText(page1, -1, """
+    #This wizard will guide you through the process of setting up
+    #everything you need to start mining Myriadcoin in just a few.
+    #steps.
     #
-    #    event.Skip()
+    #First we need a wallet to store your mined coins. Press 'Next'
+    #to open your wallet and follow the instructions if any.
+    #
+    #Once the wallet shows up after the setup process is done
+    #come back to the wizard and complete the next steps."""))
+    #
+    #    page3.sizer.Add(wx.StaticText(page3, -1, """
+    #You can find your wallet at
+    #
+    #""" + wallet.PATH_TO_EXE + """
+    #
+    #or you can open it using the desktop shortcut if you created it.
+    #
+    #You can access the documentation via
+    #Menu -> Help -> Open User Guide
+    #or browse to
+    #
+    #""" + wallet.PATH_TO_DOC + """
+    #
+    #The application will start now. Just pick your mining device(s)
+    #in the lower panel and start mining by pressing the 'Start' button."""))
+    #
+    #    self.page4.sizer.Add(wx.StaticText(self.page4, -1, """
+    #Click 'Next' to run the wizard again."""))
+    #
+    #    #self.FitToPage(page1)
+    #    self.FitToPage(page3)
+    #
+    #    page1.SetNext(page2)
+    #    page2.SetPrev(page1)
+    #    page2.SetNext(page3)
+    #    page3.SetPrev(page2)
+    #    #page3.SetNext(page4)
+    #    self.page4.SetNext(WizardPage(self, ""))
+    #
+    #    self.GetPageAreaSizer().Add(page1)
+    #
+    #    if self.RunWizard(page1):
+    #        pass
+    #        #wx.MessageBox("Wizard completed successfully", "That's all folks!")
+    #    else:
+    #        wx.MessageBox("Wizard was cancelled", "Configuration may be incomplete")
+    #
+    ##def onPageChanged(self, event):
+    ##    if event.GetPage().pageId == PAGE_ELECTRUM:
+    ##        psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
+    ##
+    ##    if event.GetPage().pageId == PAGE_SHORTCUT:
+    ##        psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
+    ##
+    ##    event.Skip()
 
     def onBeforePageChanged(self, event):
         if event.GetPage().pageId == PAGE_WELCOME:

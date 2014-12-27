@@ -7,7 +7,7 @@ import threading
 import psutil
 import subprocess
 from wx.tools.Editra.src.ebmlib.clipboard import Clipboard
-from wizard import ElectrumWizard as wz
+from wizard import QTWizard as wz
 from wx.lib.buttons import *
 from Tkinter import Tk
 #from wallet import Electrum as wallet
@@ -51,7 +51,7 @@ class FrameMYRClass(wx.Frame):
                           size=(800, 383)
         )
 
-        #self.onWizard(forceRun=False)
+        self.onWizard(forceRun=False)
         self.walletAddresses = dict()
 
         self.walletAddresses[SCRYPT] = wallet.getNewAddress(SCRYPT)
