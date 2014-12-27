@@ -4,8 +4,10 @@ import os
 import psutil
 import shutil
 import time
+import subprocess
 import FrameMYR
 import win32gui
+import win32con
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 
@@ -15,12 +17,18 @@ PATH_TO_WALLET = os.environ['AppData'] + "\\Myriadcoin\\wallet.dat"
 PATH_TO_WALLET_DIR = os.environ['AppData'] + "\\Myriadcoin\\"
 
 walletProcess = None
+rpc_conn = None
 
 def openWallet(event=None, shell=False):
     global walletProcess
 
     if not __findQTWalletWindow():
         walletProcess = psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets/myriadcoin-qt.exe", shell=shell)
+
+#def openWalletExtern(event=None, shell=False):
+#    if not __findQTWalletWindow():
+#        callS = os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + 'wallets\\myriadcoin-qt.exe'
+#        subprocess.call(callS, shell=False)
 
 def createDesktopShortcut():
     import win32com.client
@@ -38,11 +46,12 @@ def checkIfWalletExists():
 
 def getMyrAddress():
     global walletProcess
+    global rpc_conn
 
     if not walletProcess or not walletProcess.is_running():
         __copyMyriadcoinConf()
 
-        openWallet(True)
+        openWallet(shell=False)
 
     count = 0
     walletAddress = None
@@ -58,18 +67,37 @@ def getMyrAddress():
         count += 1
         time.sleep(1)
 
+    return walletAddress
+
+def killWallet():
     if walletProcess:
         walletProcess.kill()
 
     os.remove(PATH_TO_WALLET_DIR + "myriadcoin.conf")
 
-    return walletAddress
+def checkAddress(address):
+    global rpc_conn
+
+    #try:
+        #acc = rpc_conn.getaccount(address)
+    listAddGrp = rpc_conn.listaddressgroupings()
+
+    listAdd = [rpc_conn.getaccountaddress("")]
+
+    for list1 in listAddGrp:
+        for list2 in list1:
+            listAdd.append(list2[0])
+
+    return address in listAdd
+
+    #except JSONRPCException:
+    #    return False
 
 def __copyMyriadcoinConf():
     if not os.path.isdir(PATH_TO_WALLET_DIR):
         os.makedirs(PATH_TO_WALLET_DIR)
 
-    shutil.copyfile(os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "config\\myriadcoin.conf", PATH_TO_WALLET_DIR + "myriadcoin.conf")
+    shutil.copyfile(os.getcwd() + "\\myriadcoin.conf", PATH_TO_WALLET_DIR + "myriadcoin.conf")
 
 def __findQTWalletWindow():
     cb = lambda x,y: y.append(x)
@@ -85,7 +113,8 @@ def __findQTWalletWindow():
             tgtWin = win
 
     if tgtWin >= 0:
-        #win32gui.ShowWindow(tgtWin)
+        win32gui.ShowWindow(tgtWin, win32con.SW_RESTORE)
+        win32gui.ShowWindow(tgtWin, win32con.SW_SHOW)
         win32gui.BringWindowToTop(tgtWin)
         win32gui.SetForegroundWindow(tgtWin)
 

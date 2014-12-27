@@ -219,7 +219,7 @@ class PanelLogs(wx.Panel):
         self.parentNotebook = parentNotebook
         self.frame_myr = frame_myr
 
-        self.logPath = frame_myr.notebook.getTempConfigParam("logPath")
+        self.logPath = self.frame_myr.notebook.getTempConfigParam("logPath")
 
         self.wvLogs = webview.WebView.New(self)
         self.selection = None
@@ -256,7 +256,10 @@ class PanelLogs(wx.Panel):
 
     def loadList(self):
         with self.lock:
-            if not self.logPath:
+            self.logPath = self.frame_myr.notebook.getTempConfigParam("logPath")
+
+            if not self.logPath or not os.path.isdir(self.logPath):
+                self.listLogs.DeleteAllItems()
                 return
 
             logFiles = [ {"log": os.path.splitext(f)[0] } for f in reversed(listdir(self.logPath)) if isfile(join(self.logPath, f)) and f.endswith('.html') ]

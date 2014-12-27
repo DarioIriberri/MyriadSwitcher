@@ -18,6 +18,8 @@ class MiscellaneousTab(nbt.NotebookTab):
 
         #self.Bind(EVT_CONFIG_MODE_EVENT, self.onMainModeToggle)
 
+        self.parentNotebook = parentNotebook
+
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.timings_panel = TimingsPanel(self)
         self.log_panel = LogsExchangePanel(self)
@@ -437,7 +439,7 @@ class LogElement(wx.StaticBoxSizer):
         self.buttonDir.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/browse16.ico'))
         boxWrapper.Add( self.buttonDir, 0, wx.TOP, -1)
         parent.Bind(wx.EVT_BUTTON, self.onShowDialog, self.buttonDir)
-        parent.Bind(wx.EVT_TEXT, parent.GetParent().on_control_changed, self.txtDir)
+        self.txtDir.Bind(wx.EVT_TEXT, self.logDirChanged)
 
         sizerLog.Add(self.txtDir, 1, wx.LEFT, 5)
         sizerLog.Add(boxWrapper, 0, wx.LEFT | wx.RIGHT, 5)
@@ -459,6 +461,17 @@ class LogElement(wx.StaticBoxSizer):
         self.fbb.Destroy()
 
         self.parent.parent.parentNotebook.notebookControlChanged()
+
+    def logDirChanged(self, event=None):
+        try:
+            self.parent.GetParent().parentNotebook.getParentWindow().panelConsole.logs.loadList()
+
+        except AttributeError:
+            pass
+
+        self.parent.GetParent().on_control_changed(event)
+
+        event.Skip()
 
 class ErrorsElement(wx.StaticBoxSizer):
     ERROR_OPTS = ["crashes", "freezes", "crashes or freezes"]

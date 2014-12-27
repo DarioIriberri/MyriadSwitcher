@@ -367,6 +367,9 @@ class ExpandableNotebook(wx.Notebook):
         self.__loadTabsFromJson(config_json)
 
     def __getConfigJson(self):
+        if self.expansionStatus != 1:
+            self.__transferSubNotebookData(self.expansionStatus, 1)
+
         config_json = dict()
 
         for i in range(0, self.GetPageCount()):

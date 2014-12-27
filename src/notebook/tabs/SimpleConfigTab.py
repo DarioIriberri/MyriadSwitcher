@@ -11,9 +11,8 @@ import FrameMYR
 from wx.lib.mixins.listctrl import TextEditMixin
 from ObjectListView import ObjectListView, ColumnDefn
 import wx.dataview as dv
+from wallet import QTWallet as wallet
 from ConfigTabPanels import BaseConfigTab
-import wizard.MyriadSwitcherWizard as wz
-
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
 
 
@@ -205,7 +204,25 @@ class AlgoPanelSimple(wx.Panel):
     def fillWalletAddress(self, walletAdress):
         if self.poolDataJson and walletAdress:
             for pool in self.poolDataJson:
-                if 'user' not in pool or pool['user'] == '':
+                acc = True
+
+                try:
+                    acc = wallet.checkAddress(pool['user'])
+                except Exception as ex:
+                    pass
+
+                replaceAddress = None
+
+                if acc == False and replaceAddress is None:
+                    badAddress = pool['user']
+
+                    question = 'An address that is not in your wallet \n\n(' + badAddress + ')\n\nwas set for ' + self.algo.strip().lower() + '\n' \
+                               'Do you want to replace it with one that is? \n\n(' + walletAdress + ')'
+                    dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_WARNING)
+                    replaceAddress = dlg.ShowModal() == wx.ID_YES
+                    dlg.Destroy()
+
+                if 'user' not in pool or pool['user'] == '' or replaceAddress:
                     pool['user'] = walletAdress
                     pool['poolBalanceUrl'] = pool['poolBalanceUrl'] + walletAdress
 
@@ -390,7 +407,7 @@ class PoolDialog(wx.Dialog):
         self.btnRemove = wx.Button(self, wx.ID_REMOVE, size=FrameMYR.BUTTON_SIZE)
         self.btnMoveUp = wx.Button(self, wx.ID_UP, size=FrameMYR.BUTTON_SIZE)
         self.btnMoveDown = wx.Button(self, wx.ID_DOWN, size=FrameMYR.BUTTON_SIZE)
-        self.btnSave = wx.Button(self, wx.ID_ANY, "Save  ", size=FrameMYR.BUTTON_SIZE)
+        self.btnSave = wx.Button(self, wx.ID_ANY, "OK ", size=FrameMYR.BUTTON_SIZE)
         self.btnCancel = wx.Button(self, wx.ID_CANCEL, size=FrameMYR.BUTTON_SIZE)
 
         self.btnAdd.Enable(False)
@@ -402,7 +419,8 @@ class PoolDialog(wx.Dialog):
         self.btnRemove.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/remove16.ico'), wx.LEFT)
         self.btnMoveUp.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/up16.ico'), wx.LEFT)
         self.btnMoveDown.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH + 'img/down16.ico'), wx.LEFT)
-        self.btnSave.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/save16.ico'), wx.LEFT)
+        self.btnSave.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/ok16.ico'), wx.LEFT)
+        #self.btnSave.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH     + 'img/save16.ico'), wx.LEFT)
         self.btnCancel.SetBitmap(wx.Bitmap(FrameMYR.FrameMYRClass.RESOURCE_PATH   + 'img/cancel16.ico'), wx.LEFT)
 
         self.Bind(wx.EVT_BUTTON, self.onButtonAdd, self.btnAdd)

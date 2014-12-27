@@ -7,7 +7,7 @@ import threading
 import psutil
 import subprocess
 from wx.tools.Editra.src.ebmlib.clipboard import Clipboard
-from wizard import MyriadSwitcherWizard as wz
+from wizard import ElectrumWizard as wz
 from wx.lib.buttons import *
 from Tkinter import Tk
 #from wallet import Electrum as wallet
@@ -46,7 +46,7 @@ class FrameMYRClass(wx.Frame):
                           size=(800, 383)
         )
 
-        self.onWizard(forceRun=False)
+        #self.onWizard(forceRun=False)
         self.walletAddress = wallet.getMyrAddress()
 
         self.prev_size = self.GetSize()
@@ -82,7 +82,8 @@ class FrameMYRClass(wx.Frame):
         self.buttonResume.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/resume16.ico'), wx.LEFT)
         self.buttonStop.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/stop16.ico'), wx.LEFT)
         self.buttonQuit.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/exit-16.ico'), wx.LEFT)
-        self.buttonWallet.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/electrum16.ico'), wx.LEFT)
+        self.buttonWallet.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/myrNew16.ico'), wx.LEFT)
+        #self.buttonWallet.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/electrum16.ico'), wx.LEFT)
 
         self.buttonWait1.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-1.ico'), wx.LEFT)
         self.buttonWait2.SetBitmap(wx.Bitmap(FrameMYRClass.RESOURCE_PATH   + 'img/sw16-2.ico'), wx.LEFT)
@@ -253,6 +254,8 @@ class FrameMYRClass(wx.Frame):
 
         self.onSave()
 
+        wallet.killWallet()
+
         try:
             os.remove("reboot")
             os.remove(os.getenv('APPDATA') + '\\Microsoft\Windows\Start Menu\Programs\Startup\\myriadSwitcher.lnk')
@@ -329,21 +332,6 @@ class FrameMYRClass(wx.Frame):
 
     def writeClipboard(self, address):
         Clipboard.SystemSet(address)
-
-    def walletThread(self):
-        if os.name == "nt":
-            #if self.pWallet:
-            #    self.pWallet.kill()
-            #self.pWallet = psutil.Popen(FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
-            #print self.pWallet
-
-            #callS = 'cd /d "E:/Projects/Python/MyriadSwitcher/master/electrum" && Electrum-MyrWallet.exe'
-            #callS = '"E:/Projects/Python/MyriadSwitcher/master/electrum/"Electrum-MyrWallet.exe'
-            callS = os.getcwd() + "\\" + FrameMYRClass.RESOURCE_PATH + 'electrum\\Electrum-MyrWallet.exe'
-            subprocess.call(callS, shell=True)
-
-        if os.name == "posix":
-            pass
 
     def onOpen(self, event):
         activeFile = self.notebook.openConfig()
