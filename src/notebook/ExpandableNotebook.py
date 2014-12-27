@@ -10,7 +10,7 @@ import wx.lib.newevent
 NotebookBroadcastEvent, EVT_NOTEBOOK_BROADCAST_EVENT = wx.lib.newevent.NewEvent()
 
 class ExpandableNotebook(wx.Notebook):
-    def __init__(self, parent, parent_window, border=2, expandable=True, activeFile='ExpandableNotebook.conf', expansion=1, sizer=None):
+    def __init__(self, parent, parent_window, border=2, expandable=True, activeFile='ExpandableNotebook.conf', expansion=1, tabWidth=None, sizer=None):
         wx.Notebook.__init__(self, parent, id=wx.ID_ANY, style=wx.BK_TOP
                              #wx.BK_DEFAULT
                              #wx.BK_TOP
@@ -30,6 +30,7 @@ class ExpandableNotebook(wx.Notebook):
         self.parent  = parent
         self.border = border
         self.expansion  = expansion
+        self.tabWidth  = tabWidth
 
         self.activeFile = None
 
@@ -68,10 +69,16 @@ class ExpandableNotebook(wx.Notebook):
         """After the contructor and addig the tabs, call this method to get the Notebook ready. """
         self.__buildExpandedNotebooks(0, len(self.TAB_MEMBERS))
 
+        # preferred tab with, by default, all tabs visible at 1080p
+        tabWidth = 1920 / len(self.TAB_MEMBERS) if not self.tabWidth else self.tabWidth
+        displayWidth = wx.GetDisplaySize()[0]
+        maxExpansion = round(displayWidth / float(tabWidth))
+        maxExpansion = min(maxExpansion, len(self.TAB_MEMBERS))
+
         #set widths for expanding / resizing purposes
-        increment = int((wx.GetDisplaySize()[0] * 0.75) / len(self.TAB_MEMBERS))
-        for width in range (increment * 2, wx.GetDisplaySize()[0], increment):
-            if len(self.WIDTHS) == len(self.TAB_MEMBERS) - 1:
+        increment = int((displayWidth * 0.9) / maxExpansion)
+        for width in range (increment * 2, displayWidth, increment):
+            if len(self.WIDTHS) == maxExpansion - 1:
                 break
 
             self.WIDTHS.append(width)
