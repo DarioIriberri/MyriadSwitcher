@@ -155,7 +155,7 @@ class SwitcherData():
 
         scryptCorrFactor  = self.config_json["scryptHashRate"]  * num * float(blockReward)
         groestlCorrFactor = self.config_json["groestlHashRate"] * num * float(blockReward)
-        skeinCorrFactor   = self.config_json["skeinHashRate"]  * num * float(blockReward)
+        skeinCorrFactor   = self.config_json["skeinHashRate"]   * num * float(blockReward)
         qubitCorrFactor   = self.config_json["qubitHashRate"]   * num * float(blockReward)
 
         self.previousPrice = self.currentPrice
@@ -174,21 +174,55 @@ class SwitcherData():
         if self.config_json["mode"] == MODE_MAX_PER_WATT:
             self.config_json["attenuation"] = 0
 
-        self.hashtableWatts = { scryptS : self.config_json["scryptWatts"], groestlS : self.config_json["groestlWatts"], skeinS : self.config_json["skeinWatts"], qubitS : self.config_json["qubitWatts"] }
+        self.hashtableWatts = { scryptS : self.config_json["scryptWatts"],
+                                groestlS : self.config_json["groestlWatts"],
+                                skeinS : self.config_json["skeinWatts"],
+                                qubitS : self.config_json["qubitWatts"]
+        }
+
         self.attenuationWatts = self.getAverageHashValues(self.hashtableWatts) ** ((float(1) / 500))
         attenuationWatts = self.attenuationWatts ** self.config_json["attenuation"]
-        self.hashtableWattsAttenuated = { scryptS : self.config_json["scryptWatts"] + attenuationWatts, groestlS : self.config_json["groestlWatts"] + attenuationWatts, skeinS : self.config_json["skeinWatts"] + attenuationWatts, qubitS : self.config_json["qubitWatts"] + attenuationWatts }
 
-        self.hashtableRaw  = { scryptS : ((scryptCorrFactor / diffScrypt)), groestlS : ((groestlCorrFactor / diffGroestl)), skeinS : ((skeinCorrFactor / diffSkein)), qubitS : ((qubitCorrFactor / diffQubit)) }
-        self.hashtableRawAttenuated  = { scryptS : ((scryptCorrFactor / diffScrypt) ) / ( self.hashtableWatts[scryptS] + attenuationWatts ), groestlS : ((groestlCorrFactor / diffGroestl) ) / ( self.hashtableWatts[groestlS] + attenuationWatts ), skeinS : ((skeinCorrFactor / diffSkein) ) / ( self.hashtableWatts[skeinS] + attenuationWatts ), qubitS : ((qubitCorrFactor / diffQubit) ) / ( self.hashtableWatts[qubitS] + attenuationWatts ) }
-        self.hashtableFactored  = { scryptS : ((scryptCorrFactor / diffScrypt) * scryptFactor), groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor), skeinS : ((skeinCorrFactor / diffSkein) * skeinFactor), qubitS : ((qubitCorrFactor / diffQubit) * qubitFactor) }
+        self.hashtableWattsAttenuated = { scryptS  : self.config_json["scryptWatts"] + attenuationWatts,
+                                          groestlS : self.config_json["groestlWatts"] + attenuationWatts,
+                                          skeinS   : self.config_json["skeinWatts"] + attenuationWatts,
+                                          qubitS   : self.config_json["qubitWatts"] + attenuationWatts
+        }
+
+        #self.hashtableRaw  = { scryptS  : ((scryptCorrFactor / diffScrypt)),
+        #                       groestlS : ((groestlCorrFactor / diffGroestl)),
+        #                       skeinS   : ((skeinCorrFactor / diffSkein)),
+        #                       qubitS   : ((qubitCorrFactor / diffQubit))
+        #}
+
+        self.hashtableRawAttenuated  = { scryptS  : ((scryptCorrFactor / diffScrypt) ) / ( self.hashtableWatts[scryptS] + attenuationWatts ),
+                                         groestlS : ((groestlCorrFactor / diffGroestl) ) / ( self.hashtableWatts[groestlS] + attenuationWatts ),
+                                         skeinS   : ((skeinCorrFactor / diffSkein) ) / ( self.hashtableWatts[skeinS] + attenuationWatts ),
+                                         qubitS   : ((qubitCorrFactor / diffQubit) ) / ( self.hashtableWatts[qubitS] + attenuationWatts )
+        }
+
+        self.hashtableFactored  = { scryptS  : ((scryptCorrFactor / diffScrypt) * scryptFactor),
+                                    groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor),
+                                    skeinS   : ((skeinCorrFactor / diffSkein) * skeinFactor),
+                                    qubitS   : ((qubitCorrFactor / diffQubit) * qubitFactor)
+        }
+
         #hashtablePerWatt   =          { scryptS : ((scryptCorrFactor / diffScrypt) * scryptFactor) / self.hashtableWatts[scryptS], groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor) / self.hashtableWatts[groestlS], skeinS : ((skeinCorrFactor / diffSkein) * skeinFactor) / self.hashtableWatts[skeinS], qubitS : ((qubitCorrFactor / diffQubit) * qubitFactor) / self.hashtableWatts[qubitS] }
-        self.hashtablePerWattAttenuated  = { scryptS : ((scryptCorrFactor / diffScrypt) * scryptFactor) / ( self.hashtableWatts[scryptS] + attenuationWatts ), groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor) / ( self.hashtableWatts[groestlS] + attenuationWatts ), skeinS : ((skeinCorrFactor / diffSkein) * skeinFactor) / ( self.hashtableWatts[skeinS] + attenuationWatts ), qubitS : ((qubitCorrFactor / diffQubit) * qubitFactor) / ( self.hashtableWatts[qubitS] + attenuationWatts ) }
-        self.hashtableCorrected = { scryptS : (scryptCorrFactor / diffScrypt), groestlS : (groestlCorrFactor / diffGroestl), skeinS : (skeinCorrFactor / diffSkein), qubitS : (qubitCorrFactor / diffQubit) }
+        self.hashtablePerWattAttenuated  = { scryptS  : ((scryptCorrFactor / diffScrypt) * scryptFactor) / ( self.hashtableWatts[scryptS] + attenuationWatts ),
+                                             groestlS : ((groestlCorrFactor / diffGroestl) * groestlFactor) / ( self.hashtableWatts[groestlS] + attenuationWatts ),
+                                             skeinS   : ((skeinCorrFactor / diffSkein) * skeinFactor) / ( self.hashtableWatts[skeinS] + attenuationWatts ),
+                                             qubitS   : ((qubitCorrFactor / diffQubit) * qubitFactor) / ( self.hashtableWatts[qubitS] + attenuationWatts )
+        }
+
+        self.hashtableCorrected = { scryptS  : (scryptCorrFactor / diffScrypt),
+                                    groestlS : (groestlCorrFactor / diffGroestl),
+                                    skeinS   : (skeinCorrFactor / diffSkein),
+                                    qubitS   : (qubitCorrFactor / diffQubit)
+        }
 
         if self.noAlgoSelected(self.config_json):
             if self.config_json["mode"] == MODE_MAX_PER_DAY:
-                self.hashtable = self.hashtableRaw
+                self.hashtable = self.hashtableCorrected
             else:
                 self.hashtable = self.hashtableRawAttenuated
         else:

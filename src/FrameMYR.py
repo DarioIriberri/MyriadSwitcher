@@ -370,16 +370,18 @@ class FrameMYRClass(wx.Frame):
             self.setTitle(activeFile)
             self.enabled_buttons(False)
 
+    def getExtraParams(self):
+        return {"mainMode"          : self.getMainMode(),
+                "validateAddresses" : self.validateAddresses}
+
     def onSave(self, event=None):
         #if self.notebook.saveConfig(self.activeFile, {"mainMode" : self.getMainMode()}):
-        if self.notebook.saveConfig({"mainMode" : self.getMainMode(),
-                                     "validateAddresses" : self.validateAddresses}):
+        if self.notebook.saveConfig(self.getExtraParams()):
             self.panelConsole.configChanged()
             self.enabled_buttons(False)
 
     def onSaveAs(self, event):
-        activeFile = self.notebook.saveConfigAs({"mainMode" : self.getMainMode(),
-                                                 "validateAddresses" : self.validateAddresses})
+        activeFile = self.notebook.saveConfigAs(self.getExtraParams())
         if activeFile:
             self.setTitle(activeFile)
             self.enabled_buttons(False)
@@ -420,7 +422,7 @@ class FrameMYRClass(wx.Frame):
             dlg.Destroy()
 
         if result:
-            if self.notebook.saveConfig({"mainMode" : self.getMainMode()}):
+            if self.notebook.saveConfig(self.getExtraParams()):
                 self.enabled_buttons(False)
                 self.panelConsole.mine(self.notebook.activeFile)
 

@@ -208,7 +208,7 @@ class ExpandableNotebook(wx.Notebook):
             activeFile = filename
             #f.close()
 
-            if self.saveConfig(activeFile):
+            if self.saveConfig(extraParams):
                 #self.activeFile = activeFile
                 self.workingDir = dirname
                 self.__save_active_file(activeFile)
