@@ -179,11 +179,24 @@ class PanelMinerInstance(wx.Panel):
         configData = json.loads(data)
 
         #Add the pool section with the user config, then save it back
+        #the first in the list must be the active/selected pool
+        poolSelected = self.panelMiners.frame.notebook.getStoredConfigParam(algoKey + 'Pool')
         poolData = self.panelMiners.frame.notebook.getStoredConfigParam(algoKey + 'PoolData')
+
+        finalPoolDataList = list()
+        restPoolDataList  = list()
+
         for pool in poolData:
             del pool['poolBalanceUrl']
 
-        configData['pools'] = poolData
+            if poolSelected == pool['url']:
+                finalPoolDataList = [pool]
+            else:
+                restPoolDataList.append(pool)
+
+        finalPoolDataList += restPoolDataList
+
+        configData['pools'] = finalPoolDataList
 
         io.open(configPath, 'wt', encoding='utf-8').write(unicode(json.dumps(configData)))
 

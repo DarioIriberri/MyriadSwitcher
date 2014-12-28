@@ -27,14 +27,14 @@ GROESTL = "groestl"
 SKEIN   = "skein"
 QUBIT   = "qubit"
 
-
 VERSION  = "0.3"
-REVISION = 0
+REVISION = 1
 
 GRAVITY = 0.7
 
 BUTTON_SIZE  = (76, 26)
 SPLITTER_ID = 32612
+
 
 class FrameMYRClass(wx.Frame):
     RESOURCE_PATH = None
@@ -188,7 +188,7 @@ class FrameMYRClass(wx.Frame):
         self.miners = PanelMiners(parent=self.resizable_panel, frame=self)
 
         self.setMainMode(self.notebook.getStoredConfigParam('mainMode'))
-        self.validateAddresses = self.notebook.getStoredConfigParam('validateAddresses')
+        self.validateAddresses = self.notebook.getStoredConfigParam('validateAddresses') != False
         self.menuValidateAddresses.Check(self.validateAddresses)
 
         self.setTitle(self.notebook.activeFile)
