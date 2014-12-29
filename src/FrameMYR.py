@@ -54,10 +54,10 @@ class FrameMYRClass(wx.Frame):
         self.onWizard(forceRun=False)
         self.walletAddresses = dict()
 
-        self.walletAddresses[SCRYPT] = wallet.getNewAddress(SCRYPT)
-        self.walletAddresses[GROESTL] = wallet.getNewAddress(GROESTL)
-        self.walletAddresses[SKEIN] = wallet.getNewAddress(SKEIN)
-        self.walletAddresses[QUBIT] = wallet.getNewAddress(QUBIT)
+        self.walletAddresses[SCRYPT] = wallet.getAccountAddress(SCRYPT)
+        self.walletAddresses[GROESTL] = wallet.getAccountAddress(GROESTL)
+        self.walletAddresses[SKEIN] = wallet.getAccountAddress(SKEIN)
+        self.walletAddresses[QUBIT] = wallet.getAccountAddress(QUBIT)
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
@@ -263,6 +263,8 @@ class FrameMYRClass(wx.Frame):
         self.notebook.broadcastEventToAllTabs(event_id="main_config",
                                               event_value=("advanced" == self.getMainMode()))
 
+        wallet.killWallet()
+
         self.Maximize()
         self.Layout()
 
@@ -280,8 +282,6 @@ class FrameMYRClass(wx.Frame):
         self.stopEffectThread = None
 
         self.onSave()
-
-        wallet.killWallet()
 
         try:
             os.remove("reboot")

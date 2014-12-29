@@ -16,6 +16,10 @@ PATH_TO_DOC = os.getcwd() + "\\README\\README.html"
 PATH_TO_WALLET = os.environ['AppData'] + "\\Myriadcoin\\wallet.dat"
 PATH_TO_WALLET_DIR = os.environ['AppData'] + "\\Myriadcoin\\"
 
+USER = "myriadswitcher"
+PASS = "123"
+PORT = "8333"
+
 walletProcess = None
 rpc_conn = None
 
@@ -47,7 +51,7 @@ def getPathToExe():
 def checkIfWalletExists():
     return os.path.isfile(PATH_TO_WALLET)
 
-def getNewAddress(acc=""):
+def getAccountAddress(acc=""):
     global walletProcess
     global rpc_conn
 
@@ -58,11 +62,11 @@ def getNewAddress(acc=""):
 
     count = 0
     walletAddress = None
-    MAX_ITER = 30
+    MAX_ITER = 15
 
     while not walletAddress and count < MAX_ITER:
         try:
-            rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:8333"%("myriadswitcher", "123"))
+            rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:%s"%(USER, PASS, PORT))
             walletAddress = rpc_conn.getaccountaddress('MyriadSwitcher_' + acc)
             #walletAddress = rpc_conn.getaccountaddress("Myriad_Switcher")
         except:
@@ -82,26 +86,12 @@ def killWallet():
 def checkAddress(address):
     global rpc_conn
 
-    #try:
-        #acc = rpc_conn.getaccount(address)
-    listAddGrp = rpc_conn.listaddressgroupings()
+    if not rpc_conn:
+        rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:%s"%(USER, PASS, PORT))
 
-    listAdd = [
-                   rpc_conn.getaccountaddress(""),
-                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.SCRYPT),
-                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.GROESTL),
-                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.SKEIN),
-                   rpc_conn.getaccountaddress('MyriadSwitcher_' + FrameMYR.QUBIT)
-              ]
+    validateData = rpc_conn.validateaddress(address)
 
-    for list1 in listAddGrp:
-        for list2 in list1:
-            listAdd.append(list2[0])
-
-    return address in listAdd
-
-    #except JSONRPCException:
-    #    return False
+    return validateData['isvalid'] and validateData['ismine']
 
 def __copyMyriadcoinConf():
     if not os.path.isdir(PATH_TO_WALLET_DIR):

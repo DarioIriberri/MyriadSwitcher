@@ -210,16 +210,16 @@ class AlgoPanelSimple(wx.Panel):
 
                 userAddress = pool['user']
 
-                if self.parent.parentNotebook.getStoredConfigParam('validateAddresses'):
+                addressRegistered = userAddress in frame.validAddresses or userAddress in frame.invalidAddresses
+
+                if self.parent.parentNotebook.getStoredConfigParam('validateAddresses') and not addressRegistered:
                     try:
                         addressBelongsToWallet = wallet.checkAddress(userAddress)
 
                     except Exception as ex:
                         pass
 
-                    addressRegistered = userAddress in frame.validAddresses or userAddress in frame.invalidAddresses
-
-                    if not addressBelongsToWallet and userAddress and not addressRegistered:
+                    if not addressBelongsToWallet and userAddress:
                         badAddress = userAddress
 
                         question = 'An address that is not in your wallet \n\n(' + badAddress + ')\n\nwas set for ' + self.algo.strip().lower() + '\n' \

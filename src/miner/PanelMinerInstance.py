@@ -12,7 +12,7 @@ import io
 import json
 from wx._core import PyDeadObjectError
 from console.switcher import HTMLBuilder as clr
-from console.switcher import SwitcherData
+from console.switcher import SwitchingThread
 
 
 DEVICE_NONE_SELECTED = "Pick a device..."
@@ -27,7 +27,7 @@ STATUS_CRASHED              = "STATUS_CRASHED"
 STATUS_EXITING              = "STATUS_EXITING"
 STATUS_EXITED               = "STATUS_EXITED"
 
-MIN_TIME_THREAD_PROBED = 60
+#MIN_TIME_THREAD_PROBED = 60
 
 MIN_ITERATIONS = 8
 MAX_ITERATIONS = 30
@@ -261,6 +261,8 @@ class PanelMinerInstance(wx.Panel):
         try:
             CHECK_POLL_RATE = 5
 
+            monitor = self.panelMiners.frame.notebook.getStoredConfigParam('monitor')
+
             #Wait 10 seconds before checking the miner to give it plenty of time to start
             time.sleep(CHECK_POLL_RATE)
 
@@ -269,11 +271,11 @@ class PanelMinerInstance(wx.Panel):
                 time.sleep(CHECK_POLL_RATE)
 
             #if the kill signal is set, the miner was stopped by the user
-            if not self.killSignal:
+            if monitor and not self.killSignal:
                 self.handler.minerCrashed()
                 #print "checking miners CRASHED!!! .............................................. " + self.minerStatus()
 
-            elif self.minerStatus() == STATUS_EXITING:
+            elif self.killSignal and self.minerStatus() == STATUS_EXITING:
                 self.handler.status = STATUS_EXITED
                 #print "checking miners EXITED zzzzzzz .............................................. " + self.minerStatus()
 
@@ -329,12 +331,13 @@ class PanelMinerInstance(wx.Panel):
         if not self.currentCPUUsage:
             return True
 
-        if self.previousCPUUsage:
-            if (self.currentCPUUsage.timeCPUProbed - self.previousCPUUsage.timeCPUProbed) < MIN_TIME_THREAD_PROBED:
-                return False
-
+        if self.previousCPUUsage and self.currentCPUUsage and self.previousCPUUsage.pid == self.currentCPUUsage.pid:
             if self.previousCPUUsage:
-                freezed = self.currentCPUUsage.cpuTime == self.previousCPUUsage.cpuTime
+                if (self.currentCPUUsage.timeCPUProbed - self.previousCPUUsage.timeCPUProbed) < SwitchingThread.MIN_TIME_THREAD_PROBED:
+                    return False
+
+                if self.previousCPUUsage:
+                    freezed = self.currentCPUUsage.cpuTime == self.previousCPUUsage.cpuTime
 
         self.previousCPUUsage = self.currentCPUUsage
 
