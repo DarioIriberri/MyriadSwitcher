@@ -162,13 +162,23 @@ class PanelMinerInstance(wx.Panel):
             self.handler.statusStopping()
 
     def __findMiner(self, algoKey):
-        miner = self.handler.getDevice()[algoKey]['miner']
+        dev = self.handler.getDevice()
+
+        if not algoKey in dev:
+            dev = self.handler.getDefaultDevice()
+
+        miner = dev[algoKey]['miner']
 
         return FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner + '/' + miner
 
     def __findConfig(self, algoKey):
-        miner = self.handler.getDevice()[algoKey]['miner']
-        config = self.handler.getDevice()[algoKey]['config']
+        dev = self.handler.getDevice()
+
+        if not algoKey in dev:
+            dev = self.handler.getDefaultDevice()
+
+        miner = dev[algoKey]['miner']
+        config = dev[algoKey]['config']
         configPath = FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner + '/' + config
 
         #Open the config file
@@ -424,6 +434,14 @@ class PanelMinerInstanceHandler(wx.Panel):
 
     def getDevice(self):
         device = self.findDevice(self.deviceCombo.GetValue())
+        if not device:
+            return None
+
+        device['num'] = int(self.deviceNum.GetValue())
+        return device
+
+    def getDefaultDevice(self):
+        device = self.findDevice("default")
         if not device:
             return None
 

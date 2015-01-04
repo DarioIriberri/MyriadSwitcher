@@ -291,7 +291,9 @@ class HTMLBuilder():
         #stringOthersCoinsS = minedS + " / " + "{:7.0f}".format(totalCoinsSkein)   + valCorrectedS
         #stringOthersCoinsQ = minedQ + " / " + "{:7.0f}".format(totalCoinsQubit)   + valCorrectedQ
 
-        stringPrice = '{0:>10} $'.format(int(currentPrice * valCorrected / float(config_json["scryptHashRate"]))) + '{0:>10} $ '.format(int((currentPrice * valCorrected)))
+        scryptHR = 1 if config_json["scryptHashRate"] == 0 else config_json["scryptHashRate"]
+
+        stringPrice = '{0:>10} $'.format(int(currentPrice * valCorrected / float(scryptHR))) + '{0:>10} $ '.format(int((currentPrice * valCorrected)))
 
         fcY = fcG = fcS = fcQ = hashColorF3[status]
         bcY = bcG = bcS = bcQ = hashColorB3[status]
@@ -331,7 +333,7 @@ class HTMLBuilder():
             if stopped:
                 fcY = fcG = fcS = fcQ = tforeground = foregroundDisabled
 
-        totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int((profitabilityTotal / config_json["scryptHashRate"]))) + " $" + '{0: >10}'.format(int(profitabilityTotal)) + " $  "
+        totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int((profitabilityTotal / scryptHR))) + " $" + '{0: >10}'.format(int(profitabilityTotal)) + " $  "
 
         currentPriceFormated = '{0:>6} $'.format(int(currentPrice))
         coinsPerWatt = "{:0.2f}".format(0) if wattsAvg == 0 else "{:0.2f}".format(dailyCoinsTot / wattsAvg)
