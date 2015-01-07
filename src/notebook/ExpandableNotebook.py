@@ -6,6 +6,7 @@ import copy
 import io
 import os
 import wx.lib.newevent
+import wx.lib.agw.genericmessagedialog as GMD
 
 NotebookBroadcastEvent, EVT_NOTEBOOK_BROADCAST_EVENT = wx.lib.newevent.NewEvent()
 
@@ -386,7 +387,7 @@ class ExpandableNotebook(wx.Notebook):
         return config_json
 
     def __configError(self):
-        dlg = wx.MessageDialog(self, 'The config file ' + self.activeFile + " is unreadable. Using defaults",
+        dlg = GMD.GenericMessageDialog(self, 'The config file ' + self.activeFile + " is unreadable. Using defaults",
                                    'Configuration Error',
                                    wx.OK | wx.ICON_ERROR
                                    #wx.YES_NO | wx.NO_DEFAULT | wx.CANCEL | wx.ICON_INFORMATION

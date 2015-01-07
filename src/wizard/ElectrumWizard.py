@@ -2,8 +2,8 @@ __author__ = 'Dario'
 
 import wx
 import os
-#from wallet import Electrum as wallet
-from wallet import QTWallet as wallet
+from wallet import Electrum
+#from wallet import QTWallet as wallet
 import FrameMYR
 import wx.wizard as wiz
 
@@ -43,7 +43,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
         page3.sizer.Add(wx.StaticText(page3, -1, """
     You can find your wallet at
 
-    """ + wallet.PATH_TO_EXE + """
+    """ + Electrum.PATH_TO_EXE + """
 
     or you can open it using the desktop shortcut if you created it.
 
@@ -51,7 +51,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
     Menu -> Help -> Open User Guide
     or browse to
 
-    """ + wallet.PATH_TO_DOC + """
+    """ + Electrum.PATH_TO_DOC + """
 
     The application will start now. Just pick your mining device(s)
     in the lower panel and start mining by pressing the 'Start' button."""))
@@ -94,7 +94,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
             self.isRunning = True
             if os.name == "nt":
                 #psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "/electrum/Electrum-MyrWallet.exe", shell=False)
-                wallet.openWallet()
+                Electrum.openWallet()
 
             if os.name == "posix":
                 pass
@@ -102,7 +102,7 @@ class MyriadSwitcherWizard(wiz.Wizard):
         if event.GetPage().pageId == PAGE_SHORTCUT:
             if os.name == "nt":
                 if event.GetPage().prev.cb.GetValue():
-                    wallet.createDesktopShortcut()
+                    Electrum.createDesktopShortcut()
 
             if os.name == "posix":
                 pass
@@ -142,7 +142,7 @@ class WizardPage2(WizardPage):
         self.sizer.Add(self.cb, 0, wx.ALL, 5)
 
     def GetNext(self):
-        if not wallet.checkIfWalletExists():
+        if not Electrum.checkIfWalletExists():
             return self.parent.page4
 
         return self.next

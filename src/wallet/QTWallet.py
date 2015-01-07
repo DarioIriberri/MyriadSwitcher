@@ -1,10 +1,11 @@
 __author__ = 'Dario'
 
 import os
+import io
 import psutil
-import shutil
 import time
-import subprocess
+import random
+import string
 import FrameMYR
 import win32gui
 import win32con
@@ -15,113 +16,146 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 PATH_TO_DOC = os.getcwd() + "\\README\\README.html"
 PATH_TO_WALLET = os.environ['AppData'] + "\\Myriadcoin\\wallet.dat"
 PATH_TO_WALLET_DIR = os.environ['AppData'] + "\\Myriadcoin\\"
+EXE_NAME = "myriadcoin-qt.exe"
 
-USER = "myriadswitcher"
-PASS = "123"
+USER = 'myriadswitcher'
 PORT = "8333"
+
+RPC_CONFIG_FILE = 'myriadcoin.conf'
 
 walletProcess = None
 rpc_conn = None
 
-def openWallet(event=None, shell=False):
-    global walletProcess
+class QTWallet():
+    def __init__(self):
+        self.password = self.__generateRandomPassword()
 
-    if not __findQTWalletWindow():
-        walletProcess = psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets/myriadcoin-qt.exe", shell=shell)
+    def openWallet(self, event=None, shell=False):
+        global walletProcess
 
-#def openWalletExtern(event=None, shell=False):
-#    if not __findQTWalletWindow():
-#        callS = os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + 'wallets\\myriadcoin-qt.exe'
-#        subprocess.call(callS, shell=False)
+        if not self.__findQTWalletWindow():
+            walletProcess = psutil.Popen(FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets\\" + EXE_NAME, shell=shell)
 
-def createDesktopShortcut():
-    import win32com.client
+    def createDesktopShortcut(self):
+        import win32com.client
 
-    ws = win32com.client.Dispatch("wscript.shell")
-    scut = ws.CreateShortcut(os.getenv('UserProfile') + '\\Desktop\\myriadcoin-qt.lnk')
-    #self.htmlBuilder.pl(os.getcwd())
-    #scut.TargetPath = '"' + (os.getcwd() + '\\electrum\\Electrum-MyrWallet.exe"')
-    scut.TargetPath = '\"' + getPathToExe() + '\"'
-    scut.WorkingDirectory = os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets"
-    scut.Save()
+        ws = win32com.client.Dispatch("wscript.shell")
+        scut = ws.CreateShortcut(os.getenv('UserProfile') + '\\Desktop\\myriadcoin-qt.lnk')
+        #self.htmlBuilder.pl(os.getcwd())
+        #scut.TargetPath = '"' + (os.getcwd() + '\\electrum\\Electrum-MyrWallet.exe"')
+        scut.TargetPath = '\"' + self.getPathToExe() + '\"'
+        scut.WorkingDirectory = os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets"
+        scut.Save()
 
-def getPathToExe():
-    return os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets\\myriadcoin-qt.exe"
+    def getPathToExe(self):
+        return os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets\\" + EXE_NAME
 
-def checkIfWalletExists():
-    return os.path.isfile(PATH_TO_WALLET)
+    def checkIfWalletExists(self):
+        return os.path.isfile(PATH_TO_WALLET)
 
-def getAccountAddress(acc=""):
-    global walletProcess
-    global rpc_conn
+    def checkIfWalletIsRunning(self):
+        for proc in psutil.process_iter():
+            try:
+                proc.name()
+            except:
+                continue
 
-    if not walletProcess or not walletProcess.is_running():
-        __copyMyriadcoinConf()
+            if EXE_NAME in proc.name():
+                return True
 
-        openWallet(shell=False)
+        return False
 
-    count = 0
-    walletAddress = None
-    MAX_ITER = 15
+    def getAccountAddress(self, acc=""):
+        global walletProcess
+        global rpc_conn
 
-    while not walletAddress and count < MAX_ITER:
-        try:
-            rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:%s"%(USER, PASS, PORT))
-            walletAddress = rpc_conn.getaccountaddress('MyriadSwitcher_' + acc)
-            #walletAddress = rpc_conn.getaccountaddress("Myriad_Switcher")
-        except:
-            pass
+        if not walletProcess or not walletProcess.is_running():
+            self.__copyMyriadcoinConf()
 
-        count += 1
-        time.sleep(1)
+            self.openWallet(shell=False)
 
-    return walletAddress
+        count = 0
+        walletAddress = None
+        MAX_ITER = 60
 
-def killWallet():
-    if walletProcess:
-        walletProcess.kill()
+        while not walletAddress and count < MAX_ITER:
+            try:
+                rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:%s"%(USER, self.password, PORT))
+                walletAddress = rpc_conn.getaccountaddress('MyriadSwitcher_' + acc)
+                #walletAddress = rpc_conn.getaccountaddress("Myriad_Switcher")
+            except:
+                pass
 
-    os.remove(PATH_TO_WALLET_DIR + "myriadcoin.conf")
+            count += 1
+            time.sleep(1)
 
-def checkAddress(address):
-    global rpc_conn
+        return walletAddress
 
-    if not rpc_conn:
-        rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:%s"%(USER, PASS, PORT))
+    def killWallet(self):
+        if walletProcess:
+            walletProcess.kill()
 
-    validateData = rpc_conn.validateaddress(address)
+        configPath = PATH_TO_WALLET_DIR + RPC_CONFIG_FILE
+        if os.path.isfile(configPath):
+            os.remove(configPath)
 
-    return validateData['isvalid'] and validateData['ismine']
+    def checkAddress(self, address):
+        global rpc_conn
 
-def __copyMyriadcoinConf():
-    if not os.path.isdir(PATH_TO_WALLET_DIR):
-        os.makedirs(PATH_TO_WALLET_DIR)
+        if not rpc_conn:
+            rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:%s"%(USER, self.password, PORT))
 
-    shutil.copyfile(os.getcwd() + "\\myriadcoin.conf", PATH_TO_WALLET_DIR + "myriadcoin.conf")
+        validateData = rpc_conn.validateaddress(address)
 
-def __findQTWalletWindow():
-    cb = lambda x,y: y.append(x)
+        return validateData['isvalid'] and validateData['ismine']
 
-    wins = []
-    win32gui.EnumWindows(cb,wins)
+    def __copyMyriadcoinConf(self):
+        if not os.path.isdir(PATH_TO_WALLET_DIR):
+            os.makedirs(PATH_TO_WALLET_DIR)
 
-    # now check to see if any match our regexp:
-    tgtWin = -1
-    for win in wins:
-        txt = win32gui.GetWindowText(win)
-        if txt == 'Myriadcoin Core - Wallet':
-            tgtWin = win
+        f = open(RPC_CONFIG_FILE)
+        lines = f.readlines()
+        f.close()
 
-    if tgtWin >= 0:
-        win32gui.ShowWindow(tgtWin, win32con.SW_RESTORE)
-        win32gui.ShowWindow(tgtWin, win32con.SW_SHOW)
-        win32gui.BringWindowToTop(tgtWin)
-        win32gui.SetForegroundWindow(tgtWin)
+        string_out = ''
 
-        #        ShowWindow(hWnd,SW_SHOW);
-        #::BringWindowToTop(hWnd);
-        #::SetForegrounWindow(hWnd)
+        for i in range(0, len(lines)):
+            if lines[i].startswith('rpcpassword'):
+                lines[i] = "rpcpassword=" + self.password + os.linesep
 
-        return True
+            string_out += lines[i]
 
-    return False
+        io.open(PATH_TO_WALLET_DIR + RPC_CONFIG_FILE, 'wt', encoding='utf-8').write(unicode(string_out))
+
+    def __findQTWalletWindow(self):
+        cb = lambda x,y: y.append(x)
+
+        wins = []
+        win32gui.EnumWindows(cb,wins)
+
+        # now check to see if any match our regexp:
+        tgtWin = -1
+        for win in wins:
+            txt = win32gui.GetWindowText(win)
+            if txt == 'Myriadcoin Core - Wallet':
+                tgtWin = win
+
+        if tgtWin >= 0:
+            win32gui.ShowWindow(tgtWin, win32con.SW_RESTORE)
+            win32gui.ShowWindow(tgtWin, win32con.SW_SHOW)
+            win32gui.BringWindowToTop(tgtWin)
+            win32gui.SetForegroundWindow(tgtWin)
+
+            #        ShowWindow(hWnd,SW_SHOW);
+            #::BringWindowToTop(hWnd);
+            #::SetForegrounWindow(hWnd)
+
+            return True
+
+        return False
+
+    def __generateRandomPassword(self):
+        chars = string.ascii_letters + string.digits
+        random.seed = (os.urandom(1024))
+
+        return  ''.join(random.choice(chars) for i in range(32))

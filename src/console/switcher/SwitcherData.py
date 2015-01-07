@@ -43,7 +43,7 @@ MODE_MAX_PER_DAY = 1
 MODE_MAX_PER_WATT = 2
 MODE_MAX_PER_HYBRID = 3
 
-num = 20.11656761
+DIFF_CONSTANT = 20.11656761
 
 CURRENT_BLOCK_REWARD = 1000
 
@@ -153,10 +153,10 @@ class SwitcherData():
 
         #httpTime = time.time() - startT2
 
-        scryptCorrFactor  = self.config_json["scryptHashRate"]  * num * float(blockReward)
-        groestlCorrFactor = self.config_json["groestlHashRate"] * num * float(blockReward)
-        skeinCorrFactor   = self.config_json["skeinHashRate"]   * num * float(blockReward)
-        qubitCorrFactor   = self.config_json["qubitHashRate"]   * num * float(blockReward)
+        scryptCorrFactor  = self.config_json["scryptHashRate"]  * DIFF_CONSTANT * float(blockReward)
+        groestlCorrFactor = self.config_json["groestlHashRate"] * DIFF_CONSTANT * float(blockReward)
+        skeinCorrFactor   = self.config_json["skeinHashRate"]   * DIFF_CONSTANT * float(blockReward)
+        qubitCorrFactor   = self.config_json["qubitHashRate"]   * DIFF_CONSTANT * float(blockReward)
 
         self.previousPrice = self.currentPrice
 

@@ -5,11 +5,13 @@ __author__ = 'Dario'
 
 import wx
 import os
+import wx.lib.agw.genericmessagedialog as GMD
 
 try:
     from agw import multidirdialog as MDD
 except ImportError:
     import wx.lib.agw.multidirdialog as MDD
+
 
 class MiscellaneousTab(nbt.NotebookTab):
     #----------------------------------------------------------------------
@@ -290,7 +292,7 @@ class LogsExchangePanel(wx.Panel):
             #if logPath:
             #
             #    if not os.path.isdir(logPath):
-            #        dlg = wx.MessageDialog(self, 'The directory ' + logPath + " does not exist",
+            #        dlg = GMD.GenericMessageDialog(self, 'The directory ' + logPath + " does not exist",
             #                               'Configuration Warning',
             #                               wx.OK | wx.ICON_WARNING
             #        )
@@ -352,7 +354,7 @@ class LogsExchangePanel(wx.Panel):
         logPath = self.logs_box.txtDir.GetValue()
 
         if active_log and not os.path.isdir(logPath):
-            dlg = wx.MessageDialog(self, 'The logging directory ' + logPath + " does not exist",
+            dlg = GMD.GenericMessageDialog(self, 'The logging directory ' + logPath + " does not exist",
                                        'Configuration Error',
                                        wx.OK | wx.ICON_ERROR
             )

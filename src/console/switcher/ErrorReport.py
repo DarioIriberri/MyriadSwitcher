@@ -3,13 +3,14 @@ __author__ = 'Dario'
 import smtplib
 import wx
 import FrameMYR
+import wx.lib.agw.genericmessagedialog as GMD
 
 class ErrorReport():
 
     def sendReport(self, parent, text):
         try:
             question = "Sorry, something went wrong and your mining session will stop.\n\nDo you want to send an error report? No personal data will be included."
-            dlg = wx.MessageDialog(parent, question, "Send Error Report", wx.YES_NO | wx.ICON_STOP)
+            dlg = GMD.GenericMessageDialog(parent, question, "Send Error Report", wx.YES_NO | wx.ICON_STOP)
             result = dlg.ShowModal() == wx.ID_YES
             dlg.Destroy()
 

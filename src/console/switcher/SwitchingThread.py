@@ -165,7 +165,7 @@ class SwitchingThread (threading.Thread):
                         if self.mainMode == "advanced":
                             self.kill()
 
-                        retCode = self.startMiners(scriptPath, self.switcherData.maxAlgo, restart, status == "SWITCH")
+                        retCode = self.startMiners(scriptPath, self.switcherData.maxAlgo, status == "SWITCH")
 
                         #retCode = subprocess.Popen('cd /d "' + workingDirectory.encode(sys.getfilesystemencoding()) + '" && start cmd /c "' + scriptPath.encode(sys.getfilesystemencoding()) + '"', shell=True)
                         #subprocess.call('cd /d "' + unicode(workingDirectory) + '" && start cmd /c "' + unicode(scriptPath) + '"', shell=True)
@@ -176,7 +176,7 @@ class SwitchingThread (threading.Thread):
                             #switcherData.pl("Please, select a mining device first!: " + scriptPath, HTMLBuilder.COLOR_RED)
 
                             #question = "Please, select a mining device in the lower panel to start mining."
-                            #dlg = wx.MessageDialog(self.console, question, "Unable to start your mining session...", wx.OK)
+                            #dlg = GMD.GenericMessageDialog(self.console, question, "Unable to start your mining session...", wx.OK)
                             #dlg.ShowModal()
                             #dlg.Destroy()
 
@@ -197,10 +197,6 @@ class SwitchingThread (threading.Thread):
                         if self.waitForMinerToStart(self.switcherData.getMiner(), self.switcherData.config_json["rampUptime"]):
                             self.cpu1 = self.getCPUUsages(self.switcherData.getMiner())
                             self.activeMiner = self.switcherData.getMiner()
-
-                            #if self.checkSwitchingThreadStopped():
-                            #    breakAt = "after miner start"
-                            #    break
 
                     restartTime = time.time() - t1
 
@@ -262,11 +258,7 @@ class SwitchingThread (threading.Thread):
                 if ret:
                     return ret
 
-            #print time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "In thread loop..... "
             time.sleep(LOOP_SLEEP_TIME)
-
-        if self.configChangedFlag:
-            t_initSleep = time.time()
 
         self.configChangedFlag = False
 
@@ -292,7 +284,7 @@ class SwitchingThread (threading.Thread):
         else:
             return None if self.console.frame_myr.checkMinerCrashed() else MINER_CRASHED
 
-    def startMiners(self, scriptPath, maxAlgo, restart, switch):
+    def startMiners(self, scriptPath, maxAlgo, switch):
         retCode = None
 
         if "advanced" == self.mainMode:
@@ -302,10 +294,6 @@ class SwitchingThread (threading.Thread):
             return not retCode
 
         else:
-            # Not restart because in the switching thread context "restart" means "restart crashed miners"
-            # while in the miner panels "restart" in execute means restart even if already running.
-            # What we want here is to only have the crashed miners restarted. We use restart = true when switching algos
-            # to restart all of the miners to run the new algo
             retCode = self.console.frame_myr.executeAlgo(maxAlgo, switch)
 
         return retCode

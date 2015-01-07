@@ -10,7 +10,7 @@ import json
 import FrameMYR
 from wx.lib.mixins.listctrl import TextEditMixin
 from ObjectListView import ObjectListView, ColumnDefn
-import wx.dataview as dv
+import wx.lib.agw.genericmessagedialog as GMD
 from wallet import QTWallet as wallet
 from ConfigTabPanels import BaseConfigTab
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
@@ -165,7 +165,9 @@ class AlgoPanelSimple(wx.Panel):
 
         self.algo = algo
 
-        self.walletAdress = self.parent.parentNotebook.getParentWindow().walletAddresses[algo.strip().lower()]
+        algoKey = algo.strip().lower()
+        walletAddresses = self.parent.parentNotebook.getParentWindow().walletAddresses
+        self.walletAdress = walletAddresses[algoKey] if algoKey in walletAddresses else None
 
         boxWrapper = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -224,7 +226,7 @@ class AlgoPanelSimple(wx.Panel):
 
                         question = 'An address that is not in your wallet \n\n(' + badAddress + ')\n\nwas set for ' + self.algo.strip().lower() + '\n' \
                                    'Do you want to replace it with one that is? \n\n(' + walletAdress + ')'
-                        dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_WARNING)
+                        dlg = GMD.GenericMessageDialog(self, question, "Warning", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_WARNING)
 
                         if dlg.ShowModal() == wx.ID_YES:
                             frame.registerInvalidAddress(badAddress)

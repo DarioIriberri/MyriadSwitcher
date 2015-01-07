@@ -9,11 +9,10 @@ import os
 import wx.html2 as webview
 import FrameMYR
 import threading
-import  wx.lib.scrolledpanel as scrolled
 from event.Event import Event
 from os import listdir
 from os.path import isfile, join
-import wx.dataview as dv
+import wx.lib.agw.genericmessagedialog as GMD
 from ObjectListView import ObjectListView, ColumnDefn
 from console.switcher.SwitchingThread import SwitchingThread
 from event.EventLib import ConsoleEvent, EVT_CONSOLE_EVENT
@@ -336,7 +335,7 @@ class PanelLogs(wx.Panel):
 
     def onPopUpDelete(self, event):
         question = "Are you sure you want to delete those files?"
-        dlg = wx.MessageDialog(self, question, "Confirm deletion", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
+        dlg = GMD.GenericMessageDialog(self, question, "Confirm deletion", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
         result = dlg.ShowModal() == wx.ID_YES
         dlg.Destroy()
 

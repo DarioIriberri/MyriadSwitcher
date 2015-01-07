@@ -4,6 +4,7 @@ import os.path
 
 import wx
 import contrib.FileBrowseButton as Filebrowser
+import wx.lib.agw.genericmessagedialog as GMD
 
 import FrameMYR
 from notebook.tabs.ConfigTabPanels import BaseConfigTab, HeaderPanel
@@ -157,7 +158,7 @@ class AlgoPanelAdvanced(wx.Panel):
         file_name = self.fbb.value
 
         if active_algo and not os.path.isfile(file_name):
-            dlg = wx.MessageDialog(self, 'The file ' + file_name + "\nfor " + self.algo + " does not exist",
+            dlg = GMD.GenericMessageDialog(self, 'The file ' + file_name + "\nfor " + self.algo + " does not exist",
                                    self.algo + 'Configuration Error',
                                    wx.OK | wx.ICON_ERROR
             )

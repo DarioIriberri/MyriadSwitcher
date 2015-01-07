@@ -11,7 +11,7 @@ from wizard import QTWizard as wz
 from wx.lib.buttons import *
 from Tkinter import Tk
 #from wallet import Electrum as wallet
-from wallet import QTWallet as wallet
+from wallet.QTWallet import QTWallet as wallet
 from console.PanelConsole import PanelConsole
 from console.switcher import SwitcherData
 from miner.PanelMiners import PanelMiners
@@ -21,6 +21,7 @@ from notebook.tabs.ConfigTab import ConfigTab
 from notebook.tabs.SwitchingModesTab import SwitchingModesTab
 from notebook.tabs.MiscellaneousTab import MiscellaneousTab
 from event.EventLib import EVT_STATUS_BAR_EVENT, EVT_DUMMY_EVENT, DummyEvent
+import wx.lib.agw.genericmessagedialog as GMD
 
 SCRYPT  = "scrypt"
 GROESTL = "groestl"
@@ -28,7 +29,7 @@ SKEIN   = "skein"
 QUBIT   = "qubit"
 
 VERSION  = "0.3"
-REVISION = 2
+REVISION = 3
 
 GRAVITY = 0.7
 
@@ -51,13 +52,17 @@ class FrameMYRClass(wx.Frame):
                           size=(800, 383)
         )
 
+
+        self.wallet = wallet()
+        walletClosed = self.checkIfWalletIsRunning()
         self.onWizard(forceRun=False)
         self.walletAddresses = dict()
 
-        self.walletAddresses[SCRYPT] = wallet.getAccountAddress(SCRYPT)
-        self.walletAddresses[GROESTL] = wallet.getAccountAddress(GROESTL)
-        self.walletAddresses[SKEIN] = wallet.getAccountAddress(SKEIN)
-        self.walletAddresses[QUBIT] = wallet.getAccountAddress(QUBIT)
+        if walletClosed:
+            self.walletAddresses[SCRYPT] = self.wallet.getAccountAddress(SCRYPT)
+            self.walletAddresses[GROESTL] = self.wallet.getAccountAddress(GROESTL)
+            self.walletAddresses[SKEIN] = self.wallet.getAccountAddress(SKEIN)
+            self.walletAddresses[QUBIT] = self.wallet.getAccountAddress(QUBIT)
 
         self.prev_size = self.GetSize()
         self.isNotebookSimple = True
@@ -115,7 +120,8 @@ class FrameMYRClass(wx.Frame):
         menuSaveAs = filemenu.Append(wx.ID_SAVEAS, "Save &as..."," Save configuration as...")
         menuExit = filemenu.Append(wx.ID_EXIT,"E&xit"," Terminate the program")
         menuRTFM = helpmenu.Append(wx.ID_ANY, "&Open the User Guide"," Open the user guide")
-        menuWizard = helpmenu.Append(wx.ID_ANY, "Run the &wizard"," Run the wizard")
+        #menuWizard = helpmenu.Append(wx.ID_ANY, "Run the &wizard"," Run the wizard")
+        menuWizard = helpmenu.Append(wx.ID_ANY, "&Welcome message"," Welcome message")
         menuAbout = helpmenu.Append(wx.ID_ABOUT, "&About"," Information about this program")
         menuDonateMYR = donationsmenu.Append(wx.ID_ANY, "Donate &Myriadcoins (MYR)"," Copies MYR address to clipboard to donate Myriadcoins")
         menuDonateBTC = donationsmenu.Append(wx.ID_ANY, "Donate &Bitcoins (BTC)"," Copies MYR address to clipboard to donate Bitcoins")
@@ -263,7 +269,7 @@ class FrameMYRClass(wx.Frame):
         self.notebook.broadcastEventToAllTabs(event_id="main_config",
                                               event_value=("advanced" == self.getMainMode()))
 
-        wallet.killWallet()
+        self.wallet.killWallet()
 
         self.Maximize()
         self.Layout()
@@ -324,7 +330,7 @@ class FrameMYRClass(wx.Frame):
 
     def onAbout(self, event):
         # Create a message dialog box
-        dlg = wx.MessageDialog(self, " Myriad Switcher " + self.getVersion() + " by Dario Iriberri (dazz).", "About", wx.OK)
+        dlg = GMD.GenericMessageDialog(self, " Myriad Switcher " + self.getVersion() + " by Dario Iriberri (dazz).", "About", agwStyle=wx.ICON_INFORMATION | wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -340,20 +346,40 @@ class FrameMYRClass(wx.Frame):
 
     def onWizard(self, event=None, forceRun=True):
         wizard = wz.MyriadSwitcherWizard(self)
-        if forceRun or not wallet.checkIfWalletExists():
+        if forceRun or not self.wallet.checkIfWalletExists():
             wizard.startWizard()
+
+    def checkIfWalletIsRunning(self):
+        if self.wallet.checkIfWalletIsRunning():
+            dlg = GMD.GenericMessageDialog(None, "The Myriadcoin wallet is already running\n\n"
+                                                 "Close the wallet and press OK to try again\n\n"
+                                                 "or press Cancel to open Myriad Switcher.\n\n"
+                                                 "If you press Cancel and skip this step\n\n"
+                                                 "Myriad Switcher won't be able to load your addresses", "Warning",
+                                           agwStyle=wx.ICON_WARNING | wx.OK | wx.CANCEL)
+
+            res = dlg.ShowModal()
+            dlg.Destroy()
+
+            if res == wx.ID_OK:
+                self.checkIfWalletIsRunning()
+            else:
+                return False
+
+        else:
+            return True
 
     def onDonateMYR(self, event):
         myr_address = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
         self.writeClipboard(myr_address)
-        dlg = wx.MessageDialog(self, "MYR address " + myr_address + " copied to clipboard.\n\nThanks for your support.", "MYR Donation" , wx.OK)
+        dlg = GMD.GenericMessageDialog(self, "MYR address " + myr_address + " copied to clipboard.\n\nThanks for your support.", "MYR Donation", wx.ICON_INFORMATION | wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 
     def onDonateBTC(self, event):
         btc_address = "1PS2WmKorxCeFoNZbZ5XKgbiDjofxFgcPL"
         self.writeClipboard(btc_address)
-        dlg = wx.MessageDialog(self, "BTC address " + btc_address + " copied to clipboard.\n\nThanks for your support.", "BTC Donation", wx.OK)
+        dlg = GMD.GenericMessageDialog(self, "BTC address " + btc_address + " copied to clipboard.\n\nThanks for your support.", "BTC Donation", wx.ICON_INFORMATION | wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -417,7 +443,7 @@ class FrameMYRClass(wx.Frame):
 
         if self.isThereAPreviousSession():
             question = "This will delete your previously stored session data. Are you sure you want to continue?"
-            dlg = wx.MessageDialog(self, question, "Warning", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
+            dlg = GMD.GenericMessageDialog(self, question, "Warning", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
             result = dlg.ShowModal() == wx.ID_YES
             dlg.Destroy()
 
@@ -436,7 +462,7 @@ class FrameMYRClass(wx.Frame):
 
     def checkMinersSelected(self):
         if not self.miners.checkMinersSelected():
-            dlg = wx.MessageDialog(self,
+            dlg = GMD.GenericMessageDialog(self,
                                    "Pick at least one mining device in the lower panel to start your mining session.\n\n ",
                                    "Unable to start the mining session..." , wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
@@ -590,7 +616,7 @@ class FrameMYRClass(wx.Frame):
     def checkConfigChangesPending(self):
         if self.buttonSave.IsEnabled():
             question = "You have unsaved configuration changes.\nDo you want to save them now?"
-            dlg = wx.MessageDialog(self, question, "Save your changes", wx.YES | wx.NO | wx.CANCEL | wx.ICON_WARNING)
+            dlg = GMD.GenericMessageDialog(self, question, "Save your changes", wx.YES | wx.NO | wx.CANCEL | wx.ICON_WARNING)
             result = dlg.ShowModal()
             dlg.Destroy()
 
