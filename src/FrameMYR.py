@@ -29,7 +29,7 @@ SKEIN   = "skein"
 QUBIT   = "qubit"
 
 VERSION  = "0.3"
-REVISION = 3
+REVISION = 4
 
 GRAVITY = 0.7
 
@@ -352,9 +352,9 @@ class FrameMYRClass(wx.Frame):
     def checkIfWalletIsRunning(self):
         if self.wallet.checkIfWalletIsRunning():
             dlg = GMD.GenericMessageDialog(None, "The Myriadcoin wallet is already running\n\n"
-                                                 "Close the wallet and press OK to try again\n\n"
+                                                 "Close the wallet and press OK to try again\n"
                                                  "or press Cancel to open Myriad Switcher.\n\n"
-                                                 "If you press Cancel and skip this step\n\n"
+                                                 "If you press Cancel and skip this step\n"
                                                  "Myriad Switcher won't be able to load your addresses", "Warning",
                                            agwStyle=wx.ICON_WARNING | wx.OK | wx.CANCEL)
 

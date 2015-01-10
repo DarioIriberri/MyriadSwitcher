@@ -503,9 +503,9 @@ class SwitcherData():
             if prevSwitchtext:
                 self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
                                           self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped,
-                                           self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
+                                           self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json, printToConsole=False)
 
-            self.htmlBuilder.printHeader()
+            self.htmlBuilder.printHeader(printToConsole=False)
 
             self.coinsStint = 0
             self.wattsStint = 0

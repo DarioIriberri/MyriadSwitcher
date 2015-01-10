@@ -1,7 +1,6 @@
 __author__ = 'Dario'
 
 import threading
-import psutil
 import subprocess
 import time
 import sys
@@ -10,8 +9,11 @@ import os
 import logging
 import socket
 import traceback
-from console.switcher.ErrorReport import ErrorReport
+
+import psutil
+
 from console.switcher import HTMLBuilder, SwitcherData
+from errorReports import ErrorReport as err
 
 
 MIN_TIME_THREAD_PROBED = 120
@@ -230,7 +232,7 @@ class SwitchingThread (threading.Thread):
 
                 self.printTraceback("Unexpected error")
 
-                ErrorReport().sendReport(self.console, traceback.format_exc())
+                err.ErrorReport().sendReport(self.console, traceback.format_exc())
 
                 break
 

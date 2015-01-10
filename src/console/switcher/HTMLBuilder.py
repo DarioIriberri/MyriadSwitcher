@@ -116,14 +116,15 @@ class HTMLBuilder():
 
         return html
 
-    def pl(self, line_p=" ", colorForeground=(255, 255, 255), colorBackground=(0, 0, 0)):
+    def pl(self, line_p=" ", colorForeground=(255, 255, 255), colorBackground=(0, 0, 0), printToConsole=True):
         self.p(line_p, colorForeground, colorBackground)
 
         self.line = "<tr><td>" + self.line + "</td></tr>"
         self.lines.append(self.line)
         self.line = str()
 
-        wx.PostEvent(self.console, ConsoleEvent(html=self.buildHTML(self.lines)))
+        if printToConsole:
+            wx.PostEvent(self.console, ConsoleEvent(html=self.buildHTML(self.lines)))
         #self.fireHTMLEvent(self.buildHTML(self.lines))
         #self.console.onConsoleEvent(self.buildHTML(self.lines))
         #thread = threading.Thread(target=self.console.onConsoleEvent, args = (self.buildHTML(self.lines),))
@@ -174,7 +175,7 @@ class HTMLBuilder():
     #def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
     #              active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableCorrected, hashtableTime, config_json):
     def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
-                  active, stopped, hashtableExpectedCoins, hashtableCorrected, hashtableTime, config_json):
+                  active, stopped, hashtableExpectedCoins, hashtableCorrected, hashtableTime, config_json, printToConsole=True):
 
         status = "FAIL" if status == "MAX_FAIL" else status
 
@@ -360,11 +361,11 @@ class HTMLBuilder():
         self.p( " ", colorBackground=spacerColor)
         self.p( '{0:>6} '.format(coinsPerWatt), hashColorF1[status], hashColorB1[status])
 
-        self.pl()
+        self.pl(printToConsole=printToConsole)
 
-    def printHeader(self):
-        self.pl()
-        self.pl("Time    Elapsed/Stint   Algo      Exch.  Prof 1Mh/s   My profit   Scrypt    %   /day   Groestl   %   /day    Skein    %   /day    Qubit    %   /day   Tot.Coins     Tot.$   /day   Prof 1Mh/s   My profit   Watts    C/W", COLOR_CYAN)
+    def printHeader(self, printToConsole=True):
+        self.pl(printToConsole=printToConsole)
+        self.pl("Time    Elapsed/Stint   Algo      Exch.  Prof 1Mh/s   My profit   Scrypt    %   /day   Groestl   %   /day    Skein    %   /day    Qubit    %   /day   Tot.Coins     Tot.$   /day   Prof 1Mh/s   My profit   Watts    C/W", COLOR_CYAN, printToConsole=printToConsole)
         #11:32:34 00 00:00:00 S  Qubit    522$    457958 $    591681 $        0   0%    785        0   0%    586        0   0%   1409        0   0%   1133        0          0 $      0          0 $         0 $    110W    0.00
 
 

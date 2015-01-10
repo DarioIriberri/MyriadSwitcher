@@ -23,13 +23,16 @@ class MyriadSwitcherWizard(wiz.Wizard):
                   "You can find your wallet at\n\n" + wallet.getPathToExe() + "\n\n" \
                   "or you can open it using the desktop shortcut if you choose to create it.\n\n" \
                   "You can access the documentation via\n\n" \
-                  "Menu -> Help -> Open User Guide\n\nor browse to\n\n" + \
-                  QTWallet.PATH_TO_DOC + "\n\nThe application will start now. \n" \
-                  "Just pick your mining device(s) in the lower panel \n" \
+                  "Menu -> Help -> Open User Guide\n\n" \
+                  "or browse to\n\n" + \
+                  QTWallet.PATH_TO_DOC + "\n\n" \
+                  "The application will start now.\n" \
+                  "Just pick your mining device(s) in the lower panel\n" \
                   "and start mining by pressing the 'Start' button.\n\n" \
                   "Do you want to create a desktop shortcut to your wallet?"
 
-        dlg = GMD.GenericMessageDialog(self, message, "Welcome", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_INFORMATION)
+        dlg = GMD.GenericMessageDialog(None, message, "Welcome", wx.YES_NO | wx.YES_DEFAULT | wx.ICON_INFORMATION)
+
         result = dlg.ShowModal() == wx.ID_YES
         dlg.Destroy()
 
