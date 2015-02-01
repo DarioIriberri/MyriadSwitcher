@@ -4,6 +4,7 @@ import SwitcherData
 from event.EventLib import *
 
 import wx
+import io
 import time
 import cPickle
 
@@ -50,6 +51,7 @@ spacerColor = COLOR_BLACK
 ANCHOR = "MPLArvmR7dQrF7BCPDFsRCniFnCJhZkG9d"
 
 SESSION_FILE_NAME = "m_s_session.myr"
+MAX_OUTPUT_LINES = 3000
 
 
 class HTMLBuilder():
@@ -123,8 +125,13 @@ class HTMLBuilder():
         self.lines.append(self.line)
         self.line = str()
 
+        lines = self.lines[-min(len(self.lines), MAX_OUTPUT_LINES):]
+        if len(self.lines) > MAX_OUTPUT_LINES:
+            linesTruncate = ["<tr><td>&nbsp;</td></tr>", "<tr><td>[...]</td>", "</tr><tr><td>&nbsp;</td></tr>"]
+            lines = [self.lines[0]] + linesTruncate + lines
+
         if printToConsole:
-            wx.PostEvent(self.console, ConsoleEvent(html=self.buildHTML(self.lines)))
+            wx.PostEvent(self.console, ConsoleEvent(html=self.buildHTML(lines)))
         #self.fireHTMLEvent(self.buildHTML(self.lines))
         #self.console.onConsoleEvent(self.buildHTML(self.lines))
         #thread = threading.Thread(target=self.console.onConsoleEvent, args = (self.buildHTML(self.lines),))
@@ -157,9 +164,11 @@ class HTMLBuilder():
         if config_json["logActive"]:
             startT = time.time()
 
-            f = open(logFileName, "w")
-            f.write(self.buildHTML(self.lines, 80, isLog=True))
-            f.close()
+            io.open(logFileName, 'wt', encoding='utf-8').write(unicode(self.buildHTML(self.lines, 80, isLog=True)))
+
+            #f = open(logFileName, "w")
+            #f.write(self.buildHTML(self.lines, 80, isLog=True))
+            #f.close()
 
         htmlTime = time.time() - startT
 

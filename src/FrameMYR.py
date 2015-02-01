@@ -151,7 +151,7 @@ class FrameMYRClass(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onButtonDefaults, self.buttonDefaults)
         self.Bind(wx.EVT_BUTTON, self.onSave, self.buttonSave)
         self.Bind(wx.EVT_BUTTON, self.onQuit, self.buttonQuit)
-        self.Bind(wx.EVT_BUTTON, wallet.openWallet, self.buttonWallet)
+        self.Bind(wx.EVT_BUTTON, self.wallet.openWallet, self.buttonWallet)
 
         #self.buttonWait1.Bind(wx.EVT_BUTTON, self.onButtonWait)
         #self.buttonWait2.Bind(wx.EVT_BUTTON, self.onButtonWait)
@@ -362,7 +362,7 @@ class FrameMYRClass(wx.Frame):
             dlg.Destroy()
 
             if res == wx.ID_OK:
-                self.checkIfWalletIsRunning()
+                return self.checkIfWalletIsRunning()
             else:
                 return False
 
