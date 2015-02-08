@@ -29,7 +29,7 @@ SKEIN   = "skein"
 QUBIT   = "qubit"
 
 VERSION  = "0.3"
-REVISION = 4
+REVISION = 5
 
 GRAVITY = 0.7
 
