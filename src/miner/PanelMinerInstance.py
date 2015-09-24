@@ -102,10 +102,11 @@ class PanelMinerInstance(wx.Panel):
 
         if self.handler.status == STATUS_READY:
             algoKey = maxAlgo.strip().lower()
+            cwd = self.__findCwd(algoKey)
             minerS = self.__findMiner(algoKey)
             configS = self.__findConfig(algoKey)
 
-            return self.handler.execute('"' + minerS + '" --config "' + configS + '" --text-only')
+            return self.handler.execute('"' + minerS + '" --config "' + configS + '" --text-only', cwd)
 
             #if SwitcherData.scryptS == maxAlgo:
             #    #return self.handler.execute('"E:/Litecoin/SGMiner/sgminer.exe" --config "E:/Litecoin/SGMiner/cgminer-MYR - Single.conf" --text-only')
@@ -126,12 +127,12 @@ class PanelMinerInstance(wx.Panel):
 
         return False
 
-    def execute(self, command):
+    def execute(self, command, cwd):
         self._killMiner()
 
         self.clearAll()
 
-        self.process = psutil.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        self.process = psutil.Popen(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         #self.process = psutil.Popen(command, stdout=subprocess.PIPE, shell=True)
         #self.process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 
@@ -162,24 +163,25 @@ class PanelMinerInstance(wx.Panel):
             self.handler.statusStopping()
 
     def __findMiner(self, algoKey):
-        dev = self.handler.getDevice()
-
-        if not algoKey in dev:
-            dev = self.handler.getDefaultDevice()
+        dev = self.__findDevice(algoKey)
 
         miner = dev[algoKey]['miner']
 
-        return FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner + '/' + miner
+        return miner
+
+    def __findCwd(self, algoKey):
+        dev = self.__findDevice(algoKey)
+
+        miner = dev[algoKey]['miner']
+
+        return FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner
 
     def __findConfig(self, algoKey):
-        dev = self.handler.getDevice()
-
-        if not algoKey in dev:
-            dev = self.handler.getDefaultDevice()
+        dev = self.__findDevice(algoKey)
 
         miner = dev[algoKey]['miner']
         config = dev[algoKey]['config']
-        configPath = FrameMYR.FrameMYRClass.RESOURCE_PATH + 'miners/' + miner + '/' + config
+        configPath = self.__findCwd(algoKey) + '/' + config
 
         #Open the config file
         f = open(os.getcwd() + '/' + configPath)
@@ -210,7 +212,15 @@ class PanelMinerInstance(wx.Panel):
 
         io.open(configPath, 'wt', encoding='utf-8').write(unicode(json.dumps(configData)))
 
-        return configPath
+        return config
+
+    def __findDevice(self, algoKey):
+        dev = self.handler.getDevice()
+
+        if not algoKey in dev:
+            dev = self.handler.getDefaultDevice()
+
+        return  dev
 
     def _killMiner(self):
         try:
@@ -498,11 +508,11 @@ class PanelMinerInstanceHandler(wx.Panel):
         #event.Skip()
         pass
 
-    def execute(self, command):
+    def execute(self, command, cwd):
         self.command = command
 
         if not self.parent.isMinerRunning():
-            ret = self.parent.execute(command)
+            ret = self.parent.execute(command, cwd)
             #self.parent.execute('"E:/sgminer v5/sgminer.exe" --config "E:/sgminer v5/cgminer-MYRQ.conf" --text-only')
             #self.parent.execute('"E:/Skein - Single/cgminer.exe" --config "E:/Skein - Single/cgminer-MYR.conf" --text-only')
 
