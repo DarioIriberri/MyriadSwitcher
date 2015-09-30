@@ -13,6 +13,7 @@ import json
 from wx._core import PyDeadObjectError
 from console.switcher import HTMLBuilder as clr
 from console.switcher import SwitchingThread
+from wx.tools.Editra.src.ebmlib.clipboard import Clipboard
 
 
 DEVICE_NONE_SELECTED = "Pick a device..."
@@ -31,6 +32,8 @@ STATUS_EXITED               = "STATUS_EXITED"
 
 MIN_ITERATIONS = 8
 MAX_ITERATIONS = 30
+
+MAX_SHELL_LINES = 10000
 
 
 class PanelMinerInstance(wx.Panel):
@@ -364,11 +367,22 @@ class PanelMinerInstance(wx.Panel):
         return freezed
 
     def __appendText(self, shell, text):
-        try:
-            shell.AppendText(text)
+        #try:
+        self.__truncateShellOutput(shell)
+        shell.AppendText(text)
+        #
+        #except PyDeadObjectError as ex:
+        #    pass
 
-        except PyDeadObjectError as ex:
-            pass
+    def __truncateShellOutput(self, shell):
+        numLines = shell.GetNumberOfLines()
+
+        if numLines > MAX_SHELL_LINES:
+            charsToRemove = 0
+            for i in range(numLines - MAX_SHELL_LINES):
+                charsToRemove += shell.GetLineLength(i) + 1
+
+            shell.Remove(0, charsToRemove)
 
 
 class CPUUsage():
@@ -506,6 +520,9 @@ class PanelMinerInstanceHandler(wx.Panel):
         #self.execute('"E:/SPH-SGMINER - Single/sgminer.exe" --config "E:/SPH-SGMINER - Single/cgminer-MYRQ.conf" --text-only')
 
         #event.Skip()
+
+        Clipboard.SystemSet(self.parent.shellStdout.GetValue() + os.linesep * 2 + '-------------------- stderr --------------------' + os.linesep * 2 + self.parent.shellStderr.GetValue())
+
         pass
 
     def execute(self, command, cwd):
