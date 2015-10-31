@@ -179,7 +179,7 @@ class HTMLBuilder():
     def getCoinsPerDay(self, coins, time, formated=False):
         coinsR = 0 if time == 0 else coins * (SECONDS_PER_DAY / time)
 
-        return '{0:>7}'.format(int(coinsR)) if formated else coinsR
+        return '{0:>7}'.format(int(round(coinsR))) if formated else coinsR
 
     #def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
     #              active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableCorrected, hashtableTime, config_json):
@@ -199,7 +199,7 @@ class HTMLBuilder():
             profitabilityTotal = self.getCoinsPerDay(totalSatoshi, globalTime)
 
         totalSatoshiStr = "{:11.0f}".format(totalSatoshi)
-        dailyCoinsFormated = '{0:>7}'.format(int(dailyCoinsTot))
+        dailyCoinsFormated = '{0:>7}'.format(int(round(dailyCoinsTot)))
 
         priceForegroundColor = COLOR_WHITE
 
@@ -281,10 +281,10 @@ class HTMLBuilder():
             totalCoinsSkein   = hashtableExpectedCoins[SwitcherData.skeinS]
             totalCoinsQubit   = hashtableExpectedCoins[SwitcherData.qubitS]
 
-            valCorrectedY = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.scryptS]))
-            valCorrectedG = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.groestlS]))
-            valCorrectedS = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.skeinS]))
-            valCorrectedQ = '{0:>7}'.format(int(hashtableCorrected[SwitcherData.qubitS]))
+            valCorrectedY = '{0:>7}'.format(int(round(hashtableCorrected[SwitcherData.scryptS])))
+            valCorrectedG = '{0:>7}'.format(int(round(hashtableCorrected[SwitcherData.groestlS])))
+            valCorrectedS = '{0:>7}'.format(int(round(hashtableCorrected[SwitcherData.skeinS])))
+            valCorrectedQ = '{0:>7}'.format(int(round(hashtableCorrected[SwitcherData.qubitS])))
 
         #minedY = '{0:>7}'.format(hashtableMinedCoins[scryptS])
         #minedG = '{0:>7}'.format(hashtableMinedCoins[groestlS])
@@ -303,7 +303,7 @@ class HTMLBuilder():
 
         scryptHR = 1 if config_json["scryptHashRate"] == 0 else config_json["scryptHashRate"]
 
-        stringPrice = '{0:>10} $'.format(int(currentPrice * valCorrected / float(scryptHR))) + '{0:>10} $ '.format(int((currentPrice * valCorrected)))
+        stringPrice = '{0:>10} $'.format(int(round(currentPrice * valCorrected / float(scryptHR)))) + '{0:>10} $ '.format(int(round(currentPrice * valCorrected)))
 
         fcY = fcG = fcS = fcQ = hashColorF3[status]
         bcY = bcG = bcS = bcQ = hashColorB3[status]
@@ -343,9 +343,9 @@ class HTMLBuilder():
             if stopped:
                 fcY = fcG = fcS = fcQ = tforeground = foregroundDisabled
 
-        totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int((profitabilityTotal / scryptHR))) + " $" + '{0: >10}'.format(int(profitabilityTotal)) + " $  "
+        totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int(round(profitabilityTotal / scryptHR))) + " $" + '{0: >10}'.format(int(round(profitabilityTotal))) + " $  "
 
-        currentPriceFormated = '{0:>6} $'.format(int(currentPrice))
+        currentPriceFormated = '{0:>6} $'.format(int(round(currentPrice)))
         coinsPerWatt = "{:0.2f}".format(0) if wattsAvg == 0 else "{:0.2f}".format(dailyCoinsTot / wattsAvg)
 
         nowP = time.strftime("%H:%M:%S", time.localtime(now))
@@ -366,7 +366,7 @@ class HTMLBuilder():
         self.p( stringOthersCoinsQ + " ", fcQ, bcQ)
         self.p( " ", colorBackground=spacerColor)
         self.p( totalCoinsFormated + totals , hashColorF4[status], hashColorB4[status])
-        self.p( " " + '{0:>4}'.format(int(wattsAvg)) + "W ", hashColorF1[status], hashColorB1[status])
+        self.p( " " + '{0:>4}'.format(int(round(wattsAvg))) + "W ", hashColorF1[status], hashColorB1[status])
         self.p( " ", colorBackground=spacerColor)
         self.p( '{0:>6} '.format(coinsPerWatt), hashColorF1[status], hashColorB1[status])
 
@@ -380,7 +380,7 @@ class HTMLBuilder():
 
     def getFormatedTime(self, timestamp):
         time_str = time.strftime('%H:%M:%S', time.gmtime(timestamp))
-        days = int(timestamp / SECONDS_PER_DAY)
+        days = int(round(timestamp) / SECONDS_PER_DAY)
 
         return "{:02.0f}".format(days) + " " + time_str
 

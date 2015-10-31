@@ -317,7 +317,7 @@ class SwitcherData():
 
         else:
             if self.config_json["mode"] == MODE_MAX_PER_DAY:
-                self.globalStopped = self.newValCorrected < self.config_json["minCoins"]
+                self.globalStopped = self.nextValCorrected < self.config_json["minCoins"]
 
             else:
                 averageMinimumCoinsPerWatt = self.config_json["minCoins"] / self.getAverageHashValues(self.hashtableWattsAttenuated)
