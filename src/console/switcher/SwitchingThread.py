@@ -117,7 +117,7 @@ class SwitchingThread (threading.Thread):
 
                 # Still same Algo, check if the miner is running OK
                 else:
-                    switchtext = "   " + self.switcherData.current
+                    switchtext = "   " + self.switcherData.currentAlgo
 
                     self.cpu2 = self.getCPUUsages(self.switcherData.getMiner())
 
@@ -129,7 +129,7 @@ class SwitchingThread (threading.Thread):
                     self.cpu1 = self.cpu2
 
                     if restart:
-                        switchtext = "x " + self.switcherData.current
+                        switchtext = "x " + self.switcherData.currentAlgo
                         status = "FAIL"
                         errors += 1
 
@@ -139,7 +139,7 @@ class SwitchingThread (threading.Thread):
                             maxMinerFails = True
 
                     else:
-                        switchtext = ". " + self.switcherData.current
+                        switchtext = ". " + self.switcherData.currentAlgo
                         status = "OK"
                         errors = 0
 
@@ -156,7 +156,7 @@ class SwitchingThread (threading.Thread):
                     if status != "SWITCH":
                         status = "OK"
 
-                    switchtext = "S " + self.switcherData.current
+                    switchtext = "S " + self.switcherData.currentAlgo
 
                 if self.checkRestart(prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
                     sleepTime = self.switcherData.config_json["sleepLONG"]

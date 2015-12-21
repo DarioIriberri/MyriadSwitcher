@@ -55,7 +55,7 @@ LOG_FORMAT_PATTERN = "%y.%m.%d.%H%M%S"
 
 class SwitcherData():
     def __init__(self, console, activeFile):
-        self.current                            = None
+        self.currentAlgo                            = None
         self.first                              = True
         self.currentPrice                       = None
         self.hashtableCorrected                 = None
@@ -241,18 +241,18 @@ class SwitcherData():
         greaterThanHys = True
         greaterThanMin = True
 
-        if self.current:
-            prevVal = self.hashtable[self.current]
+        if self.currentAlgo:
+            prevVal = self.hashtable[self.currentAlgo]
 
             greaterThanHys = ( not prevVal ) or ( float(self.maxValue) / float(prevVal) ) > self.config_json["hysteresis"]
             greaterThanMin = ((time.time() - self.lastStintStart) / 60.0) > self.config_json["minTimeNoHysteresis"]
 
-        isSwitch = (self.current != self.maxAlgo and ( greaterThanHys or greaterThanMin )) or forceSwitch
+        isSwitch = (self.currentAlgo != self.maxAlgo and ( greaterThanHys or greaterThanMin )) or forceSwitch
 
-        self.prevAlgo = self.current if self.current else self.maxAlgo
+        self.prevAlgo = self.currentAlgo if self.currentAlgo else self.maxAlgo
 
         if isSwitch:
-            self.current = self.maxAlgo
+            self.currentAlgo = self.maxAlgo
 
         return isSwitch
 
@@ -270,19 +270,19 @@ class SwitcherData():
         self.dumpData(self.htmlBuilder)
 
     def getMiner(self):
-        return self.hashtableMiners[self.current] if self.current in self.hashtableMiners.keys() else None
+        return self.hashtableMiners[self.currentAlgo] if self.currentAlgo in self.hashtableMiners.keys() else None
 
     def getScriptPath(self):
-        if self.current == scryptS:
+        if self.currentAlgo == scryptS:
             return self.config_json["scryptBatchFile"]
 
-        elif self.current == groestlS:
+        elif self.currentAlgo == groestlS:
             return self.config_json["groestlBatchFile"]
 
-        elif self.current == skeinS:
+        elif self.currentAlgo == skeinS:
             return self.config_json["skeinBatchFile"]
 
-        elif self.current == qubitS:
+        elif self.currentAlgo == qubitS:
             return self.config_json["qubitBatchFile"]
 
     def initRound(self, status):
@@ -304,7 +304,7 @@ class SwitcherData():
 
         self.prevValCorrected = self.prevHashtableCorrected[self.prevAlgo]
 
-        self.nextValCorrected = self.hashtableCorrected[self.current]
+        self.nextValCorrected = self.hashtableCorrected[self.currentAlgo]
         self.newValCorrected  = self.hashtableCorrected[self.prevAlgo]
 
         self.restartTime = 0
@@ -321,7 +321,7 @@ class SwitcherData():
 
             else:
                 averageMinimumCoinsPerWatt = self.config_json["minCoins"] / self.getAverageHashValues(self.hashtableWattsAttenuated)
-                self.globalStopped = self.hashtablePerWattAttenuated[self.current] < averageMinimumCoinsPerWatt
+                self.globalStopped = self.hashtablePerWattAttenuated[self.currentAlgo] < averageMinimumCoinsPerWatt
 
         #return self.globalStopped
 
@@ -515,7 +515,7 @@ class SwitcherData():
 
 
         self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
-                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.current, self.globalStopped,
+                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.currentAlgo, self.globalStopped,
                                    self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
         self.first = False
@@ -606,7 +606,7 @@ class SwitcherData():
             if self.globalStopped:
                 return None
 
-            return self.maxAlgo
+            return self.currentAlgo
 
         except Exception:
             return None

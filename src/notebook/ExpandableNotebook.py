@@ -11,7 +11,7 @@ import wx.lib.agw.genericmessagedialog as GMD
 NotebookBroadcastEvent, EVT_NOTEBOOK_BROADCAST_EVENT = wx.lib.newevent.NewEvent()
 
 class ExpandableNotebook(wx.Notebook):
-    def __init__(self, parent, parent_window, border=2, expandable=True, activeFile='ExpandableNotebook.conf', expansion=1, tabWidth=None, sizer=None):
+    def __init__(self, parent=None, parent_window=None, mainNotebook=None, border=2, expandable=True, activeFile='ExpandableNotebook.conf', expansion=1, tabWidth=None, sizer=None):
         wx.Notebook.__init__(self, parent, id=wx.ID_ANY, style=wx.BK_TOP
                              #wx.BK_DEFAULT
                              #wx.BK_TOP
@@ -25,6 +25,7 @@ class ExpandableNotebook(wx.Notebook):
         self.TABS = []
         self.TAB_MEMBERS = []
 
+        self.mainNotebook = mainNotebook if mainNotebook else self
         self.parent_window = parent_window
 
         self.expandable = expandable
@@ -110,7 +111,7 @@ class ExpandableNotebook(wx.Notebook):
         except AttributeError:
             obj = event
 
-        for expansion, nbs in self.NOTEBOOKS.iteritems():
+        for expansion, nbs in self.mainNotebook.NOTEBOOKS.iteritems():
             for nb in nbs:
                 for tab in nb.TABS:
                     wx.PostEvent(tab, NotebookBroadcastEvent(broadcast_obj=obj, event_id=event_id, event_value=value))
@@ -224,7 +225,8 @@ class ExpandableNotebook(wx.Notebook):
         return self.GetPage(0).get_default_values()
 
     def getTempConfigJson(self):
-        return self.__getConfigJson()
+        return self.mainNotebook.__getConfigJson(checkExpansion=False)
+        #return self.__getConfigJson()
 
     def getStoredConfigJson(self):
         try:
@@ -245,7 +247,8 @@ class ExpandableNotebook(wx.Notebook):
 
     def getTempConfigParam(self, param):
         try:
-            config_json = self.__getConfigJson()
+            #config_json = self.mainNotebook.__getConfigJson(checkExpansion=False)
+            config_json = self.__getConfigJson(checkExpansion=False)
             return config_json[param]
 
         except KeyError:
@@ -268,7 +271,6 @@ class ExpandableNotebook(wx.Notebook):
     ############################################  PRIVATE MEMBERS   ####################################################
     ####################################################################################################################
 
-
     def __buildExpandedNotebooks(self, start, length, tabMembers = None):
         if tabMembers:
             self.TAB_MEMBERS = tabMembers
@@ -283,13 +285,13 @@ class ExpandableNotebook(wx.Notebook):
 
                 #single tab sub-notebooks
                 for single_nb in range (0, expansion - 1):
-                    nb = ExpandableNotebook(self.parent, self.parent_window, self.border, expandable=False, activeFile=self.activeFile, expansion=expansion, sizer=self.sizer)
+                    nb = ExpandableNotebook(self.parent, self.parent_window, self.mainNotebook, self.border, expandable=False, activeFile=self.activeFile, expansion=expansion, sizer=self.sizer)
                     sub_notebooks.append(nb.__buildExpandedNotebooks(single_nb, 1, self.TAB_MEMBERS))
 
                 #another sub-notebook with the rest of the tabs
                 rest_start = expansion - 1
                 rest_length = len(self.TAB_MEMBERS) - expansion + 1
-                nb = ExpandableNotebook(self.parent, self.parent_window, self.border, expandable=False, activeFile=self.activeFile, expansion=expansion, sizer=self.sizer)
+                nb = ExpandableNotebook(self.parent, self.parent_window, self.mainNotebook, self.border, expandable=False, activeFile=self.activeFile, expansion=expansion, sizer=self.sizer)
                 sub_notebooks.append(nb.__buildExpandedNotebooks(rest_start, rest_length, self.TAB_MEMBERS))
 
                 self.NOTEBOOKS[expansion] = sub_notebooks
@@ -363,7 +365,7 @@ class ExpandableNotebook(wx.Notebook):
         config_json = dict()
 
         for notebook in notebooks:
-            config_json.update(notebook.__getConfigJson())
+            config_json.update(notebook.__getConfigJson(checkExpansion=False))
 
         self.__loadTabsFromJson(config_json)
 
@@ -374,15 +376,17 @@ class ExpandableNotebook(wx.Notebook):
 
         self.__loadTabsFromJson(config_json)
 
-    def __getConfigJson(self):
-        if self.expansionStatus != 1:
-            self.__transferSubNotebookData(self.expansionStatus, 1)
+    def __getConfigJson(self, checkExpansion=True):
+        if checkExpansion and self.expansionStatus != self.expansion:
+            self.__transferSubNotebookData(self.expansionStatus, self.expansion)
 
         config_json = dict()
+        nbs = self.mainNotebook.NOTEBOOKS[self.mainNotebook.expansionStatus]
 
-        for i in range(0, self.GetPageCount()):
-            page = self.GetPage(i)
-            config_json.update(page.get_json())
+        for nb in nbs:
+            for i in range(0, nb.GetPageCount()):
+                page = nb.GetPage(i)
+                config_json.update(page.get_json())
 
         return config_json
 

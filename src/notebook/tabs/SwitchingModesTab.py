@@ -13,6 +13,8 @@ class SwitchingModesTab(nbt.NotebookTab):
     def __init__(self, parentNotebook):
         nbt.NotebookTab.__init__(self, parentNotebook=parentNotebook, id=wx.ID_ANY)
 
+        self.parentNotebook = parentNotebook
+
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.modes_panel = ModesPanel(self)
         self.data_panel = DataPanel(self)
@@ -27,7 +29,7 @@ class SwitchingModesTab(nbt.NotebookTab):
 
         # Internal variables
         self.base = float()
-        self.config_json = {}
+        #self.config_json = {}
         self.att_watts = float()
 
     def get_json(self):
@@ -37,16 +39,22 @@ class SwitchingModesTab(nbt.NotebookTab):
 
     def set_json(self, config_json):
         self.modes_panel.set_values(config_json, "mode", "attenuation", "minCoins")
-        try:
-            self.config_json = config_json
-            self.calculateExpected()
-        except:
-            print "Error: calculateExpected"
 
+        self.calculateExpected()
+
+        #try:
+        #    #self.config_json = config_json
+        #    self.calculateExpected()
+        #except:
+        #    print "Error: calculateExpected"
+
+    def onBroadcastedEvent(self, event):
+        if "recalculate_expected" == event.event_id:
+            self.calculateExpected()
 
     def calculateExpected(self):
-        if not self.config_json:
-            return
+        #if not self.config_json:
+        #    return
         #min_coins = int(config_json["minCoins"])
         #self.config_json = config_json
 
@@ -55,10 +63,18 @@ class SwitchingModesTab(nbt.NotebookTab):
 
         mode = self.modes_panel.getActiveMode()
 
-        w_scrypt  = float(self.config_json["scryptWatts"])
-        w_groestl = float(self.config_json["groestlWatts"])
-        w_skein   = float(self.config_json["skeinWatts"])
-        w_qubit   = float(self.config_json["qubitWatts"])
+        #w_scrypt  = float(self.get_value(self.config_json, "scryptWatts"))
+        #w_groestl = float(self.config_json["groestlWatts"])
+        #w_skein   = float(self.config_json["skeinWatts"])
+        #w_qubit   = float(self.config_json["qubitWatts"])
+
+        w_scrypt  = self.parentNotebook.getTempConfigParam("scryptWatts")
+        w_groestl  = self.parentNotebook.getTempConfigParam("groestlWatts")
+        w_skein  = self.parentNotebook.getTempConfigParam("skeinWatts")
+        w_qubit  = self.parentNotebook.getTempConfigParam("qubitWatts")
+
+        if not w_scrypt or not w_groestl or not w_skein:
+            return
 
         avg_watts = self.average([w_scrypt, w_groestl, w_skein, w_qubit])
 
