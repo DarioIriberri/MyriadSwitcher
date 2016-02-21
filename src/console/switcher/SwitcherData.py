@@ -55,7 +55,7 @@ LOG_FORMAT_PATTERN = "%y.%m.%d.%H%M%S"
 
 class SwitcherData():
     def __init__(self, console, activeFile):
-        self.currentAlgo                            = None
+        self.currentAlgo                        = None
         self.first                              = True
         self.currentPrice                       = None
         self.hashtableCorrected                 = None
@@ -324,6 +324,9 @@ class SwitcherData():
                 self.globalStopped = self.hashtablePerWattAttenuated[self.currentAlgo] < averageMinimumCoinsPerWatt
 
         #return self.globalStopped
+
+    def getProfit(self):
+        return self.newValCorrected * self.currentPrice
 
     def noAlgoSelected(self, config_json):
         return not (config_json["scryptFactor"] or config_json["groestlFactor"] or config_json["skeinFactor"] or config_json["qubitFactor"])
