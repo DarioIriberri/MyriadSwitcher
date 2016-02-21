@@ -48,7 +48,7 @@ class FrameMYRClass(wx.Frame):
         self.mining  = False
 
         wx.Frame.__init__(self, None, wx.ID_ANY,
-                          "Myriad Switcher Configurator... ",
+                          "Digibyte Switcher Configurator... ",
                           #size=(800, 383)
                           size=(955, 1050)
         )
@@ -320,7 +320,7 @@ class FrameMYRClass(wx.Frame):
 
     # Sets the main window title
     def setTitle(self, activeFile):
-        self.SetTitle("Myriad Switcher " + self.getVersion() + "... (" + activeFile + ")")
+        self.SetTitle("Digibyte Switcher " + self.getVersion() + "... (" + activeFile + ")")
 
     def on_mouse_over(self, event):
         self.status_bar.SetStatusText(event.message)
@@ -331,7 +331,7 @@ class FrameMYRClass(wx.Frame):
 
     def onAbout(self, event):
         # Create a message dialog box
-        dlg = GMD.GenericMessageDialog(self, " Myriad Switcher " + self.getVersion() + " by Dario Iriberri (dazz).", "About", agwStyle=wx.ICON_INFORMATION | wx.OK)
+        dlg = GMD.GenericMessageDialog(self, " Digibyte Switcher " + self.getVersion() + " by Dario Iriberri (dazz).", "About", agwStyle=wx.ICON_INFORMATION | wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
 

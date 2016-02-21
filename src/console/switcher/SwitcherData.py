@@ -129,12 +129,12 @@ class SwitcherData():
             diffSkein 	 = self.difficulties.getSkeinDifficulty()
             diffQubit 	 = self.difficulties.getQubitDifficulty()
 
-            print time.strftime(DATE_FORMAT_PATTERN, time.localtime())
-            print 'diffScrypt  = ' + str(diffScrypt)
-            print 'diffGroestl = ' + str(diffGroestl)
-            print 'diffSkein   = ' + str(diffSkein)
-            print 'diffQubit   = ' + str(diffQubit)
-            print '-------------------------------------------------------'
+            #print time.strftime(DATE_FORMAT_PATTERN, time.localtime())
+            #print 'diffScrypt  = ' + str(diffScrypt)
+            #print 'diffGroestl = ' + str(diffGroestl)
+            #print 'diffSkein   = ' + str(diffSkein)
+            #print 'diffQubit   = ' + str(diffQubit)
+            #print '-------------------------------------------------------'
 
         except Exception as ex:
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
@@ -158,8 +158,8 @@ class SwitcherData():
             if not blockReward:
                 blockReward = CURRENT_BLOCK_REWARD
 
-            print 'blockReward   = ' + str(blockReward)
-            print '-------------------------------------------------------'
+            #print 'blockReward   = ' + str(blockReward)
+            #print '-------------------------------------------------------'
 
         except:
             return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "

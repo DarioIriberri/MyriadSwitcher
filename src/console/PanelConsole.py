@@ -1,9 +1,6 @@
-import psutil
-
 __author__ = 'Dario'
-
+import psutil
 import time
-
 import wx
 import os
 import wx.html2 as webview

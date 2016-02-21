@@ -539,6 +539,9 @@ class SwitchingThread (threading.Thread):
             except:
                 print "Failed to kill miners"
 
+        if EXTERNAL_SYNC:
+            ExternalProfitServer.force_stop()
+
         #self.console.parent.onMiningProcessStopped()
         self._stop.set()
 
