@@ -1,5 +1,4 @@
 __author__ = 'Dario'
-
 import wx
 import os
 import time
@@ -142,6 +141,7 @@ class PanelMinerInstance(wx.Panel):
         self.killSignal = False
 
         self.threadStreams = threading.Thread(target=self.__runStreamThreads)
+        self.threadStreams.setDaemon(True)
         self.threadStreams.start()
 
         time.sleep(1)
@@ -277,6 +277,8 @@ class PanelMinerInstance(wx.Panel):
         self.threadOut = threading.Thread(target=self.__outputThread, args=[self.shellStdout, self.process.stdout])
         self.threadErr = threading.Thread(target=self.__outputThread, args=(self.shellStderr, self.process.stderr))
 
+        self.threadOut.setDaemon(True)
+        self.threadErr.setDaemon(True)
         self.threadOut.start()
         self.threadErr.start()
 
@@ -594,6 +596,7 @@ class PanelMinerInstanceHandler(wx.Panel):
         self.status = STATUS_CRASHED
 
         thread = threading.Thread(target=self.statusCrashedThread)
+        thread.setDaemon(True)
         thread.start()
 
     def statusCrashedThread(self):
@@ -620,6 +623,7 @@ class PanelMinerInstanceHandler(wx.Panel):
             #self.parent._killMiner()
 
             thread = threading.Thread(target=self.statusStoppingThread)
+            thread.setDaemon(True)
             thread.start()
 
     def statusStoppingThread(self):
@@ -648,6 +652,7 @@ class PanelMinerInstanceHandler(wx.Panel):
             self.deviceLabel.Enable(True)
 
             thread = threading.Thread(target=self.statusStartingThread)
+            thread.setDaemon(True)
             thread.start()
 
     def statusStartingThread(self):

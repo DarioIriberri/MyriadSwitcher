@@ -254,6 +254,7 @@ class PanelMiners(wx.Panel):
                 return
 
             thread = threading.Thread(target=self.resizeMinerPanelsThread, args=(wide, narrow))
+            thread.setDaemon(True)
             thread.start()
 
         except (PyDeadObjectError, AttributeError):

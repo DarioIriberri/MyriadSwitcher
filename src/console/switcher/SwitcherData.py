@@ -6,6 +6,7 @@ import operator
 import socket
 import urllib2
 import cPickle
+from difficulty.sources.DataSource import DataSource
 
 import HTMLBuilder
 import difficulty.Difficulties as Difficulties
@@ -55,7 +56,7 @@ LOG_FORMAT_PATTERN = "%y.%m.%d.%H%M%S"
 
 class SwitcherData():
     def __init__(self, console, activeFile):
-        self.current                            = None
+        self.currentAlgo                        = None
         self.first                              = True
         self.currentPrice                       = None
         self.hashtableCorrected                 = None
@@ -115,6 +116,7 @@ class SwitcherData():
         getResultCoins = None
         getResultPrice = None
         blockReward    = None
+        blocks         = None
 
         startT2 = time.time()
 
@@ -127,8 +129,27 @@ class SwitcherData():
             diffSkein 	 = self.difficulties.getSkeinDifficulty()
             diffQubit 	 = self.difficulties.getQubitDifficulty()
 
+            print time.strftime(DATE_FORMAT_PATTERN, time.localtime())
+            print 'diffScrypt  = ' + str(diffScrypt)
+            print 'diffGroestl = ' + str(diffGroestl)
+            print 'diffSkein   = ' + str(diffSkein)
+            print 'diffQubit   = ' + str(diffQubit)
+            print '-------------------------------------------------------'
+
         except Exception as ex:
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
+
+            #try:
+            #    diffs = self.console.frame_myr.wallet.getDifficulties()
+            #
+            #    diffScrypt  = float(diffs['difficulty_scrypt'])
+            #    diffGroestl = float(diffs['difficulty_groestl'])
+            #    diffSkein   = float(diffs['difficulty_skein'])
+            #    diffQubit   = float(diffs['difficulty_qubit'])
+            #    blocks      = diffs['blocks']
+            #
+            #except:
+            #    return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
 
         try:
             self.difficulties.fetchBlockReward()
@@ -137,9 +158,17 @@ class SwitcherData():
             if not blockReward:
                 blockReward = CURRENT_BLOCK_REWARD
 
+            print 'blockReward   = ' + str(blockReward)
+            print '-------------------------------------------------------'
+
         except:
-            blockReward = CURRENT_BLOCK_REWARD
-            #return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "
+            return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "
+
+            #try:
+            #    blockReward = DataSource(None, None, None).calculateBlockReward(blocks)
+            #
+            #except:
+            #    blockReward = CURRENT_BLOCK_REWARD
 
         try:
             getResultPrice = self.httpGet(exchangesURL.get(self.config_json["exchange"]))
@@ -164,10 +193,10 @@ class SwitcherData():
             objPrice = json.loads(getResultPrice)
 
             if EXCHANGE_POLONIEX == self.config_json["exchange"]:
-                self.currentPrice = float(objPrice["BTC_MYR"]["last"]) * 100000000
+                self.currentPrice = float(objPrice["BTC_DGB"]["last"]) * 100000000
 
             if EXCHANGE_CRYPTSY == self.config_json["exchange"]:
-                self.currentPrice = float(objPrice["return"]["markets"]["MYR"]["lasttradeprice"]) * 100000000
+                self.currentPrice = float(objPrice["return"]["markets"]["DGB"]["lasttradeprice"]) * 100000000
 
         self.prevHashtableCorrected = self.hashtableCorrected
 
@@ -241,18 +270,18 @@ class SwitcherData():
         greaterThanHys = True
         greaterThanMin = True
 
-        if self.current:
-            prevVal = self.hashtable[self.current]
+        if self.currentAlgo:
+            prevVal = self.hashtable[self.currentAlgo]
 
-            greaterThanHys = ( not prevVal ) or ( float(self.maxValue) / float(prevVal) ) > self.config_json["hysteresis"]
+            greaterThanHys = ( not prevVal ) or ( self.globalStopped ) or ( self.wasStopped ) or ( float(self.maxValue) / float(prevVal) ) > self.config_json["hysteresis"]
             greaterThanMin = ((time.time() - self.lastStintStart) / 60.0) > self.config_json["minTimeNoHysteresis"]
 
-        isSwitch = (self.current != self.maxAlgo and ( greaterThanHys or greaterThanMin )) or forceSwitch
+        isSwitch = (self.currentAlgo != self.maxAlgo and ( greaterThanHys or greaterThanMin )) or forceSwitch
 
-        self.prevAlgo = self.current if self.current else self.maxAlgo
+        self.prevAlgo = self.currentAlgo if self.currentAlgo else self.maxAlgo
 
         if isSwitch:
-            self.current = self.maxAlgo
+            self.currentAlgo = self.maxAlgo
 
         return isSwitch
 
@@ -267,22 +296,22 @@ class SwitcherData():
         self.printData(status, prevSwitchtext, switchtext)
 
         self.htmlBuilder.log(self.config_json, self.logFileName)
-        self.dumpData(self.htmlBuilder)
+        self.dumpData()
 
     def getMiner(self):
-        return self.hashtableMiners[self.current] if self.current in self.hashtableMiners.keys() else None
+        return self.hashtableMiners[self.currentAlgo] if self.currentAlgo in self.hashtableMiners.keys() else None
 
     def getScriptPath(self):
-        if self.current == scryptS:
+        if self.currentAlgo == scryptS:
             return self.config_json["scryptBatchFile"]
 
-        elif self.current == groestlS:
+        elif self.currentAlgo == groestlS:
             return self.config_json["groestlBatchFile"]
 
-        elif self.current == skeinS:
+        elif self.currentAlgo == skeinS:
             return self.config_json["skeinBatchFile"]
 
-        elif self.current == qubitS:
+        elif self.currentAlgo == qubitS:
             return self.config_json["qubitBatchFile"]
 
     def initRound(self, status):
@@ -304,7 +333,7 @@ class SwitcherData():
 
         self.prevValCorrected = self.prevHashtableCorrected[self.prevAlgo]
 
-        self.nextValCorrected = self.hashtableCorrected[self.current]
+        self.nextValCorrected = self.hashtableCorrected[self.currentAlgo]
         self.newValCorrected  = self.hashtableCorrected[self.prevAlgo]
 
         self.restartTime = 0
@@ -317,13 +346,16 @@ class SwitcherData():
 
         else:
             if self.config_json["mode"] == MODE_MAX_PER_DAY:
-                self.globalStopped = self.newValCorrected < self.config_json["minCoins"]
+                self.globalStopped = self.nextValCorrected < self.config_json["minCoins"]
 
             else:
                 averageMinimumCoinsPerWatt = self.config_json["minCoins"] / self.getAverageHashValues(self.hashtableWattsAttenuated)
-                self.globalStopped = self.hashtablePerWattAttenuated[self.current] < averageMinimumCoinsPerWatt
+                self.globalStopped = self.hashtablePerWattAttenuated[self.currentAlgo] < averageMinimumCoinsPerWatt
 
         #return self.globalStopped
+
+    def getProfit(self):
+        return self.newValCorrected * self.currentPrice
 
     def noAlgoSelected(self, config_json):
         return not (config_json["scryptFactor"] or config_json["groestlFactor"] or config_json["skeinFactor"] or config_json["qubitFactor"])
@@ -515,7 +547,7 @@ class SwitcherData():
 
 
         self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
-                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.current, self.globalStopped,
+                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.currentAlgo, self.globalStopped,
                                    self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
         self.first = False
@@ -556,20 +588,21 @@ class SwitcherData():
             self.hashtableExpectedCoins = obj[1]
             self.storedGlobalTime = obj[2]
             self.watts = obj[3]
+            self.logFileName = obj[4]
 
-            #htmlBuilder.loadLines()
+            self.htmlBuilder.loadLines()
 
             return True
 
         except IOError:
             return False
 
-    def dumpData(self, htmlBuilder):
+    def dumpData(self):
         try:
-            obj = [self.hashtableTime, self.hashtableExpectedCoins, self.globalTime, self.watts]
+            obj = [self.hashtableTime, self.hashtableExpectedCoins, self.globalTime, self.watts, self.logFileName]
             cPickle.dump(obj, open(DATA_FILE_NAME, "wb"))
 
-            htmlBuilder.dumpLines()
+            self.htmlBuilder.dumpLines()
 
         except (IOError, AttributeError):
             pass
@@ -589,7 +622,7 @@ class SwitcherData():
         self.htmlBuilder.pl()
         self.htmlBuilder.pl("Process stopped at ... " + time.strftime(DATE_FORMAT_PATTERN, time.localtime()))
 
-        self.dumpData(self.htmlBuilder)
+        self.dumpData()
 
         self.globalStopped = True
 
@@ -606,7 +639,7 @@ class SwitcherData():
             if self.globalStopped:
                 return None
 
-            return self.maxAlgo
+            return self.currentAlgo
 
         except Exception:
             return None

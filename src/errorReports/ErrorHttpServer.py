@@ -21,7 +21,6 @@ else:
 
 
 class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-
     def do_GET(self):
         #logging.warning("======= GET STARTED =======")
         #logging.warning(self.headers)

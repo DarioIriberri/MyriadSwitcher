@@ -12,9 +12,11 @@ import traceback
 
 import psutil
 
-from console.switcher import HTMLBuilder, SwitcherData
+import ExternalProfitServer
+from SwitcherData import SwitcherData
+from console.switcher import HTMLBuilder
 from errorReports import ErrorReport as err
-
+import requests
 
 MIN_TIME_THREAD_PROBED = 120
 CPU_TIME               = 0
@@ -24,6 +26,13 @@ LOOP_SLEEP_TIME        = 5
 MINER_CRASHED = "crashes"
 MINER_FREEZED = "freezes"
 MINER_CRASHED_OR_FREEZED = "crashes or freezes"
+
+LOCAL_START = "LOCAL_START"
+LOCAL_STOP  = "LOCAL_STOP"
+
+EXTERNAL_SYNC = True
+URL = 'http://localhost:8080/ExternalProfitMYR'
+TIMEOUT = 10
 
 
 class SwitchingThread (threading.Thread):
@@ -58,7 +67,9 @@ class SwitchingThread (threading.Thread):
 
         self.console.onMiningProcessStarted()
 
-        self.switcherData = SwitcherData.SwitcherData(self.console, thread.activeConfigFile)
+        self.switcherData = SwitcherData(self.console, thread.activeConfigFile)
+        if EXTERNAL_SYNC:
+            ExternalProfitServer.start(self.switcherData)
 
         if self.resume or self.rebooting:
             self.switcherData.loadData()
@@ -76,6 +87,7 @@ class SwitchingThread (threading.Thread):
         scriptPath         = None
         prevSwitchtext     = None
         globalStopped      = True
+        externalStopped    = False
         wasStopped         = False
         stopReason         = None
         maxMinerFails      = False
@@ -89,7 +101,6 @@ class SwitchingThread (threading.Thread):
                 threadStopped = self.isStopped()
 
                 if dataError:
-
                     nowP = time.strftime("%H:%M:%S", time.localtime(time.time()))
 
                     hcF = HTMLBuilder.hashColorF1["FAIL"]
@@ -100,7 +111,7 @@ class SwitchingThread (threading.Thread):
                     if threadStopped:
                         break
                     else:
-                        loopMinerStatus = self.waitLoop(self.switcherData.config_json["sleepSHORT"], globalStopped, self.switcherData, dataError=True)
+                        loopMinerStatus = self.waitLoop(self.switcherData.config_json["sleepSHORT"], globalStopped, externalStopped, self.switcherData, dataError=True)
                         continue
 
                 # New Algo found to switch to!
@@ -117,19 +128,19 @@ class SwitchingThread (threading.Thread):
 
                 # Still same Algo, check if the miner is running OK
                 else:
-                    switchtext = "   " + self.switcherData.current
+                    switchtext = "   " + self.switcherData.currentAlgo
 
                     self.cpu2 = self.getCPUUsages(self.switcherData.getMiner())
 
                     #if not globalStopped or self.mainMode == "simple":
                     stopReason = loopMinerStatus if loopMinerStatus else self.minerStopped(self.cpu1, self.cpu2, self.switcherData.getMiner(), self.switcherData.config_json)
 
-                    restart = ( not globalStopped or self.mainMode == "simple" ) and ( stopReason in (MINER_CRASHED, MINER_FREEZED) )
+                    restart = ( not globalStopped or self.mainMode == "simple" ) and ( stopReason in (MINER_CRASHED, MINER_FREEZED, LOCAL_START) )
 
                     self.cpu1 = self.cpu2
 
-                    if restart:
-                        switchtext = "x " + self.switcherData.current
+                    if restart and stopReason in ( MINER_CRASHED, MINER_FREEZED ):
+                        switchtext = "x " + self.switcherData.currentAlgo
                         status = "FAIL"
                         errors += 1
 
@@ -139,14 +150,15 @@ class SwitchingThread (threading.Thread):
                             maxMinerFails = True
 
                     else:
-                        switchtext = ". " + self.switcherData.current
+                        switchtext = ". " + self.switcherData.currentAlgo
                         status = "OK"
                         errors = 0
 
                 self.switcherData.initRound(status)
 
-                globalStopped = self.switcherData.globalStopped
+                externalStopped = self.isExternalStopped(externalStopped, loopMinerStatus)
                 wasStopped    = self.switcherData.wasStopped
+                globalStopped = self.switcherData.globalStopped = self.switcherData.globalStopped or externalStopped
 
                 prevScriptPath = scriptPath
 
@@ -156,7 +168,7 @@ class SwitchingThread (threading.Thread):
                     if status != "SWITCH":
                         status = "OK"
 
-                    switchtext = "S " + self.switcherData.current
+                    switchtext = "S " + self.switcherData.currentAlgo
 
                 if self.checkRestart(prevScriptPath, scriptPath, restart, maxMinerFails, globalStopped, wasStopped):
                     sleepTime = self.switcherData.config_json["sleepLONG"]
@@ -219,7 +231,7 @@ class SwitchingThread (threading.Thread):
                     self.stop(True)
                     break
 
-                loopMinerStatus = self.waitLoop(sleepTime, globalStopped, self.switcherData)
+                loopMinerStatus = self.waitLoop(sleepTime, globalStopped, externalStopped, self.switcherData)
 
                 self.switcherData.loadConfig(thread.activeConfigFile)
 
@@ -243,11 +255,20 @@ class SwitchingThread (threading.Thread):
         return ( restart and not maxMinerFails and not globalStopped ) or \
                ( wasStopped and not globalStopped ) or \
                self.scriptChanged(prevScriptPath, scriptPath, restart, globalStopped)
+    
+    def isExternalStopped(self, externalStopped, loopMinerStatus):
+        if LOCAL_START == loopMinerStatus:
+            return False
+        
+        if LOCAL_STOP == loopMinerStatus:
+            return True
 
+        return externalStopped
+    
     def scriptChanged(self, prevScriptPath, scriptPath, restart, globalStopped):
         return not restart and not globalStopped and ( prevScriptPath and scriptPath and (prevScriptPath != scriptPath) )
 
-    def waitLoop(self, sleepTime, globalStopped, switcherData, dataError=False):
+    def waitLoop(self, sleepTime, globalStopped, externalStopped, switcherData, dataError=False):
         self.cpuF1 = self.cpu1
         t_initSleep = time.time()
 
@@ -259,6 +280,24 @@ class SwitchingThread (threading.Thread):
                 ret = self.checkMinersInLoop(globalStopped, switcherData)
                 if ret:
                     return ret
+
+            if EXTERNAL_SYNC:
+                external_profit = 0
+                try:
+                    external_profit = float(requests.request('get', URL, timeout=TIMEOUT).content)
+                except:
+                    pass
+
+                local_profit = switcherData.getProfit()
+
+                if externalStopped and local_profit > external_profit:
+                    return LOCAL_START
+
+                if not externalStopped and local_profit < external_profit:
+                    return LOCAL_STOP
+                #print 'external_profit = ' % external_profit
+
+
 
             time.sleep(LOOP_SLEEP_TIME)
 

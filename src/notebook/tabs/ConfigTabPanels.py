@@ -170,6 +170,7 @@ class LeftPanel(wx.Panel):
 
     def on_control_changed(self, event):
         self.baseConfigTab.on_control_changed(event)
+        self.baseConfigTab.parentNotebook.broadcastEventToAllTabs(event_id="recalculate_expected")
 
     def isActiveAlgo(self, algo):
         return self.algo_panel_dict[algo].isActiveAlgo()
@@ -325,6 +326,7 @@ class AlgoPanelData(wx.Panel):
             if miningThisAlgo:
                 #print self.algo + "Running disabled"
                 self.activeAlgoColorsRunningDisabled()
+
                 if event:
                     event.Skip()
 
@@ -376,6 +378,7 @@ class AlgoPanelData(wx.Panel):
     def activeAlgoColorsRunningBlink(self, algo):
         if self.active_algo.GetValue() and algo.strip() == self.algo.strip():
             thread = threading.Thread(target=self.activeAlgoRunningColorsBlinkThread, args=[algo])
+            thread.setDaemon(True)
             thread.start()
 
         else:

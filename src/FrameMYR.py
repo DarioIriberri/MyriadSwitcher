@@ -29,7 +29,7 @@ SKEIN   = "skein"
 QUBIT   = "qubit"
 
 VERSION  = "0.3"
-REVISION = 8
+REVISION = 9
 
 GRAVITY = 0.7
 
@@ -49,7 +49,8 @@ class FrameMYRClass(wx.Frame):
 
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "Myriad Switcher Configurator... ",
-                          size=(800, 383)
+                          #size=(800, 383)
+                          size=(955, 1050)
         )
 
 
@@ -597,6 +598,7 @@ class FrameMYRClass(wx.Frame):
     def stopMiners(self, runStopButtonEffect=False, wait=False, exit=False):
         if runStopButtonEffect:
             self.stopEffectThread = threading.Thread(target=self.stopLabelSingletonThread)
+            self.stopEffectThread.setDaemon(True)
             self.stopEffectThread.start()
             #StopLabelSingletonThread(self, self.miners).start()
 
@@ -661,6 +663,8 @@ class FrameMYRClass(wx.Frame):
 
         self.finished = False
 
+        threadMiners.setDaemon(True)
+        threadConsole.setDaemon(True)
         threadMiners.start()
         threadConsole.start()
 
@@ -671,6 +675,7 @@ class FrameMYRClass(wx.Frame):
                                                  maximum=100
                                                 )
             threadProgressBar = threading.Thread(target=self.progressBarThread)
+            threadProgressBar.setDaemon(True)
             threadProgressBar.start()
 
 

@@ -14,14 +14,18 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 #PATH_TO_EXE = os.getcwd() + "\\" + FrameMYR.FrameMYRClass.RESOURCE_PATH + "wallets\\myriadcoin-qt.exe"
 PATH_TO_DOC = os.getcwd() + "\\README\\README.html"
-PATH_TO_WALLET = os.environ['AppData'] + "\\Myriadcoin\\wallet.dat"
-PATH_TO_WALLET_DIR = os.environ['AppData'] + "\\Myriadcoin\\"
-EXE_NAME = "myriadcoin-qt.exe"
+#PATH_TO_WALLET = os.environ['AppData'] + "\\Myriadcoin\\wallet.dat"
+PATH_TO_WALLET = os.environ['AppData'] + "\\Digibyte\\wallet.dat"
+#PATH_TO_WALLET_DIR = os.environ['AppData'] + "\\Myriadcoin\\"
+PATH_TO_WALLET_DIR = os.environ['AppData'] + "\\Digibyte\\"
+#EXE_NAME = "myriadcoin-qt.exe"
+EXE_NAME = "digibyte-qt.exe"
 
 USER = 'myriadswitcher'
 PORT = "8333"
 
-RPC_CONFIG_FILE = 'myriadcoin.conf'
+#RPC_CONFIG_FILE = 'myriadcoin.conf'
+RPC_CONFIG_FILE = 'digibyte.conf'
 
 walletProcess = None
 rpc_conn = None
@@ -108,6 +112,33 @@ class QTWallet():
         validateData = rpc_conn.validateaddress(address)
 
         return validateData['isvalid'] and validateData['ismine']
+
+    def getDifficulties(self):
+        global walletProcess
+        global rpc_conn
+
+        if not walletProcess or not walletProcess.is_running():
+            self.__copyMyriadcoinConf()
+
+            self.openWallet(shell=False)
+
+        diffs = None
+        count = 0
+        MAX_ITER = 60
+
+        while not diffs and count < MAX_ITER:
+            try:
+                rpc_conn = AuthServiceProxy("http://%s:%s@127.0.0.1:%s"%(USER, self.password, PORT))
+                diffs = rpc_conn.getinfo()
+                #walletAddress = rpc_conn.getaccountaddress("Myriad_Switcher")
+            except:
+                pass
+
+            count += 1
+            time.sleep(1)
+
+        return diffs
+
 
     def __copyMyriadcoinConf(self):
         if not os.path.isdir(PATH_TO_WALLET_DIR):

@@ -30,8 +30,14 @@ class DataSource():
         return obj
 
     def calculateBlockReward(self, block):
-        halves = block / 967680
-        reward = 1000 / math.pow(2, halves)
+        #DGB
+        #return 2459 * 0.99**(math.floor(((block - 400000) / 80160) + 1))
+        #return ( 2459 * 0.99**(math.floor(((block - 400000) / 80160) + 1)) ) / 2
+        return ( 2459 * 0.99**((((block - 400000) / 80160) + 1)) ) / 2
 
-        return reward
+        #MYR
+        #halves = block / 967680
+        #reward = 1000 / math.pow(2, halves)
+        #
+        #return reward
 

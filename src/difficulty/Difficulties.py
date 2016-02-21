@@ -18,12 +18,18 @@ class Difficulties:
     def loadDiffSources(self, queue):
         self.DIFF_SOURCES = \
         (
-             #Birdonwheels5(self.parent, queue, TIMEOUT),
-             InsightSingleQuery(self.parent, 'http://birdonwheels5.no-ip.org/api/status?q=getInfo', queue, TIMEOUT),
-             #Theblockexplorer(self.parent, queue, TIMEOUT),
-             TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
-             InsightSingleQuery(self.parent, 'https://cryptap.us/myr/insight/api/status?q=getInfo', queue, TIMEOUT),
-             P2pool(self.parent, queue, TIMEOUT),
+             #DGB
+
+             InsightSingleQuery(self.parent, 'http://digiexplorer.info/api/status?q=getInfo', queue, TIMEOUT),
+
+             #MYR
+
+             #InsightSingleQuery(self.parent, 'http://birdonwheels5.no-ip.org/api/status?q=getInfo', queue, TIMEOUT),
+             ##Theblockexplorer(self.parent, queue, TIMEOUT),
+             #TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
+             #InsightSingleQuery(self.parent, 'https://cryptap.us/myr/insight/api/status?q=getInfo', queue, TIMEOUT),
+             #P2pool(self.parent, queue, TIMEOUT),
+             ##Birdonwheels5(self.parent, queue, TIMEOUT),
         )
 
         return self.DIFF_SOURCES
@@ -31,12 +37,19 @@ class Difficulties:
     def loadRewardSources(self, queue):
         self.REWARD_SOURCES = \
         (
-             #Birdonwheels5(self.parent, queue, TIMEOUT),
-             InsightSingleQuery(self.parent, 'http://birdonwheels5.no-ip.org/api/status?q=getInfo', queue, TIMEOUT),
-             #Theblockexplorer(self.parent, queue, TIMEOUT),
-             TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
-             InsightSingleQuery(self.parent, 'https://cryptap.us/myr/insight/api/status?q=getInfo', queue, TIMEOUT),
-             Cryptap(self.parent, queue, TIMEOUT),
+
+             #DGB
+
+             InsightSingleQuery(self.parent, 'http://digiexplorer.info/api/status?q=getInfo', queue, TIMEOUT),
+
+             #MYR
+
+             ##Birdonwheels5(self.parent, queue, TIMEOUT),
+             #InsightSingleQuery(self.parent, 'http://birdonwheels5.no-ip.org/api/status?q=getInfo', queue, TIMEOUT),
+             ##Theblockexplorer(self.parent, queue, TIMEOUT),
+             #TheblockexplorerSingleQuery(self.parent, queue, TIMEOUT),
+             #InsightSingleQuery(self.parent, 'https://cryptap.us/myr/insight/api/status?q=getInfo', queue, TIMEOUT),
+             #Cryptap(self.parent, queue, TIMEOUT),
         )
 
         return self.REWARD_SOURCES
