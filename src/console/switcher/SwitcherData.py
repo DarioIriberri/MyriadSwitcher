@@ -64,6 +64,7 @@ class SwitcherData():
         self.hashtablePreviousStintMinedCoins   = None
         self.wasStopped                         = False
         self.prevRestartTime                    = 0
+        self.totalCoins                         = 0
         self.coinsStint                         = 0
         self.wattsStint                         = 0
         self.storedGlobalTime                   = 0
@@ -249,7 +250,7 @@ class SwitcherData():
                                     qubitS   : (qubitCorrFactor / diffQubit)
         }
 
-        if self.noAlgoSelected(self.config_json):
+        if self.noAlgoSelected():
             if self.config_json["mode"] == MODE_MAX_PER_DAY:
                 self.hashtable = self.hashtableCorrected
             else:
@@ -285,7 +286,7 @@ class SwitcherData():
 
         return isSwitch
 
-    def executeRound(self, status, timeStopped, maxMinerFails, resume, prevSwitchtext, switchtext):
+    def executeRound(self, status, timeStopped, maxMinerFails, resume, prevSwitchtext, switchtext, external_profit_total=0):
         self.setEffectiveRoundTime(status == "FAIL", timeStopped)
 
         self.calculateCoins(maxMinerFails)
@@ -293,7 +294,7 @@ class SwitcherData():
 
         self.prepareNextRound()
 
-        self.printData(status, prevSwitchtext, switchtext)
+        self.printData(status, prevSwitchtext, switchtext, external_profit_total)
 
         self.htmlBuilder.log(self.config_json, self.logFileName)
         self.dumpData()
@@ -341,7 +342,7 @@ class SwitcherData():
         self._isGlobalStopped()
 
     def _isGlobalStopped(self):
-        if self.noAlgoSelected(self.config_json):
+        if self.noAlgoSelected():
             self.globalStopped = True
 
         else:
@@ -357,8 +358,8 @@ class SwitcherData():
     def getProfit(self):
         return self.newValCorrected * self.currentPrice
 
-    def noAlgoSelected(self, config_json):
-        return not (config_json["scryptFactor"] or config_json["groestlFactor"] or config_json["skeinFactor"] or config_json["qubitFactor"])
+    def noAlgoSelected(self):
+        return not (self.config_json["scryptFactor"] or self.config_json["groestlFactor"] or self.config_json["skeinFactor"] or self.config_json["qubitFactor"])
 
     def httpGet(self, url, timeout=None):
         prev_timeout = socket.getdefaulttimeout()
@@ -530,11 +531,11 @@ class SwitcherData():
     def getAverageHashValues(self, dict_p):
         return sum(dict_p.values()) / float(len(dict_p))
 
-    def printData(self, status, prevSwitchtext, switchtext):
+    def printData(self, status, prevSwitchtext, switchtext, external_profit_total=0):
         if status == "SWITCH" or status == "MAX_FAIL":
             if prevSwitchtext:
                 self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
-                                          self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped,
+                                          self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped, 0,
                                            self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json, printToConsole=False)
 
             self.htmlBuilder.printHeader(printToConsole=False)
@@ -547,7 +548,7 @@ class SwitcherData():
 
 
         self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
-                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.currentAlgo, self.globalStopped,
+                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.currentAlgo, self.globalStopped, external_profit_total,
                                    self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
         self.first = False

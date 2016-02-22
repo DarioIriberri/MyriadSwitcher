@@ -163,9 +163,9 @@ class PanelConsole(wx.Panel):
         if self.thread:
             self.thread.configChanged()
 
-    def stop(self, kill_miners=True, wait=True):
+    def stop(self, kill_miners=True, wait=True, terminate=False):
         if self.thread:
-            self.thread.stop(kill_miners)
+            self.thread.stop(kill_miners, terminate)
         else:
             return
 

@@ -13,7 +13,8 @@ import traceback
 import psutil
 
 import ExternalProfitServer
-from SwitcherData import SwitcherData
+import SwitcherData
+from SwitcherData import SwitcherData as SD
 from console.switcher import HTMLBuilder
 from errorReports import ErrorReport as err
 import requests
@@ -67,7 +68,7 @@ class SwitchingThread (threading.Thread):
 
         self.console.onMiningProcessStarted()
 
-        self.switcherData = SwitcherData(self.console, thread.activeConfigFile)
+        self.switcherData = SD(self.console, thread.activeConfigFile)
         if EXTERNAL_SYNC:
             ExternalProfitServer.start(self.switcherData)
 
@@ -92,6 +93,7 @@ class SwitchingThread (threading.Thread):
         stopReason         = None
         maxMinerFails      = False
         loopMinerStatus    = None
+        self.external_profit_total  = None
 
         while True:
             try:
@@ -219,7 +221,7 @@ class SwitchingThread (threading.Thread):
 
                 timeStopped = 0 if status != "FAIL" else LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
 
-                self.switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext)
+                self.switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext, self.external_profit_total)
 
                 if self.isStopped():
                     breakAt = "after prints, thread stopped"
@@ -284,7 +286,9 @@ class SwitchingThread (threading.Thread):
             if EXTERNAL_SYNC:
                 external_profit = 0
                 try:
-                    external_profit = float(requests.request('get', URL, timeout=TIMEOUT).content)
+                    content = requests.request('get', URL, timeout=TIMEOUT).content
+                    external_profit = float(content.split(';')[0])
+                    self.external_profit_total = int(float(content.split(';')[1]))
                 except:
                     pass
 
@@ -526,7 +530,7 @@ class SwitchingThread (threading.Thread):
             if miner in proc.name():
                 proc.kill()
 
-    def stop(self, kill_miners=False):
+    def stop(self, kill_miners=False, terminate=False):
         #self.htmlBuilder.pl()
         #self.htmlBuilder.pl("Stopping... ")
 
@@ -541,6 +545,13 @@ class SwitchingThread (threading.Thread):
 
         if EXTERNAL_SYNC:
             ExternalProfitServer.force_stop()
+
+            if terminate:
+                st_count = 0
+                while ExternalProfitServer.STARTED and st_count < 60:
+                    #httpd.setSwitcherData(switcherdata_p)
+                    time.sleep(1)
+                    st_count += 1
 
         #self.console.parent.onMiningProcessStopped()
         self._stop.set()
