@@ -176,15 +176,15 @@ class HTMLBuilder():
 
         return htmlTime
 
-    def getCoinsPerDay(self, coins, time, formated=False):
+    def getCoinsPerDay(self, coins, time, formated=False, external_profit_total=0):
         coinsR = 0 if time == 0 else coins * (SECONDS_PER_DAY / time)
 
-        return '{0:>7}'.format(int(round(coinsR))) if formated else coinsR
+        return '{0:>7}'.format(int(round(coinsR)) + external_profit_total) if formated else coinsR
 
     #def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
     #              active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableCorrected, hashtableTime, config_json):
     def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
-                  active, stopped, hashtableExpectedCoins, hashtableCorrected, hashtableTime, config_json, printToConsole=True):
+                  active, stopped, external_profit_total, hashtableExpectedCoins, hashtableCorrected, hashtableTime, config_json, printToConsole=True):
 
         status = "FAIL" if status == "MAX_FAIL" else status
 
@@ -197,6 +197,14 @@ class HTMLBuilder():
         if globalTime > 0:
             dailyCoinsTot = self.getCoinsPerDay(coins, globalTime)
             profitabilityTotal = self.getCoinsPerDay(totalSatoshi, globalTime)
+
+            if external_profit_total > 0:
+                external_profit_total = ' /{0: >9} $'.format(int(round(external_profit_total + profitabilityTotal)))
+                #profitabilityTotal += external_profit_total
+            else:
+                external_profit_total = ''
+        else:
+            external_profit_total = ''
 
         totalSatoshiStr = "{:11.0f}".format(totalSatoshi)
         dailyCoinsFormated = '{0:>7}'.format(int(round(dailyCoinsTot)))
@@ -343,7 +351,7 @@ class HTMLBuilder():
             if stopped:
                 fcY = fcG = fcS = fcQ = tforeground = foregroundDisabled
 
-        totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int(round((profitabilityTotal / scryptHR)))) + " $" + '{0: >10}'.format(int(round(profitabilityTotal))) + " $  "
+        totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int(round((profitabilityTotal / scryptHR)))) + " $" + '{0: >10}'.format(int(round(profitabilityTotal))) + " $ "
 
         currentPriceFormated = '{0:>6} $'.format(int(round(currentPrice)))
         coinsPerWatt = "{:0.2f}".format(0) if wattsAvg == 0 else "{:0.2f}".format(dailyCoinsTot / wattsAvg)
@@ -369,6 +377,7 @@ class HTMLBuilder():
         self.p( " " + '{0:>4}'.format(int(round(wattsAvg))) + "W ", hashColorF1[status], hashColorB1[status])
         self.p( " ", colorBackground=spacerColor)
         self.p( '{0:>6} '.format(coinsPerWatt), hashColorF1[status], hashColorB1[status])
+        self.p( external_profit_total )
 
         self.pl(printToConsole=printToConsole)
 

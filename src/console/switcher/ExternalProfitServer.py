@@ -53,7 +53,7 @@ def start_serving(httpd):
 
     FORCE_STOP = False
     STARTED = False
-    print "Stopping MYR Profit service"
+    print "MYR Profit service Stopped"
 
 
 class ExternalProfitServer(SocketServer.TCPServer):
@@ -76,16 +76,25 @@ class ExternalProfitHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_GET(self):
         #logging.warning("======= GET STARTED =======")
         #logging.warning(self.headers)
+        sd = self.server.switcherData
 
-        #profit = 111
-        profit = 0 if not self.server.switcherData.getMiningAlgo() else self.server.switcherData.getProfit()
+        try:
+            profit = 0 if self.isNotMining() else sd.getProfit()
+            profitabilityTotal = sd.htmlBuilder.getCoinsPerDay(sd.totalCoins * sd.currentPrice, sd.globalTime)
+        except:
+            profit = 0
+            profitabilityTotal = 0
 
         #logging.warning("\n")
 
         if self.path == PATH:
-            self.wfile.write(profit)
+            self.wfile.write('%s;%s' % (profit, profitabilityTotal))
 
     def do_POST(self):
         #logging.warning("======= POST STARTED =======")
         self.wfile.write("POST method not supported")
         #logging.warning(self.headers)
+
+    def isNotMining(self):
+        return not self.server.switcherData.getMiningAlgo()
+        #return not self.server.switcherData.noAlgoSelected() and not self.server.switcherData.getMiningAlgo()

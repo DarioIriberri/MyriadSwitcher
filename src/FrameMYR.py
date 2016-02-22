@@ -49,7 +49,8 @@ class FrameMYRClass(wx.Frame):
 
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "Myriad Switcher Configurator... ",
-                          size=(800, 383)
+                          #size=(800, 383)
+                          size=(960, 1050)
         )
 
 
@@ -657,7 +658,7 @@ class FrameMYRClass(wx.Frame):
         self.waitForStopThread()
 
         threadMiners = threading.Thread(target=self.stopMiners, kwargs={'runStopButtonEffect' : False, 'wait' : True, 'exit' : True })
-        threadConsole = threading.Thread(target=self.panelConsole.stop, kwargs={'kill_miners' : False, 'wait' : True })
+        threadConsole = threading.Thread(target=self.panelConsole.stop, kwargs={'kill_miners' : False, 'wait' : True, 'terminate' : True })
 
         self.finished = False
 
