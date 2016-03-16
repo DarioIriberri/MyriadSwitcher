@@ -94,6 +94,7 @@ class SwitchingThread (threading.Thread):
         maxMinerFails      = False
         loopMinerStatus    = None
         self.external_profit_total  = None
+        self.external_total_satoshi  = None
 
         while True:
             try:
@@ -109,6 +110,11 @@ class SwitchingThread (threading.Thread):
                     hcB = HTMLBuilder.hashColorB1["FAIL"]
 
                     self.switcherData.pl(nowP + " >  " + dataError + (" " * 109), hcF, hcB)
+
+                    if EXTERNAL_SYNC:
+                        self.switcherData.globalStopped = True
+                        #self.switcherData.currentAlgo = None
+                        self.stopMiners()
 
                     if threadStopped:
                         break
@@ -165,7 +171,7 @@ class SwitchingThread (threading.Thread):
                 prevScriptPath = scriptPath
 
                 if globalStopped:
-                    self.kill()
+                    self.stopMiners()
 
                     if status != "SWITCH":
                         status = "OK"
@@ -179,7 +185,7 @@ class SwitchingThread (threading.Thread):
 
                     if not self.switcherData.config_json["debug"]:
                         if self.mainMode == "advanced":
-                            self.kill()
+                            self.stopMiners()
 
                         retCode = self.startMiners(scriptPath, self.switcherData.maxAlgo, status == "SWITCH")
 
@@ -221,7 +227,7 @@ class SwitchingThread (threading.Thread):
 
                 timeStopped = 0 if status != "FAIL" else LOOP_SLEEP_TIME if stopReason == MINER_CRASHED else MIN_TIME_THREAD_PROBED / 2.0
 
-                self.switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext, self.external_profit_total)
+                self.switcherData.executeRound(status, timeStopped, maxMinerFails, self.resume, prevSwitchtext, switchtext, EXTERNAL_SYNC, self.external_profit_total, self.external_total_satoshi)
 
                 if self.isStopped():
                     breakAt = "after prints, thread stopped"
@@ -283,23 +289,24 @@ class SwitchingThread (threading.Thread):
                 if ret:
                     return ret
 
-            if EXTERNAL_SYNC:
-                external_profit = 0
-                try:
-                    content = requests.request('get', URL, timeout=TIMEOUT).content
-                    external_profit = float(content.split(';')[0])
-                    self.external_profit_total = int(float(content.split(';')[1]))
-                except:
-                    pass
+                if EXTERNAL_SYNC:
+                    external_profit = 0
+                    try:
+                        content = requests.request('get', URL, timeout=TIMEOUT).content
+                        external_profit = float(content.split(';')[0])
+                        self.external_profit_total = int(float(content.split(';')[1]))
+                        self.external_total_satoshi = int(float(content.split(';')[2]))
+                    except:
+                        pass
 
-                local_profit = switcherData.getProfit()
+                    local_profit = switcherData.getProfit()
 
-                if externalStopped and local_profit > external_profit:
-                    return LOCAL_START
+                    if externalStopped and local_profit > external_profit:
+                        return LOCAL_START
 
-                if not externalStopped and local_profit < external_profit:
-                    return LOCAL_STOP
-                #print 'external_profit = ' % external_profit
+                    if not externalStopped and local_profit < external_profit:
+                        return LOCAL_STOP
+                    #print 'external_profit = ' % external_profit
 
 
 
@@ -510,7 +517,7 @@ class SwitchingThread (threading.Thread):
         if os.name == "posix":
             pass
 
-    def kill(self):
+    def stopMiners(self):
         if self.mainMode == "advanced":
             self.killMiner(self.activeMiner) if self.activeMiner else self.killMiners()
         else:
@@ -539,7 +546,7 @@ class SwitchingThread (threading.Thread):
         if kill_miners:
             try:
                 #if self.mainMode == "advanced":
-                self.kill()
+                self.stopMiners()
             except:
                 print "Failed to kill miners"
 

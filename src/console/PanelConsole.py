@@ -289,7 +289,7 @@ class PanelLogs(wx.Panel):
         f = open(self.logPath + "/" + logFile + ".html")
         html = f.read()
         f.close()
-        self.onLog(html)
+        self.onLog(html.decode("utf8"))
 
     def onLog(self, html):
         self.wvLogs.SetPage(html, "")

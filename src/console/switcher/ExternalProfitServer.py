@@ -33,7 +33,7 @@ def start(switcherdata_p):
     threading.Thread(target=start_serving, args=(httpd,)).start()
     STARTED = True
 
-    print "Serving DGB Profit at: http://%(interface)s:%(port)s" % dict(interface=INTERFACE or "localhost", port=PORT)
+    print "Serving DGB Profit at: http://%(interface)s:%(port)s%(path)s" % dict(interface=INTERFACE or "localhost", port=PORT, path=PATH)
 
 def keep_running():
     global FORCE_STOP
@@ -81,14 +81,16 @@ class ExternalProfitHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         try:
             profit = 0 if self.isNotMining() else sd.getProfit()
             profitabilityTotal = sd.htmlBuilder.getCoinsPerDay(sd.totalCoins * sd.currentPrice, sd.globalTime)
+            totalSatoshi = sd.getTotalSatoshi()
         except:
             profit = 0
             profitabilityTotal = 0
+            totalSatoshi = 0
 
         #logging.warning("\n")
 
         if self.path == PATH:
-            self.wfile.write('%s;%s' % (profit, profitabilityTotal))
+            self.wfile.write('%s;%s;%s' % (profit, profitabilityTotal, totalSatoshi))
 
     def do_POST(self):
         #logging.warning("======= POST STARTED =======")

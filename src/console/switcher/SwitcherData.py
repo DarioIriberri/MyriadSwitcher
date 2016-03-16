@@ -38,7 +38,7 @@ MINER_CHOICES = ["sgminer",
 
 EXCHANGE_POLONIEX = "poloniex"
 EXCHANGE_CRYPTSY  = "cryptsy"
-exchangesURL = {EXCHANGE_POLONIEX: "https://poloniex.com/public?command=returnTicker", EXCHANGE_CRYPTSY: "http://pubapi2.cryptsy.com/api.php?method=singlemarketdata&marketid=200"}
+exchangesURL = {EXCHANGE_POLONIEX: "https://poloniex.com/public?command=returnTicker", EXCHANGE_CRYPTSY: "https://www.cryptsy.com/api/v2/currencies"}
 
 MODE_MAX_PER_DAY = 1
 MODE_MAX_PER_WATT = 2
@@ -58,7 +58,8 @@ class SwitcherData():
     def __init__(self, console, activeFile):
         self.currentAlgo                        = None
         self.first                              = True
-        self.currentPrice                       = None
+        self.currentPrice                       = 0
+        self.currentBTCPrice                    = None
         self.hashtableCorrected                 = None
         self.hashtableMinedCoins                = {}
         self.hashtablePreviousStintMinedCoins   = None
@@ -70,6 +71,9 @@ class SwitcherData():
         self.storedGlobalTime                   = 0
         self.watts                              = 0
         self.config_json                        = None
+        self.nextValCorrected                   = 0
+        self.now = time.time()
+        self.globalStart = time.time()
 
         self.hashtableTime  = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
         self.hashtableExpectedCoins = { scryptS : 0, groestlS : 0, skeinS : 0, qubitS : 0 }
@@ -130,27 +134,9 @@ class SwitcherData():
             diffSkein 	 = self.difficulties.getSkeinDifficulty()
             diffQubit 	 = self.difficulties.getQubitDifficulty()
 
-            #print time.strftime(DATE_FORMAT_PATTERN, time.localtime())
-            #print 'diffScrypt  = ' + str(diffScrypt)
-            #print 'diffGroestl = ' + str(diffGroestl)
-            #print 'diffSkein   = ' + str(diffSkein)
-            #print 'diffQubit   = ' + str(diffQubit)
-            #print '-------------------------------------------------------'
-
         except Exception as ex:
+            self.globalTime = self.storedGlobalTime + ( time.time() - self.globalStart )
             return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
-
-            #try:
-            #    diffs = self.console.frame_myr.wallet.getDifficulties()
-            #
-            #    diffScrypt  = float(diffs['difficulty_scrypt'])
-            #    diffGroestl = float(diffs['difficulty_groestl'])
-            #    diffSkein   = float(diffs['difficulty_skein'])
-            #    diffQubit   = float(diffs['difficulty_qubit'])
-            #    blocks      = diffs['blocks']
-            #
-            #except:
-            #    return "Something went wrong while retrieving the difficulties from the block chain explorer       :-(   "
 
         try:
             self.difficulties.fetchBlockReward()
@@ -159,17 +145,9 @@ class SwitcherData():
             if not blockReward:
                 blockReward = CURRENT_BLOCK_REWARD
 
-            #print 'blockReward   = ' + str(blockReward)
-            #print '-------------------------------------------------------'
-
         except:
-            return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "
-
-            #try:
-            #    blockReward = DataSource(None, None, None).calculateBlockReward(blocks)
-            #
-            #except:
-            #    blockReward = CURRENT_BLOCK_REWARD
+            blockReward = CURRENT_BLOCK_REWARD
+            #return "Something went wrong while retrieving the block reward data from the block chain explorer  :-(   "
 
         try:
             getResultPrice = self.httpGet(exchangesURL.get(self.config_json["exchange"]))
@@ -189,15 +167,18 @@ class SwitcherData():
         qubitCorrFactor   = self.config_json["qubitHashRate"]   * DIFF_CONSTANT * float(blockReward)
 
         self.previousPrice = self.currentPrice
+        self.previousBTCPrice = self.currentBTCPrice
 
         if priceOK:
             objPrice = json.loads(getResultPrice)
 
             if EXCHANGE_POLONIEX == self.config_json["exchange"]:
                 self.currentPrice = float(objPrice["BTC_DGB"]["last"]) * 100000000
+                self.currentBTCPrice = float(objPrice["USDT_BTC"]["last"]) / 100000000
 
             if EXCHANGE_CRYPTSY == self.config_json["exchange"]:
                 self.currentPrice = float(objPrice["return"]["markets"]["DGB"]["lasttradeprice"]) * 100000000
+                self.currentBTCPrice = 0
 
         self.prevHashtableCorrected = self.hashtableCorrected
 
@@ -286,15 +267,15 @@ class SwitcherData():
 
         return isSwitch
 
-    def executeRound(self, status, timeStopped, maxMinerFails, resume, prevSwitchtext, switchtext, external_profit_total=0):
+    def executeRound(self, status, timeStopped, maxMinerFails, resume, prevSwitchtext, switchtext, is_external_sync, external_profit_total=0, external_total_satoshi=0):
         self.setEffectiveRoundTime(status == "FAIL", timeStopped)
 
         self.calculateCoins(maxMinerFails)
-        self.calculateWatts(status, resume)
+        self.calculateWatts(status, resume, is_external_sync)
 
         self.prepareNextRound()
 
-        self.printData(status, prevSwitchtext, switchtext, external_profit_total)
+        self.printData(status, prevSwitchtext, switchtext, external_profit_total, external_total_satoshi)
 
         self.htmlBuilder.log(self.config_json, self.logFileName)
         self.dumpData()
@@ -356,7 +337,10 @@ class SwitcherData():
         #return self.globalStopped
 
     def getProfit(self):
-        return self.newValCorrected * self.currentPrice
+        return self.nextValCorrected * self.currentPrice
+
+    def getTotalSatoshi(self):
+        return self.totalCoins * self.currentPrice
 
     def noAlgoSelected(self):
         return not (self.config_json["scryptFactor"] or self.config_json["groestlFactor"] or self.config_json["skeinFactor"] or self.config_json["qubitFactor"])
@@ -500,10 +484,10 @@ class SwitcherData():
 
         return int(round(confirmed + unconfirmed))
 
-    def calculateWatts(self, status, resume):
+    def calculateWatts(self, status, resume, is_external_sync):
         currentWatts = 0
         if self.wasStopped and not self.first or (self.globalStopped and self.first):
-            currentWatts = self.config_json["idleWatts"]
+            currentWatts = 0 if is_external_sync else self.config_json["idleWatts"]
 
         else:
             currentWatts = self.hashtableWatts[self.prevAlgo]
@@ -531,11 +515,11 @@ class SwitcherData():
     def getAverageHashValues(self, dict_p):
         return sum(dict_p.values()) / float(len(dict_p))
 
-    def printData(self, status, prevSwitchtext, switchtext, external_profit_total=0):
+    def printData(self, status, prevSwitchtext, switchtext, external_profit_total=0, external_total_satoshi=0):
         if status == "SWITCH" or status == "MAX_FAIL":
             if prevSwitchtext:
-                self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.currentPrice,
-                                          self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped, 0,
+                self.htmlBuilder.printData("SWITCH", self.now, self.globalStintTime, prevSwitchtext, self.previousPrice, self.previousBTCPrice, self.currentPrice, self.currentBTCPrice,
+                                          self.newValCorrected, self.coinsStint, self.avgStintWatts, self.prevAlgo, self.globalStopped, 0, 0,
                                            self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json, printToConsole=False)
 
             self.htmlBuilder.printHeader(printToConsole=False)
@@ -547,8 +531,8 @@ class SwitcherData():
                 status = "OK"
 
 
-        self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.currentPrice,
-                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.currentAlgo, self.globalStopped, external_profit_total,
+        self.htmlBuilder.printData(status, self.now, self.globalTime, switchtext, self.previousPrice, self.previousBTCPrice, self.currentPrice, self.currentBTCPrice,
+                                   self.nextValCorrected, self.totalCoins, self.wattsAvg, self.currentAlgo, self.globalStopped, external_profit_total, external_total_satoshi,
                                    self.hashtableExpectedCoins, self.hashtableCorrected, self.hashtableTime, self.config_json)
 
         self.first = False

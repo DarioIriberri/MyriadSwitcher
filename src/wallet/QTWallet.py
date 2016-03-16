@@ -74,7 +74,7 @@ class QTWallet():
         global rpc_conn
 
         if not walletProcess or not walletProcess.is_running():
-            self.__copyMyriadcoinConf()
+            self.__copyDigibyteConf()
 
             self.openWallet(shell=False)
 
@@ -118,7 +118,7 @@ class QTWallet():
         global rpc_conn
 
         if not walletProcess or not walletProcess.is_running():
-            self.__copyMyriadcoinConf()
+            self.__copyDigibyteConf()
 
             self.openWallet(shell=False)
 
@@ -140,7 +140,7 @@ class QTWallet():
         return diffs
 
 
-    def __copyMyriadcoinConf(self):
+    def __copyDigibyteConf(self):
         if not os.path.isdir(PATH_TO_WALLET_DIR):
             os.makedirs(PATH_TO_WALLET_DIR)
 
@@ -168,7 +168,7 @@ class QTWallet():
         tgtWin = -1
         for win in wins:
             txt = win32gui.GetWindowText(win)
-            if txt == 'Myriadcoin Core - Wallet':
+            if txt == 'DigiByte Core - Wallet':
                 tgtWin = win
 
         if tgtWin >= 0:

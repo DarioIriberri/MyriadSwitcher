@@ -1,4 +1,5 @@
-__author__ = 'Dario'
+# -*- coding: utf-8 -*-
+# __author__ = 'Dario'
 
 import SwitcherData
 from event.EventLib import *
@@ -68,9 +69,10 @@ class HTMLBuilder():
 
         html =  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN"
         html += "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">"
+        html += "<meta charset='UTF-8'>"
         html += "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
         html += "<head>"
-        html += "<style>BODY{background-color:" + backgroundColor + ";color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:137em;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
+        html += "<style>BODY{background-color:" + backgroundColor + ";color:#FFFFFF;font-family:\"Courier New\";font-weight:bold;font-size:" + str(text_size) + "%;}table{border-collapse:collapse;width:145em;}tr{line-height:1}div:{margin-bottom:20px;}</style>"
         #html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {location.reload();}," + self.refresh_t + ")}</script>"
         html += "<script>window.onload=function(){window.scrollTo(0, document.body.scrollHeight);setTimeout(function() {window.scrollTo(0, document.body.scrollHeight);location.reload();}," + self.refresh_milisecs + ")}</script>"
         html += '<link id="page_favicon" href="data:image/x-icon;base64,AAABAAEAGBgAAAEAIACICQAAFgAAACgAAAAYAAAAMAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMiM/QS7dPwbvHT8KqqI/AN2cfwVgH38BQ' \
@@ -107,7 +109,7 @@ class HTMLBuilder():
         for line in lines:
             html += line
 
-        return html + self.html_end()
+        return (html + self.html_end()).decode("utf8")
 
     def html_end(self):
         html =  "</table>"
@@ -183,14 +185,15 @@ class HTMLBuilder():
 
     #def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
     #              active, stopped, hashtableExpectedCoins, hashtableMinedCoins, hashtableCorrected, hashtableTime, config_json):
-    def printData(self, status, now, globalTime, switchtext, previousPrice, currentPrice, valCorrected, coins, wattsAvg,
-                  active, stopped, external_profit_total, hashtableExpectedCoins, hashtableCorrected, hashtableTime, config_json, printToConsole=True):
+    def printData(self, status, now, globalTime, switchtext, previousPrice, previousBTCPrice, currentPrice, currentBTCPrice, valCorrected, coins, wattsAvg,
+                  active, stopped, external_profit_total, external_total_satoshi, hashtableExpectedCoins, hashtableCorrected, hashtableTime, config_json, printToConsole=True):
 
         status = "FAIL" if status == "MAX_FAIL" else status
 
-        totalCoinsFormated = "{:7.0f}".format(coins)
+        totalCoinsFormated = "{:9.0f} ".format(coins)
 
         totalSatoshi = coins * currentPrice
+        totalUSD = totalSatoshi * currentBTCPrice
         dailyCoinsTot = 0
         profitabilityTotal = 0
 
@@ -199,26 +202,20 @@ class HTMLBuilder():
             profitabilityTotal = self.getCoinsPerDay(totalSatoshi, globalTime)
 
             if external_profit_total > 0:
-                external_profit_total = ' /{0: >9} $'.format(int(round(external_profit_total + profitabilityTotal)))
+                external_profit_total =  '{0: >8} ß'.format(int(round(external_profit_total + profitabilityTotal))) + '{:7.2f} $'.format((external_profit_total + profitabilityTotal) * currentBTCPrice)
+                external_profit_total += '{0: >11} ß'.format(int(round(external_total_satoshi + totalSatoshi))) + '{:8.2f} $'.format((external_total_satoshi + totalSatoshi) * currentBTCPrice)
                 #profitabilityTotal += external_profit_total
             else:
-                external_profit_total = ''
+                external_profit_total = '                       '
         else:
-            external_profit_total = ''
+            external_profit_total = '                       '
 
-        totalSatoshiStr = "{:11.0f}".format(totalSatoshi)
+        totalSatoshiStr = "{:10.0f}".format(totalSatoshi)
+        totalUSDStr = "{:8.2f}".format(totalUSD)
         dailyCoinsFormated = '{0:>7}'.format(int(round(dailyCoinsTot)))
 
-        priceForegroundColor = COLOR_WHITE
-
-        if not previousPrice or ( currentPrice == previousPrice ):
-            priceForegroundColor = COLOR_WHITE
-        else:
-            if currentPrice > previousPrice:
-                priceForegroundColor = COLOR_GREEN
-
-            else:
-                priceForegroundColor = COLOR_RED
+        priceForegroundColor = self.getPriceColor(previousPrice, currentPrice)
+        priceBTCForegroundColor = self.getPriceColor(previousBTCPrice, currentBTCPrice)
 
         totalCoinsScrypt  = 0
         totalCoinsGroestl = 0
@@ -299,10 +296,10 @@ class HTMLBuilder():
         #minedS = '{0:>7}'.format(hashtableMinedCoins[skeinS])
         #minedQ = '{0:>7}'.format(hashtableMinedCoins[qubitS])
 
-        stringOthersCoinsY = "{:7.0f}".format(totalCoinsScrypt)  + " " + self.formatPct(totalCoinsScrypt, coins, 0)  + valCorrectedY
-        stringOthersCoinsG = "{:7.0f}".format(totalCoinsGroestl) + " " + self.formatPct(totalCoinsGroestl, coins, 0) + valCorrectedG
-        stringOthersCoinsS = "{:7.0f}".format(totalCoinsSkein)   + " " + self.formatPct(totalCoinsSkein, coins, 0)   + valCorrectedS
-        stringOthersCoinsQ = "{:7.0f}".format(totalCoinsQubit)   + " " + self.formatPct(totalCoinsQubit, coins, 0)   + valCorrectedQ
+        #stringOthersCoinsY = "{:7.0f}".format(totalCoinsScrypt)  + " " + valCorrectedY
+        stringOthersCoinsG = "{:7.0f}".format(totalCoinsGroestl) + " " + valCorrectedG
+        stringOthersCoinsS = "{:7.0f}".format(totalCoinsSkein)   + " " + valCorrectedS
+        stringOthersCoinsQ = "{:7.0f}".format(totalCoinsQubit)   + " " + valCorrectedQ
 
         #stringOthersCoinsY = minedY + " / " + "{:7.0f}".format(totalCoinsScrypt)  + valCorrectedY
         #stringOthersCoinsG = minedG + " / " + "{:7.0f}".format(totalCoinsGroestl) + valCorrectedG
@@ -311,7 +308,8 @@ class HTMLBuilder():
 
         scryptHR = 1 if config_json["scryptHashRate"] == 0 else config_json["scryptHashRate"]
 
-        stringPrice = '{0:>10} $'.format(int(round(currentPrice) * valCorrected / float(scryptHR))) + '{0:>10} $ '.format(int(round((currentPrice * valCorrected))))
+        #stringPrice = '{0:>10} $'.format(int(round(currentPrice) * valCorrected / float(scryptHR))) + '{0:>10} $ '.format(int(round((currentPrice * valCorrected))))
+        stringPrice = '{0:>10} ß '.format(int(round((currentPrice * valCorrected)))) + ' {:6.2f} $'.format(currentPrice * valCorrected * currentBTCPrice)
 
         fcY = fcG = fcS = fcQ = hashColorF3[status]
         bcY = bcG = bcS = bcQ = hashColorB3[status]
@@ -351,9 +349,13 @@ class HTMLBuilder():
             if stopped:
                 fcY = fcG = fcS = fcQ = tforeground = foregroundDisabled
 
-        totals = totalSatoshiStr + " $" + dailyCoinsFormated + '{0: >11}'.format(int(round((profitabilityTotal / scryptHR)))) + " $" + '{0: >10}'.format(int(round(profitabilityTotal))) + " $ "
+        #totals = totalSatoshiStr + " ß" + dailyCoinsFormated + '{0: >11}'.format(int(round((profitabilityTotal / scryptHR)))) + " $" + '{0: >10}'.format(int(round(profitabilityTotal))) + " ß "
+        #totals = totalSatoshiStr + " ß" + totalUSDStr + " $ " + dailyCoinsFormated + '{0: >9} ß '.format(int(round(profitabilityTotal))) + '{:6.2f} $ '.format(profitabilityTotal * currentBTCPrice)
+        totals1 = dailyCoinsFormated + '{0: >9} ß '.format(int(round(profitabilityTotal))) + '{:6.2f} $ '.format(profitabilityTotal * currentBTCPrice)
+        totals2 = totalSatoshiStr + " ß" + totalUSDStr + " $ "
 
-        currentPriceFormated = '{0:>6} $'.format(int(round(currentPrice)))
+        currentPriceFormated = '{0:>6} ß'.format(int(round(currentPrice)))
+        currentBTCPriceFormated = '{0:>6} $'.format(int(round(currentBTCPrice * 100000000)))
         coinsPerWatt = "{:0.2f}".format(0) if wattsAvg == 0 else "{:0.2f}".format(dailyCoinsTot / wattsAvg)
 
         nowP = time.strftime("%H:%M:%S", time.localtime(now))
@@ -363,35 +365,50 @@ class HTMLBuilder():
         self.p( nowP + " " + nowG + " ", hashColorF1[status], hashColorB1[status])
         self.p( switchtext, tforeground, hashColorB2[status] )
         self.p( currentPriceFormated, priceForegroundColor, hashColorB2[status])
+        self.p( currentBTCPriceFormated, priceBTCForegroundColor, hashColorB2[status])
         self.p( stringPrice, tforeground, hashColorB2[status])
         self.p( " ", colorBackground=spacerColor)
-        self.p( stringOthersCoinsY + " ", fcY, bcY)
-        self.p( " ", colorBackground=spacerColor)
+        #self.p( stringOthersCoinsY + " ", fcY, bcY)
+        #self.p( " ", colorBackground=spacerColor)
         self.p( stringOthersCoinsG + " ", fcG, bcG)
         self.p( " ", colorBackground=spacerColor)
         self.p( stringOthersCoinsS + " ", fcS, bcS)
         self.p( " ", colorBackground=spacerColor)
         self.p( stringOthersCoinsQ + " ", fcQ, bcQ)
         self.p( " ", colorBackground=spacerColor)
-        self.p( totalCoinsFormated + totals , hashColorF4[status], hashColorB4[status])
+        self.p( totals1 , hashColorF4[status], hashColorB4[status])
+        self.p( totalCoinsFormated , hashColorF1[status], hashColorB1[status])
+        self.p( totals2 , hashColorF4[status], hashColorB4[status])
         self.p( " " + '{0:>4}'.format(int(round(wattsAvg))) + "W ", hashColorF1[status], hashColorB1[status])
         self.p( " ", colorBackground=spacerColor)
-        self.p( '{0:>6} '.format(coinsPerWatt), hashColorF1[status], hashColorB1[status])
-        self.p( external_profit_total )
+        #self.p( '{0:>6} '.format(coinsPerWatt), hashColorF1[status], hashColorB1[status])
+        self.p( external_profit_total)
 
         self.pl(printToConsole=printToConsole)
 
     def printHeader(self, printToConsole=True):
         self.pl(printToConsole=printToConsole)
-        self.pl("Time    Elapsed/Stint   Algo      Exch.  Prof 1Mh/s   My profit   Scrypt    %   /day   Groestl   %   /day    Skein    %   /day    Qubit    %   /day   Tot.Coins     Tot.$   /day   Prof 1Mh/s   My profit   Watts    C/W", COLOR_CYAN, printToConsole=printToConsole)
-        #11:32:34 00 00:00:00 S  Qubit    522$    457958 $    591681 $        0   0%    785        0   0%    586        0   0%   1409        0   0%   1133        0          0 $      0          0 $         0 $    110W    0.00
-
+        #self.pl("Time    Elapsed/Stint   Algo      DGB-ß   ß-USD      Prof ß   Prof USD  Scrypt    /day   Groestl   /day    Skein    /day    Qubit    /day   Tot.DGB       Tot.ß     Tot.$  DGB/day        ß/day     $/day  Watts       Ext.ß    Ext.$", COLOR_CYAN, printToConsole=printToConsole)
+        self.pl("Time    Elapsed/Stint   Algo      DGB-ß   ß-USD      Prof ß  Prof USD  Groestl   /day    Skein    /day    Qubit    /day   DGB/day     ß/day    $/day   Tot.DGB        Tot.ß     Tot.$  Watts       Ext.ß    Ext.$        Tot.ß    Tot.$", COLOR_CYAN, printToConsole=printToConsole)
+                #21:13:16 00 04:38:58 S  Qubit      53 ß   421 $    236343 ß    1.00 $       0    1006      406    4000      267    4459     3474   184135 ß   0.78 $       673      35673 ß    0.15 $   162W    439441 ß   1.85 $      84285 ß    0.35 $
 
     def getFormatedTime(self, timestamp):
         time_str = time.strftime('%H:%M:%S', time.gmtime(timestamp))
         days = int(round(timestamp) / SECONDS_PER_DAY)
 
         return "{:02.0f}".format(days) + " " + time_str
+
+    def getPriceColor(self, previousPrice, currentPrice):
+        if not previousPrice or ( currentPrice == previousPrice ):
+            priceForegroundColor = COLOR_WHITE
+        else:
+            if currentPrice > previousPrice:
+                priceForegroundColor = COLOR_GREEN
+
+            else:
+                priceForegroundColor = COLOR_RED
+
+        return priceForegroundColor
 
     def formatPct(self, decim1, decim2, decDigits):
         if not decim2:
